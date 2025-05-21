@@ -1,0 +1,13 @@
+{
+    "url": "https://forum.mihono.cn",
+    "secret": "3db67495-9cbf-4992-86a6-a08301198218",
+    "database": "mongo",
+    "mongo": {
+        "host": "127.0.0.1",
+        "port": 27017,
+        "username": "",
+        "password": "",
+        "database": "nodebb",
+        "uri": "mongodb://nodebbUser:moddingissoevil@localhost:27017/nodebb?authSource=admin"
+    }
+}
