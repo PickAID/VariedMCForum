@@ -114,3 +114,4 @@ webpack.installer.js
 webpack.prod.js
 
 !markdown-toc/*
+!extended-markdown-fixed/*
