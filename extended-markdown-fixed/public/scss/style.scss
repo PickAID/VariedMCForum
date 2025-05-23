@@ -104,14 +104,50 @@ a.anchor-offset {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     position: relative;
     
-    // 隐藏可能的箭头元素
+    // 彻底隐藏所有可能的箭头和导航元素
     .fa-chevron-left,
     .fa-chevron-right,
     .fa-angle-left,
     .fa-angle-right,
+    .fa-arrow-left,
+    .fa-arrow-right,
+    .fa-caret-left,
+    .fa-caret-right,
     [class*="chevron"],
-    [class*="angle"] {
+    [class*="angle"],
+    [class*="arrow"],
+    [class*="caret"],
+    .carousel-control,
+    .carousel-control-prev,
+    .carousel-control-next,
+    .slick-prev,
+    .slick-next,
+    .swiper-button-prev,
+    .swiper-button-next,
+    .owl-prev,
+    .owl-next,
+    .prev,
+    .next,
+    button[class*="prev"],
+    button[class*="next"],
+    a[class*="prev"],
+    a[class*="next"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    
+    // 隐藏任何绝对定位的导航元素
+    > *:not(.nav-tabs):not(.tab-content) {
+        display: none !important;
+    }
+    
+    // 确保只显示我们的tab内容
+    .nav-tabs,
+    .tab-content {
+        position: relative;
+        z-index: 1;
     }
 }
 
@@ -193,13 +229,29 @@ a.anchor-offset {
         background: transparent !important;
         padding: 1rem;
     }
-    
-    // 隐藏任何可能的导航箭头
+}
+
+// 全局隐藏可能影响代码组的导航元素
+.code-group-container,
+.code-group-container * {
     .carousel-control-prev,
     .carousel-control-next,
     .slick-prev,
-    .slick-next {
+    .slick-next,
+    .swiper-button-prev,
+    .swiper-button-next,
+    .owl-prev,
+    .owl-next,
+    [data-slide="prev"],
+    [data-slide="next"],
+    [data-bs-slide="prev"],
+    [data-bs-slide="next"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        left: -9999px !important;
     }
 }
 

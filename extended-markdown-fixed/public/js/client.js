@@ -175,25 +175,63 @@ $(document).ready(function () {
             };
         });
 
-        // 处理代码分组的tab切换和高亮
         document.querySelectorAll('.code-group-container .nav-tabs button[data-bs-toggle="tab"]').forEach(function(tabButton) {
             tabButton.addEventListener('shown.bs.tab', function (event) {
                 const targetPane = document.querySelector(event.target.getAttribute('data-bs-target'));
                 if (targetPane) {
                     const codeBlock = targetPane.querySelector('code');
                     if (codeBlock && window.hljs) {
-                        // 重新应用代码高亮
                         window.hljs.highlightElement(codeBlock);
                     }
                 }
             });
         });
 
-        // 初始化时对所有可见的代码块应用高亮
         if (window.hljs) {
             document.querySelectorAll('.code-group-container code').forEach(function(codeBlock) {
                 window.hljs.highlightElement(codeBlock);
             });
         }
+
+        setTimeout(function() {
+            document.querySelectorAll('.code-group-container').forEach(function(container) {
+                const unwantedSelectors = [
+                    '.fa-chevron-left', '.fa-chevron-right', '.fa-angle-left', '.fa-angle-right',
+                    '.fa-arrow-left', '.fa-arrow-right', '.fa-caret-left', '.fa-caret-right',
+                    '.carousel-control', '.carousel-control-prev', '.carousel-control-next',
+                    '.slick-prev', '.slick-next', '.swiper-button-prev', '.swiper-button-next',
+                    '.owl-prev', '.owl-next', '.prev', '.next',
+                    '[class*="chevron"]', '[class*="angle"]', '[class*="arrow"]', '[class*="caret"]',
+                    '[data-slide]', '[data-bs-slide]',
+                    'i.fa-chevron-left', 'i.fa-chevron-right', 'i.fa-angle-left', 'i.fa-angle-right',
+                    'span.fa-chevron-left', 'span.fa-chevron-right', 'span.fa-angle-left', 'span.fa-angle-right'
+                ];
+                
+                unwantedSelectors.forEach(function(selector) {
+                    try {
+                        const elements = container.querySelectorAll(selector);
+                        elements.forEach(function(el) {
+                            el.remove();
+                        });
+                    } catch (e) {
+                    }
+                });
+                
+                Array.from(container.children).forEach(function(child) {
+                    if (!child.classList.contains('nav-tabs') && 
+                        !child.classList.contains('tab-content')) {
+                        child.remove();
+                    }
+                });
+                
+                const allIcons = container.querySelectorAll('i[class*="fa-"], span[class*="fa-"]');
+                allIcons.forEach(function(icon) {
+                    const parent = icon.parentElement;
+                    if (!parent || !parent.classList.contains('nav-link')) {
+                        icon.remove();
+                    }
+                });
+            });
+        }, 100);
     }
 });
