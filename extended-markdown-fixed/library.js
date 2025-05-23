@@ -2,7 +2,7 @@
 
 const slugify = require.main.require('./src/slugify');
 
-const textHeaderRegex = /<p dir="auto">#([a-zA-Z0-9-]*)\((.*)\)<\/p>/g;
+const textHeaderRegex = /<p dir="auto">#([a-zA-Z0-9-_]+)\(([^)]+)\)<\/p>/g;
 const tooltipRegex = /(<code.*?>.*?<\/code>)|°(.+?)°\((.+?)\)/g;
 
 const codeTabRegex = /(?:<p dir="auto">={3}group<\/p>\n)((?:<pre><code class=".+">[^]*?<\/code><\/pre>\n){2,})(?:<p dir="auto">={3}<\/p>)/g;
@@ -215,7 +215,7 @@ function applySpoiler(textContent, id) {
         textContent = textContent.replace(spoilerRegex, (match, text) => {
             const spoilerButton = `
                 <button class="btn btn-primary extended-markdown-spoiler" type="button" name="spoiler" data-bs-toggle="collapse" data-bs-target="#spoiler${count + id}" aria-expanded="false" aria-controls="spoiler${count + id}">
-                    Spoiler <i class="fa fa-eye-slash"></i>
+                    [[extendedmarkdown:spoiler]] <i class="fa fa-eye-slash"></i>
                 </button>`;
 
             const spoilerContent = `
