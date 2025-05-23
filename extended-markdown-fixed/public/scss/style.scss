@@ -99,125 +99,82 @@ a.anchor-offset {
 
 .code-group-container {
     margin: 1rem 0;
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+    background: #fff;
     
-    // 彻底隐藏所有可能的箭头和导航元素
-    .fa-chevron-left,
-    .fa-chevron-right,
-    .fa-angle-left,
-    .fa-angle-right,
-    .fa-arrow-left,
-    .fa-arrow-right,
-    .fa-caret-left,
-    .fa-caret-right,
-    [class*="chevron"],
-    [class*="angle"],
-    [class*="arrow"],
-    [class*="caret"],
-    .carousel-control,
-    .carousel-control-prev,
-    .carousel-control-next,
-    .slick-prev,
-    .slick-next,
-    .swiper-button-prev,
-    .swiper-button-next,
-    .owl-prev,
-    .owl-next,
-    .prev,
-    .next,
-    button[class*="prev"],
-    button[class*="next"],
-    a[class*="prev"],
-    a[class*="next"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    
-    // 隐藏任何绝对定位的导航元素
-    > *:not(.nav-tabs):not(.tab-content) {
-        display: none !important;
-    }
-    
-    // 确保只显示我们的tab内容
-    .nav-tabs,
-    .tab-content {
-        position: relative;
-        z-index: 1;
-    }
-}
-
-.nav-tabs {
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 0;
-    background-color: #f8f9fa;
-    
-    .nav-item {
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
         margin-bottom: 0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 0;
         
-        &:not(:last-child) .nav-link {
-            border-right: 1px solid #dee2e6;
-        }
-        
-        .nav-link {
-            border: none;
-            border-radius: 0;
-            padding: 0.75rem 1rem;
-            color: #6c757d;
-            background-color: transparent;
-            transition: all 0.15s ease-in-out;
-            position: relative;
+        .nav-item {
+            margin-bottom: 0;
             
-            &:hover {
-                background-color: #e9ecef;
-                color: #495057;
+            &:not(:last-child) .nav-link {
+                border-right: 1px solid #dee2e6;
             }
             
-            &.active {
-                color: #007bff;
-                background-color: #fff;
+            .nav-link {
+                border: none;
+                border-radius: 0;
+                padding: 0.875rem 1.25rem;
+                color: #6c757d;
+                background: transparent;
                 font-weight: 500;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                position: relative;
                 
-                &::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 2px;
-                    background-color: #007bff;
+                &:hover {
+                    background: rgba(255, 255, 255, 0.7);
+                    color: #495057;
+                    transform: translateY(-1px);
+                }
+                
+                &.active {
+                    color: #0d6efd;
+                    background: #fff;
+                    font-weight: 600;
+                    
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        height: 3px;
+                        background: linear-gradient(90deg, #0d6efd, #6610f2);
+                        border-radius: 3px 3px 0 0;
+                    }
                 }
             }
         }
     }
-}
-
-.tab-content {
-    border: none;
-    border-radius: 0;
-    background-color: #fff;
     
-    .tab-pane {
-        padding: 0;
+    .tab-content {
+        background: #fff;
         
-        pre {
-            margin: 0;
-            border: none;
-            border-radius: 0;
-            background-color: #f8f9fa;
+        .tab-pane {
+            padding: 0;
             
-            code {
-                padding: 1rem;
-                display: block;
-                overflow-x: auto;
-                background-color: transparent;
-                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-                font-size: 0.875rem;
-                line-height: 1.5;
+            pre {
+                margin: 0;
+                border-radius: 0;
+                background: #f8f9fa;
+                border: none;
+                
+                code {
+                    padding: 1.25rem;
+                    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+                    font-size: 0.875rem;
+                    line-height: 1.6;
+                    color: #212529;
+                    background: transparent;
+                }
             }
         }
     }
@@ -258,43 +215,41 @@ a.anchor-offset {
 // 暗色主题支持
 [data-bs-theme="dark"] {
     .code-group-container {
-        box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
-    }
-    
-    .nav-tabs {
-        border-bottom-color: #495057;
-        background-color: #343a40;
+        background: #212529;
+        border-color: #495057;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         
-        .nav-item {
-            &:not(:last-child) .nav-link {
-                border-right-color: #495057;
-            }
+        .nav-tabs {
+            background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+            border-bottom-color: #495057;
             
-            .nav-link {
-                color: #adb5bd;
-                
-                &:hover {
-                    background-color: #495057;
-                    color: #fff;
+            .nav-item {
+                &:not(:last-child) .nav-link {
+                    border-right-color: #495057;
                 }
                 
-                &.active {
-                    color: #0d6efd;
-                    background-color: #212529;
+                .nav-link {
+                    color: #adb5bd;
                     
-                    &::after {
-                        background-color: #0d6efd;
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #fff;
+                    }
+                    
+                    &.active {
+                        color: #6ea8fe;
+                        background: #212529;
+                        
+                        &::after {
+                            background: linear-gradient(90deg, #6ea8fe, #a370f7);
+                        }
                     }
                 }
             }
         }
-    }
-    
-    .tab-content {
-        background-color: #212529;
         
-        .tab-pane pre {
-            background-color: #1a1e21;
+        .tab-content .tab-pane pre {
+            background: #1a1e21;
             
             code {
                 color: #f8f9fa;
