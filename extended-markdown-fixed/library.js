@@ -145,11 +145,14 @@ function applyGroupCode(textContent, id) {
         textContent = textContent.replace(codeTabRegex, (match, codes) => {
             let codeArray = codes.substring(5, codes.length - 6).split(/<\/pre>\n<pre>/g);
             let lang = [];
+            let processedCodeArray = [];
+            
             for (let i in codeArray) {
                 const langMatch = langCodeRegex.exec(codeArray[i]);
                 if (langMatch) {
                     lang[i] = langMatch[1];
-                    codeArray[i] = "<pre>" + codeArray[i] + "</pre>";
+                    // 保持原始代码结构，不添加额外的pre标签
+                    processedCodeArray[i] = codeArray[i];
                 }
             }
             
@@ -179,7 +182,7 @@ function applyGroupCode(textContent, id) {
                                    role="tabpanel" 
                                    aria-labelledby="${tabId}-tab" 
                                    tabindex="0">
-                    ${codeArray[i]}
+                    <pre><code class="${lang[i]}">${processedCodeArray[i].replace(/<\/?pre>/g, '').replace(/<code class="[^"]*">/, '').replace(/<\/code>/, '')}</code></pre>
                 </div>`;
             }
             

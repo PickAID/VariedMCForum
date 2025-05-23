@@ -174,5 +174,26 @@ $(document).ready(function () {
                 element.children[0].className = isExpanded ? "fa fa-eye-slash" : "fa fa-eye";
             };
         });
+
+        // 处理代码分组的tab切换和高亮
+        document.querySelectorAll('.code-group-container .nav-tabs button[data-bs-toggle="tab"]').forEach(function(tabButton) {
+            tabButton.addEventListener('shown.bs.tab', function (event) {
+                const targetPane = document.querySelector(event.target.getAttribute('data-bs-target'));
+                if (targetPane) {
+                    const codeBlock = targetPane.querySelector('code');
+                    if (codeBlock && window.hljs) {
+                        // 重新应用代码高亮
+                        window.hljs.highlightElement(codeBlock);
+                    }
+                }
+            });
+        });
+
+        // 初始化时对所有可见的代码块应用高亮
+        if (window.hljs) {
+            document.querySelectorAll('.code-group-container code').forEach(function(codeBlock) {
+                window.hljs.highlightElement(codeBlock);
+            });
+        }
     }
 });
