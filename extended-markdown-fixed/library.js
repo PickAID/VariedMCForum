@@ -12,7 +12,7 @@ const colorRegex = /(<code.*>*?[^]<\/code>)|%\((#[\dA-Fa-f]{6}|rgb\(\d{1,3}, ?\d
 
 const paragraphAndHeadingRegex = /<(h[1-6]|p dir="auto")>([^]*?)<\/(h[1-6]|p)>/g;
 
-const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([a-zA-Z0-9]*)\]: ((.|<br \/>\n)*)<\/p>/g;
+const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|<br \/>\n)*)<\/p>/g;
 
 const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 
@@ -146,19 +146,47 @@ function applyGroupCode(textContent, id) {
             let codeArray = codes.substring(5, codes.length - 6).split(/<\/pre>\n<pre>/g);
             let lang = [];
             for (let i in codeArray) {
-                lang[i] = langCodeRegex.exec(codeArray[i])[1];
-                codeArray[i] = "<pre>" + codeArray[i] + "</pre>\n";
+                const langMatch = langCodeRegex.exec(codeArray[i]);
+                if (langMatch) {
+                    lang[i] = langMatch[1];
+                    codeArray[i] = "<pre>" + codeArray[i] + "</pre>";
+                }
             }
-            let menuTab = "<ul class='nav nav-tabs' role='tablist'>";
-            let contentTab = "<div class='tab-content'>";
+            
+            const groupId = `codegroup-${count}-${id}`;
+            let menuTab = `<ul class='nav nav-tabs' role='tablist' id='${groupId}-tabs'>`;
+            let contentTab = `<div class='tab-content' id='${groupId}-content'>`;
+            
             for (let i = 0; i < lang.length; i++) {
-                menuTab += `<li class="nav-item" role="presentation"><button class="nav-link ${i === 0 ? "active" : ""}" id="${lang[i] + count + id}-tab" data-bs-toggle="tab" data-bs-target="#${lang[i] + count + id}" type="button" role="tab" aria-controls="${lang[i] + count + id}" aria-selected="${i === 0 ? "true" : "false"}">${capitalizeFirstLetter(lang[i])}</button></li>`;
-                contentTab += `<div class="tab-pane fade ${i === 0 ? "show active" : ""}" id="${lang[i] + count + id}" role="tabpanel" aria-labelledby="${lang[i] + count + id}-tab">${codeArray[i]}</div>`;
+                const tabId = `${groupId}-${lang[i]}-${i}`;
+                const isActive = i === 0;
+                
+                menuTab += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${isActive ? "active" : ""}" 
+                            id="${tabId}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#${tabId}" 
+                            type="button" 
+                            role="tab" 
+                            aria-controls="${tabId}" 
+                            aria-selected="${isActive ? "true" : "false"}">
+                        ${capitalizeFirstLetter(lang[i])}
+                    </button>
+                </li>`;
+                
+                contentTab += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                                   id="${tabId}" 
+                                   role="tabpanel" 
+                                   aria-labelledby="${tabId}-tab" 
+                                   tabindex="0">
+                    ${codeArray[i]}
+                </div>`;
             }
+            
             menuTab += "</ul>";
             contentTab += "</div>";
             count++;
-            return menuTab + contentTab;
+            return `<div class="code-group-container">${menuTab}${contentTab}</div>`;
         });
     }
     return textContent;
