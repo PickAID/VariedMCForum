@@ -15,6 +15,49 @@ $(document).ready(function () {
         ExtendedMarkdown.prepareFormattingTools();
     });
 
+    function detectTheme() {
+        const body = document.body;
+        const html = document.documentElement;
+        
+        if (body.classList.contains('dark') || 
+            html.getAttribute('data-theme') === 'dark' ||
+            html.getAttribute('data-bs-theme') === 'dark') {
+            return 'dark';
+        }
+        
+        const linkElement = document.querySelector('link[href*="bootstrap"]');
+        if (linkElement) {
+            const href = linkElement.href.toLowerCase();
+            if (href.includes('darkly') || href.includes('cyborg') || 
+                href.includes('slate') || href.includes('superhero') ||
+                href.includes('vapor') || href.includes('solar')) {
+                return 'dark';
+            }
+        }
+        
+        const computedStyle = window.getComputedStyle(body);
+        const bgColor = computedStyle.backgroundColor;
+        if (bgColor) {
+            const rgb = bgColor.match(/\d+/g);
+            if (rgb && rgb.length >= 3) {
+                const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+                return brightness < 128 ? 'dark' : 'light';
+            }
+        }
+        
+        return 'light';
+    }
+
+    function applyThemeStyles() {
+        const theme = detectTheme();
+        const containers = document.querySelectorAll('.code-group-container');
+        
+        containers.forEach(container => {
+            container.classList.remove('theme-light', 'theme-dark');
+            container.classList.add(`theme-${theme}`);
+        });
+    }
+
     ExtendedMarkdown.prepareFormattingTools = async function () {
         const [formatting, controls, translator] = await app.require(['composer/formatting', 'composer/controls', 'translator']);
         if (formatting && controls) {
@@ -74,20 +117,20 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, strings.align_right + '-|');
-                        controls.updateTextareaSelection(textarea, selectionStart, selectionStart + strings.align_right.length);
+                        controls.insertIntoTextarea(textarea, '|-' + strings.align_right + '-|');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + strings.align_right.length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '', '-|');
-                        controls.updateTextareaSelection(textarea, selectionStart, selectionEnd);
+                        controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionEnd + 2);
                     }
                 });
 
                 formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|=' + strings.align_justify + '=|');
+                        controls.insertIntoTextarea(textarea, '|-' + strings.align_justify + '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + strings.align_justify.length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
+                        controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionEnd + 2);
                     }
                 });
@@ -108,70 +151,64 @@ $(document).ready(function () {
                 });
 
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '===group\n```' + strings.groupedcode_firstlang + "\n```\n```" + strings.groupedcode_secondlang + '\n```\n===');
-                    }
+                    controls.insertIntoTextarea(textarea, '===group\n```' + strings.groupedcode_firstlang + '\n\n```\n```' + strings.groupedcode_secondlang + '\n\n```\n===');
+                    controls.updateTextareaSelection(textarea, selectionStart + 16 + strings.groupedcode_firstlang.length, selectionStart + 16 + strings.groupedcode_firstlang.length);
                 });
 
                 formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '°fa-info°(' + strings.bubbleinfo_text + ')');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 8);
+                        controls.insertIntoTextarea(textarea, '°' + strings.bubbleinfo_text + '°(tooltip)');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + strings.bubbleinfo_text.length);
                     } else {
-                        var wrapDelta = controls.wrapSelectionInTextareaWith(textarea, '°', '°(' + strings.bubbleinfo_text + ')');
-                        controls.updateTextareaSelection(textarea, selectionEnd + 3 - wrapDelta[1], selectionEnd + strings.bubbleinfo_text.length + 3 - wrapDelta[1]);
+                        controls.wrapSelectionInTextareaWith(textarea, '°', '°(tooltip)');
+                        controls.updateTextareaSelection(textarea, selectionEnd + 2, selectionEnd + 9);
                     }
                 });
-                
+
                 formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, "||" + strings.spoiler + "||");
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + strings.spoiler.length);
+                        controls.insertIntoTextarea(textarea, '||spoiler||');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, "||", "||");
+                        controls.wrapSelectionInTextareaWith(textarea, '||', '||');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionEnd + 2);
                     }
                 });
 
                 formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '!!! info [' + strings.note_title + ']: ' + strings.note_content);
-                        controls.updateTextareaSelection(textarea, selectionStart + 11, selectionStart + 11 + strings.note_title.length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '!!! info [' + strings.note_title + ']: ', '');
-                        controls.updateTextareaSelection(textarea, selectionStart + 11, selectionStart + 11 + strings.note_title.length);
-                    }
+                    controls.insertIntoTextarea(textarea, '!!! info [' + strings.note_title + ']: ' + strings.note_content);
+                    controls.updateTextareaSelection(textarea, selectionStart + 11, selectionStart + 11 + strings.note_title.length);
                 });
 
                 formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '!!! warning [' + strings.note_title + ']: ' + strings.note_content);
-                        controls.updateTextareaSelection(textarea, selectionStart + 14, selectionStart + 14 + strings.note_title.length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '!!! warning [' + strings.note_title + ']: ', '');
-                        controls.updateTextareaSelection(textarea, selectionStart + 14, selectionStart + 14 + strings.note_title.length);
-                    }
+                    controls.insertIntoTextarea(textarea, '!!! warning [' + strings.note_title + ']: ' + strings.note_content);
+                    controls.updateTextareaSelection(textarea, selectionStart + 14, selectionStart + 14 + strings.note_title.length);
                 });
 
                 formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '!!! important [' + strings.note_title + ']: ' + strings.note_content);
-                        controls.updateTextareaSelection(textarea, selectionStart + 16, selectionStart + 16 + strings.note_title.length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '!!! important [' + strings.note_title + ']: ', '');
-                        controls.updateTextareaSelection(textarea, selectionStart + 16, selectionStart + 16 + strings.note_title.length);
-                    }
+                    controls.insertIntoTextarea(textarea, '!!! important [' + strings.note_title + ']: ' + strings.note_content);
+                    controls.updateTextareaSelection(textarea, selectionStart + 16, selectionStart + 16 + strings.note_title.length);
                 });
             });
         }
     };
 
-    async function pageReady() {
-        require(['bootstrap'], function (bootstrap) {
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
-                new bootstrap.Tooltip(element);
+    function pageReady() {
+        applyThemeStyles();
+        
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && 
+                    (mutation.attributeName === 'class' || 
+                     mutation.attributeName === 'data-theme' || 
+                     mutation.attributeName === 'data-bs-theme')) {
+                    applyThemeStyles();
+                }
             });
         });
+        
+        observer.observe(document.body, { attributes: true });
+        observer.observe(document.documentElement, { attributes: true });
 
         document.querySelectorAll('button.extended-markdown-spoiler').forEach(function (element) {
             element.onclick = function() {
@@ -237,6 +274,8 @@ $(document).ready(function () {
                     }
                 });
             });
+            
+            applyThemeStyles();
         }, 100);
     }
 });

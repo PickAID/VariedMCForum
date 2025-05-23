@@ -99,15 +99,96 @@ a.anchor-offset {
 
 .code-group-container {
     margin: 1.5rem 0;
-    border-radius: var(--bs-border-radius, 0.375rem);
+    border-radius: 0.5rem;
     overflow: hidden;
-    border: var(--bs-border-width, 1px) solid var(--bs-border-color, #dee2e6);
-    background: var(--bs-body-bg, #ffffff);
+    transition: all 0.3s ease;
+    
+    &.theme-light {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        
+        .nav-tabs {
+            background: rgba(0, 0, 0, 0.03);
+            
+            .nav-item .nav-link {
+                color: rgba(0, 0, 0, 0.75);
+                border-right-color: rgba(0, 0, 0, 0.08);
+                
+                &:hover {
+                    background: rgba(0, 0, 0, 0.08);
+                    color: rgba(0, 0, 0, 0.95);
+                }
+                
+                &.active {
+                    color: #0d6efd;
+                    background: rgba(255, 255, 255, 0.9);
+                    
+                    &::after {
+                        background: #0d6efd;
+                    }
+                }
+            }
+        }
+        
+        .tab-content {
+            background: rgba(255, 255, 255, 0.95);
+            
+            .tab-pane pre {
+                background: rgba(248, 249, 250, 0.9);
+                
+                code {
+                    color: #212529;
+                }
+            }
+        }
+    }
+    
+    &.theme-dark {
+        background: rgba(33, 37, 41, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        
+        .nav-tabs {
+            background: rgba(255, 255, 255, 0.03);
+            
+            .nav-item .nav-link {
+                color: rgba(255, 255, 255, 0.75);
+                border-right-color: rgba(255, 255, 255, 0.08);
+                
+                &:hover {
+                    background: rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.95);
+                }
+                
+                &.active {
+                    color: #6ea8fe;
+                    background: rgba(33, 37, 41, 0.9);
+                    
+                    &::after {
+                        background: #6ea8fe;
+                    }
+                }
+            }
+        }
+        
+        .tab-content {
+            background: rgba(33, 37, 41, 0.95);
+            
+            .tab-pane pre {
+                background: rgba(13, 17, 23, 0.9);
+                
+                code {
+                    color: #f8f9fa;
+                }
+            }
+        }
+    }
     
     .nav-tabs {
         border: none;
         margin: 0;
-        background: var(--bs-secondary-bg, var(--bs-gray-100, #f8f9fa));
         padding: 0;
         display: flex;
         
@@ -115,15 +196,10 @@ a.anchor-offset {
             margin: 0;
             flex: 1;
             
-            &:not(:last-child) .nav-link {
-                border-right: var(--bs-border-width, 1px) solid var(--bs-border-color, #dee2e6);
-            }
-            
             .nav-link {
                 border: none;
                 border-radius: 0;
                 padding: 1rem 1.5rem;
-                color: var(--bs-secondary-color, var(--bs-gray-600, #6c757d));
                 background: transparent;
                 font-weight: 500;
                 font-size: 0.875rem;
@@ -131,48 +207,32 @@ a.anchor-offset {
                 position: relative;
                 text-align: center;
                 
-                &:hover {
-                    background: var(--bs-tertiary-bg, rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05));
-                    color: var(--bs-body-color, #212529);
-                }
-                
-                &.active {
-                    color: var(--bs-primary, #0d6efd);
-                    background: var(--bs-body-bg, #ffffff);
-                    font-weight: 600;
-                    
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        right: 0;
-                        height: 2px;
-                        background: var(--bs-primary, #0d6efd);
-                    }
+                &.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
                 }
             }
         }
     }
     
     .tab-content {
-        background: var(--bs-body-bg, #ffffff);
-        
         .tab-pane {
             padding: 0;
             
             pre {
                 margin: 0;
                 border-radius: 0;
-                background: var(--bs-gray-100, #f8f9fa);
                 border: none;
                 
                 code {
                     padding: 1.5rem;
-                    font-family: var(--bs-font-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace);
+                    font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
                     font-size: 0.875rem;
                     line-height: 1.7;
-                    color: var(--bs-body-color, #212529);
                     background: transparent;
                     display: block;
                 }
@@ -212,40 +272,41 @@ a.anchor-offset {
 [data-bs-theme="dark"] .code-group-container,
 body.dark .code-group-container,
 html[data-theme="dark"] .code-group-container {
-    background: var(--bs-dark, #212529);
-    border-color: var(--bs-border-color-translucent, rgba(255, 255, 255, 0.15));
+    background: rgba(33, 37, 41, 0.98);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     
     .nav-tabs {
-        background: var(--bs-gray-900, #0d1117);
+        background: rgba(255, 255, 255, 0.03);
         
         .nav-item .nav-link {
-            color: var(--bs-secondary-color, var(--bs-gray-400, #adb5bd));
-            border-right-color: var(--bs-border-color-translucent, rgba(255, 255, 255, 0.15));
+            color: rgba(255, 255, 255, 0.75);
+            border-right-color: rgba(255, 255, 255, 0.08);
             
             &:hover {
-                background: var(--bs-tertiary-bg, rgba(255, 255, 255, 0.05));
-                color: var(--bs-body-color, #ffffff);
+                background: rgba(255, 255, 255, 0.08);
+                color: rgba(255, 255, 255, 0.95);
             }
             
             &.active {
-                color: var(--bs-primary, #0d6efd);
-                background: var(--bs-dark, #212529);
+                color: #6ea8fe;
+                background: rgba(33, 37, 41, 0.9);
                 
                 &::after {
-                    background: var(--bs-primary, #0d6efd);
+                    background: #6ea8fe;
                 }
             }
         }
     }
     
     .tab-content {
-        background: var(--bs-dark, #212529);
+        background: rgba(33, 37, 41, 0.95);
         
         .tab-pane pre {
-            background: var(--bs-gray-900, #0d1117);
+            background: rgba(13, 17, 23, 0.9);
             
             code {
-                color: var(--bs-body-color, #ffffff);
+                color: #f8f9fa;
             }
         }
     }
