@@ -1,0 +1,27 @@
+{
+	"id": "nodebb-plugin-markdown-toc",
+	"url": "https://github.com/NodeBB/nodebb-plugin-markdown-toc",
+	"library": "./library.js",
+	"hooks": [
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "filter:parse.post", "method": "parsePost" },
+		{ "hook": "filter:parse.signature", "method": "parseSignature" },
+		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" }
+	],
+	"staticDirs": {
+		"static": "./static"
+	},
+	"scss": [
+		"scss/markdown-toc.scss"
+	],
+	"scripts": [
+		"public/lib/main.js"
+	],
+	"acpScripts": [
+		"public/lib/acp-main.js"
+	],
+	"modules": {
+		"../admin/plugins/markdown-toc.js": "./public/lib/admin.js"
+	},
+	"templates": "templates"
+}
