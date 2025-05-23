@@ -9,44 +9,46 @@ const plugin = {};
 
 plugin.init = async (params) => {
 	const { router } = params;
-	
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/markdown-toc', controllers.renderAdminPage);
 };
 
 plugin.parsePost = async (data) => {
-	if (!data || !data.postData || !data.postData.content) {
-		return data;
+	if (data && data.postData && data.postData.content) {
+		const settings = await meta.settings.get('markdown-toc');
+		if (settings.enabled === 'on') {
+			data.postData.content = processMarkdownToc(data.postData.content, settings);
+		}
 	}
-
-	const settings = await meta.settings.get('markdown-toc');
-	
-	if (settings.enabled !== 'on') {
-		return data;
-	}
-
-	data.postData.content = await processMarkdownToc(data.postData.content, settings);
 	return data;
 };
 
-plugin.parseSignature = async (data) => {
-	if (!data || !data.userData || !data.userData.signature) {
-		return data;
+plugin.parseRaw = async (data) => {
+	if (data) {
+		const settings = await meta.settings.get('markdown-toc');
+		if (settings.enabled === 'on') {
+			data = processMarkdownToc(data, settings);
+		}
 	}
-
-	const settings = await meta.settings.get('markdown-toc');
-	
-	if (settings.enabled !== 'on' || settings.enableInSignatures !== 'on') {
-		return data;
-	}
-
-	data.userData.signature = await processMarkdownToc(data.userData.signature, settings);
 	return data;
 };
 
-async function processMarkdownToc(content, settings) {
+plugin.registerFormatting = async (payload) => {
+	const formatting = [
+		{ 
+			name: "toc", 
+			className: "fa fa-list-ol", 
+			title: "插入目录" 
+		}
+	];
+
+	payload.options = payload.options.concat(formatting);
+	return payload;
+};
+
+function processMarkdownToc(content, settings) {
 	const tocMarker = settings.tocMarker || '[TOC]';
 	
-	if (!content.includes(tocMarker)) {
+	if (!content.toLowerCase().includes(tocMarker.toLowerCase())) {
 		return content;
 	}
 
@@ -61,22 +63,26 @@ async function processMarkdownToc(content, settings) {
 		const tocResult = toc(content, tocOptions);
 		
 		if (!tocResult.content) {
-			return content.replace(tocMarker, '');
+			return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), '');
 		}
 
 		const tocTitle = settings.tocTitle || 'Table of Contents';
-		let tocHtml = `<div class="markdown-toc">
-			<div class="toc-title">${tocTitle}</div>
-			<div class="toc-content">
+		const tocHtml = `<div class="markdown-toc">
+<div class="toc-title">${tocTitle}</div>
+<div class="toc-content">
 ${tocResult.content}
-			</div>
-		</div>`;
+</div>
+</div>`;
 
-		return content.replace(tocMarker, tocHtml);
+		return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), tocHtml);
 	} catch (err) {
 		console.error('Error processing markdown TOC:', err);
-		return content.replace(tocMarker, '');
+		return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), '');
 	}
+}
+
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 plugin.addAdminNavigation = (header) => {
@@ -85,7 +91,6 @@ plugin.addAdminNavigation = (header) => {
 		icon: 'fa-list-ol',
 		name: 'Markdown TOC',
 	});
-
 	return header;
 };
 

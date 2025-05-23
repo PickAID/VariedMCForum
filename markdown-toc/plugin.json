@@ -5,7 +5,8 @@
 	"hooks": [
 		{ "hook": "static:app.load", "method": "init" },
 		{ "hook": "filter:parse.post", "method": "parsePost" },
-		{ "hook": "filter:parse.signature", "method": "parseSignature" },
+		{ "hook": "filter:parse.raw", "method": "parseRaw" },
+		{ "hook": "filter:composer.formatting", "method": "registerFormatting" },
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" }
 	],
 	"staticDirs": {
@@ -23,5 +24,6 @@
 	"modules": {
 		"../admin/plugins/markdown-toc.js": "./public/lib/admin.js"
 	},
-	"templates": "templates"
+	"templates": "templates",
+	"languages": "languages"
 }
