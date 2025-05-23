@@ -54,10 +54,10 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|-' + strings.align_left);
+                        controls.insertIntoTextarea(textarea, '|-' + strings.align_left + '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + strings.align_left.length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '|-', '');
+                        controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionEnd + 2);
                     }
                 });
@@ -67,7 +67,7 @@ $(document).ready(function () {
                         controls.insertIntoTextarea(textarea, '|-' + strings.align_center + '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + strings.align_center.length);
                     } else {
-                        var wrapDelta = controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
+                        controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionEnd + 2);
                     }
                 });
