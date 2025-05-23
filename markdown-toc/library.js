@@ -15,8 +15,11 @@ plugin.init = async (params) => {
 plugin.parsePost = async (data) => {
 	if (data && data.postData && data.postData.content) {
 		const settings = await meta.settings.get('markdown-toc');
+		console.log('parsePost settings:', settings);
 		if (settings.enabled === 'on') {
+			const originalContent = data.postData.content;
 			data.postData.content = processMarkdownToc(data.postData.content, settings);
+			console.log('parsePost processed:', originalContent !== data.postData.content);
 		}
 	}
 	return data;
@@ -25,8 +28,11 @@ plugin.parsePost = async (data) => {
 plugin.parseRaw = async (data) => {
 	if (data) {
 		const settings = await meta.settings.get('markdown-toc');
+		console.log('parseRaw settings:', settings);
 		if (settings.enabled === 'on') {
+			const originalData = data;
 			data = processMarkdownToc(data, settings);
+			console.log('parseRaw processed:', originalData !== data);
 		}
 	}
 	return data;
@@ -47,6 +53,8 @@ plugin.registerFormatting = async (payload) => {
 
 function processMarkdownToc(content, settings) {
 	const tocMarker = settings.tocMarker || '[TOC]';
+	console.log('Processing content with marker:', tocMarker);
+	console.log('Content includes marker:', content.toLowerCase().includes(tocMarker.toLowerCase()));
 	
 	if (!content.toLowerCase().includes(tocMarker.toLowerCase())) {
 		return content;
@@ -60,9 +68,12 @@ function processMarkdownToc(content, settings) {
 			bullets: settings.bullets || '*'
 		};
 
+		console.log('TOC options:', tocOptions);
 		const tocResult = toc(content, tocOptions);
+		console.log('TOC result:', tocResult);
 		
 		if (!tocResult.content) {
+			console.log('No TOC content generated');
 			return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), '');
 		}
 
@@ -74,6 +85,7 @@ ${tocResult.content}
 </div>
 </div>`;
 
+		console.log('Generated TOC HTML:', tocHtml);
 		return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), tocHtml);
 	} catch (err) {
 		console.error('Error processing markdown TOC:', err);
