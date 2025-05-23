@@ -1,20 +1,20 @@
 {
   "name": "nodebb-plugin-markdown-toc",
   "version": "1.0.0",
-  "description": "NodeBB plugin for markdown table of contents",
+  "description": "A NodeBB plugin to generate table of contents for markdown posts",
   "main": "library.js",
-  "author": "Your Name",
+  "author": "NodeBB",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/nodebb-plugin-markdown-toc.git"
+    "url": "https://github.com/NodeBB/nodebb-plugin-markdown-toc"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/nodebb-plugin-markdown-toc/issues"
+    "url": "https://github.com/NodeBB/nodebb-plugin-markdown-toc/issues"
   },
-  "homepage": "https://github.com/yourusername/nodebb-plugin-markdown-toc#readme",
+  "homepage": "https://github.com/NodeBB/nodebb-plugin-markdown-toc",
   "dependencies": {
-    "markdown-toc": "^1.2.0"
+    "cheerio": "^1.0.0-rc.12"
   },
   "peerDependencies": {
     "nodebb": ">=1.0.0"
@@ -39,7 +39,7 @@
     ]
   },
   "nbbpm": {
-    "compatibility": "^3.2.0"
+    "compatibility": "^3.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",

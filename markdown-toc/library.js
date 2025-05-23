@@ -1,6 +1,6 @@
 'use strict';
 
-const toc = require('markdown-toc');
+const cheerio = require('cheerio');
 const meta = require.main.require('./src/meta');
 const controllers = require('./lib/controllers');
 const routeHelpers = require.main.require('./src/routes/helpers');
@@ -15,11 +15,8 @@ plugin.init = async (params) => {
 plugin.parsePost = async (data) => {
 	if (data && data.postData && data.postData.content) {
 		const settings = await meta.settings.get('markdown-toc');
-		console.log('parsePost settings:', settings);
 		if (settings.enabled === 'on') {
-			const originalContent = data.postData.content;
 			data.postData.content = processMarkdownToc(data.postData.content, settings);
-			console.log('parsePost processed:', originalContent !== data.postData.content);
 		}
 	}
 	return data;
@@ -28,11 +25,8 @@ plugin.parsePost = async (data) => {
 plugin.parseRaw = async (data) => {
 	if (data) {
 		const settings = await meta.settings.get('markdown-toc');
-		console.log('parseRaw settings:', settings);
 		if (settings.enabled === 'on') {
-			const originalData = data;
 			data = processMarkdownToc(data, settings);
-			console.log('parseRaw processed:', originalData !== data);
 		}
 	}
 	return data;
@@ -52,45 +46,74 @@ plugin.registerFormatting = async (payload) => {
 };
 
 function processMarkdownToc(content, settings) {
-	const tocMarker = settings.tocMarker || '[TOC]';
-	console.log('Processing content with marker:', tocMarker);
-	console.log('Content includes marker:', content.toLowerCase().includes(tocMarker.toLowerCase()));
+	if (!content) return content;
 	
-	if (!content.toLowerCase().includes(tocMarker.toLowerCase())) {
+	const tocMarker = settings.tocMarker || '[TOC]';
+	const titleRegexp = /<h([1-6])>(.*?)<\/h[1-6]>/gm;
+	const tocRegexp = new RegExp(escapeRegExp(tocMarker), 'gi');
+	
+	const titles = content.match(titleRegexp);
+	const toc = content.match(tocRegexp);
+	
+	if (!titles || !titles.length || !toc || !toc.length) {
 		return content;
 	}
-
-	try {
-		const tocOptions = {
-			maxdepth: parseInt(settings.maxDepth) || 6,
-			firsth1: settings.firsth1 === 'on',
-			stripHeadingTags: settings.stripHeadingTags === 'on',
-			bullets: settings.bullets || '*'
-		};
-
-		console.log('TOC options:', tocOptions);
-		const tocResult = toc(content, tocOptions);
-		console.log('TOC result:', tocResult);
+	
+	const maxDepth = parseInt(settings.maxDepth) || 6;
+	const ids = [];
+	let parentNode = '';
+	let parentObject = {};
+	const $ = cheerio.load('<div class="markdown-toc"><div class="toc-title">' + (settings.tocTitle || 'Table of Contents') + '</div><div class="toc-content"></div></div>');
+	
+	let processedContent = content;
+	
+	titles.forEach(function (title) {
+		const str = title.replace(titleRegexp, '{"num":"$1","id":"$2"}');
+		const object = JSON.parse(str);
+		const headingLevel = parseInt(object.num);
 		
-		if (!tocResult.content) {
-			console.log('No TOC content generated');
-			return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), '');
+		if (headingLevel > maxDepth) return;
+		
+		let id = object.id.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-').toLowerCase();
+		
+		if (ids.indexOf(id) !== -1) {
+			id = id + '-' + ids.length;
 		}
-
-		const tocTitle = settings.tocTitle || 'Table of Contents';
-		const tocHtml = `<div class="markdown-toc">
-<div class="toc-title">${tocTitle}</div>
-<div class="toc-content">
-${tocResult.content}
-</div>
-</div>`;
-
-		console.log('Generated TOC HTML:', tocHtml);
-		return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), tocHtml);
-	} catch (err) {
-		console.error('Error processing markdown TOC:', err);
-		return content.replace(new RegExp(escapeRegExp(tocMarker), 'gi'), '');
-	}
+		ids.push(id);
+		
+		processedContent = processedContent.replace(title, '<h' + object.num + ' id="' + id + '">' + object.id + '</h' + object.num + '>');
+		const li = '<li><a href="#' + id + '">' + object.id + '</a></li>';
+		let i = 1;
+		
+		if (!parentNode) {
+			$('.toc-content').append('<ul></ul>');
+			parentNode = $('.toc-content').children().first();
+			while (i < headingLevel) {
+				parentNode.append('<ul></ul>');
+				parentNode = parentNode.children().last();
+				i++;
+			}
+			parentNode.append(li);
+			parentNode = parentNode.children().last();
+		} else if (parentObject.num == headingLevel) {
+			parentNode.append(li);
+			parentNode = parentNode.children().last();
+		} else {
+			parentNode = $('.toc-content').children().first();
+			while (i < headingLevel) {
+				if (parentNode.children('ul').length === 0) {
+					parentNode.append('<ul></ul>');
+				}
+				parentNode = parentNode.children('ul').last();
+				i++;
+			}
+			parentNode.append(li);
+		}
+		parentObject = object;
+	});
+	
+	processedContent = processedContent.replace(tocRegexp, $.html());
+	return processedContent;
 }
 
 function escapeRegExp(string) {
