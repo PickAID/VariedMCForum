@@ -1,0 +1,98 @@
+@import './variables';
+
+.text-header {
+    background-color: $extended-markdown-text-header-bg;
+    text-align: center;
+    color: $extended-markdown-text-header-color;
+    box-shadow: 0 0 15px rgba(0,0,0,.4) inset;
+    padding: 7px;
+    font-weight: bold;
+}
+
+
+.extended-markdown-tooltip {
+    color: $extended-markdown-tooltip-color;
+    cursor: pointer;
+}
+
+.extended-markdown-tooltip:hover {
+    color: $extended-markdown-tooltip-hover-color;
+    cursor: pointer;
+}
+
+// add an offset to compensate the fixed navbar
+a.anchor-offset {
+    display: block;
+    position: relative;
+    top: -50px;
+    visibility: hidden;
+}
+
+
+.admonition {
+    border-radius: 3px;
+    box-shadow: $extended-markdown-admonition-box-shadow;
+    margin-bottom: .625rem;
+    background: $extended-markdown-admonition-bg;
+}
+
+.admonition p { 
+    padding: 0 1rem; 
+}
+
+.admonition pre { 
+    margin-left: 1rem; 
+    margin-right: 1rem; 
+}
+
+.admonition .admonition-title {
+    font-weight: 700;
+    padding: .2rem 1rem;
+    font-size: 1.2rem;
+    color: $extended-markdown-admonition-title-color;
+    margin: 0;
+    border-radius: 3px 3px 0 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    background: $extended-markdown-admonition-title-bg;
+}
+
+.admonition .admonition-title i.fa { 
+    margin-right: 5px; 
+}
+
+.admonition >:nth-child(2) { 
+    margin-top: 0.5rem; 
+}
+
+.admonition >:not(pre):last-child { 
+    padding-bottom: .5rem; 
+}
+
+.admonition.important { 
+    background: $extended-markdown-admonition-important-bg;
+}
+
+.admonition.important .admonition-title { 
+    background: $extended-markdown-admonition-important-title-bg;
+}
+
+.admonition.info { 
+    background: $extended-markdown-admonition-info-bg;
+}
+
+.admonition.info .admonition-title { 
+    background: $extended-markdown-admonition-info-title-bg;
+}
+
+.admonition.warning { 
+    background: $extended-markdown-admonition-warning-bg;
+}
+
+.admonition.warning .admonition-title { 
+    background: $extended-markdown-admonition-warning-title-bg;
+}
+
+.spoiler {
+    background-color: $extended-markdown-spoiler-bg;
+    padding: 18px;
+}
