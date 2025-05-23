@@ -1,0 +1,112 @@
+.markdown-toc {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    
+    &.theme-light {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        color: #212529;
+        
+        h3 {
+            color: #495057;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        ul li a {
+            color: rgba(0, 0, 0, 0.7);
+            
+            &:hover {
+                color: #0d6efd;
+                background: rgba(13, 110, 253, 0.05);
+            }
+        }
+    }
+    
+    &.theme-dark {
+        background: rgba(33, 37, 41, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+        color: #f8f9fa;
+        
+        h3 {
+            color: #e9ecef;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        ul li a {
+            color: rgba(255, 255, 255, 0.7);
+            
+            &:hover {
+                color: #6ea8fe;
+                background: rgba(110, 168, 254, 0.1);
+            }
+        }
+    }
+    
+    h3 {
+        margin: 0 0 1rem 0;
+        padding: 0 0 0.5rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        
+        li {
+            margin: 0.25rem 0;
+            
+            a {
+                display: block;
+                padding: 0.5rem 0.75rem;
+                text-decoration: none;
+                border-radius: 0.25rem;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+                
+                &:hover {
+                    text-decoration: none;
+                }
+            }
+            
+            &.toc-h2 {
+                padding-left: 0;
+            }
+            
+            &.toc-h3 {
+                padding-left: 1rem;
+                
+                a {
+                    font-size: 0.85rem;
+                }
+            }
+            
+            &.toc-h4 {
+                padding-left: 2rem;
+                
+                a {
+                    font-size: 0.8rem;
+                }
+            }
+            
+            &.toc-h5,
+            &.toc-h6 {
+                padding-left: 3rem;
+                
+                a {
+                    font-size: 0.75rem;
+                }
+            }
+        }
+    }
+}
+
+.markdown-toc:empty {
+    display: none;
+} 
