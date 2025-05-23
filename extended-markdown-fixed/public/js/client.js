@@ -94,11 +94,14 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '#' + strings.textheader_anchor + '(' + strings.textheader_title + ')');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + strings.textheader_anchor.length);
+                        controls.insertIntoTextarea(textarea, '#anchor(' + strings.textheader_title + ')');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 7);
                     } else {
                         var selectedText = textarea.value.substring(selectionStart, selectionEnd);
                         var anchorId = selectedText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (!anchorId) {
+                            anchorId = 'anchor';
+                        }
                         controls.wrapSelectionInTextareaWith(textarea, '#' + anchorId + '(', ')');
                         controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + anchorId.length);
                     }

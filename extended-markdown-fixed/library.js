@@ -26,32 +26,32 @@ const ExtendedMarkdown = {
     // post
     async parsePost(data) {
         if (data && data.postData && data.postData.content) {
-            data.postData.content = applyExtendedMarkdown(data.postData.content);
+            data.postData.content = await applyExtendedMarkdown(data.postData.content);
             data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
-            data.postData.content = applySpoiler(data.postData.content, data.postData.pid);
+            data.postData.content = await applySpoiler(data.postData.content, data.postData.pid);
         }
         return data;
     },
     // user signature
     async parseSignature(data) {
         if (data && data.userData && data.userData.signature) {
-            data.userData.signature = applyExtendedMarkdown(data.userData.signature);
+            data.userData.signature = await applyExtendedMarkdown(data.userData.signature);
         }
         return data;
     },
     // user description
     async parseAboutMe(data) {
         if (data) {
-            data = applyExtendedMarkdown(data);
+            data = await applyExtendedMarkdown(data);
         }
         return data;
     },
     // direct preview in editor
     async parseRaw(data) {
         if (data) {
-            data = applyExtendedMarkdown(data);
+            data = await applyExtendedMarkdown(data);
             data = applyGroupCode(data, "");
-            data = applySpoiler(data, "");
+            data = await applySpoiler(data, "");
         }
         return data;
     },
@@ -209,13 +209,16 @@ function generateAnchorFromHeading(heading) {
     return `<a class="anchor-offset" name="${slugify(heading)}"></a>`;
 }
 
-function applySpoiler(textContent, id) {
+async function applySpoiler(textContent, id) {
     if (textContent.match(spoilerRegex)) {
+        const translator = require.main.require('./src/translator');
+        const spoilerText = await translator.translate('[[extendedmarkdown:spoiler]]');
+        
         let count = 0;
         textContent = textContent.replace(spoilerRegex, (match, text) => {
             const spoilerButton = `
                 <button class="btn btn-primary extended-markdown-spoiler" type="button" name="spoiler" data-bs-toggle="collapse" data-bs-target="#spoiler${count + id}" aria-expanded="false" aria-controls="spoiler${count + id}">
-                    [[extendedmarkdown:spoiler]] <i class="fa fa-eye-slash"></i>
+                    ${spoilerText} <i class="fa fa-eye-slash"></i>
                 </button>`;
 
             const spoilerContent = `
