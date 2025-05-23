@@ -1,0 +1,53 @@
+{
+  "name": "nodebb-plugin-markdown-toc",
+  "version": "1.0.0",
+  "description": "NodeBB plugin for markdown table of contents",
+  "main": "library.js",
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/nodebb-plugin-markdown-toc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/nodebb-plugin-markdown-toc/issues"
+  },
+  "homepage": "https://github.com/yourusername/nodebb-plugin-markdown-toc#readme",
+  "dependencies": {
+    "markdown-toc": "^1.2.0"
+  },
+  "peerDependencies": {
+    "nodebb": ">=1.0.0"
+  },
+  "keywords": [
+    "nodebb",
+    "plugin",
+    "markdown",
+    "toc",
+    "table-of-contents"
+  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "nbbpm": {
+    "compatibility": "^3.2.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-angular": "19.8.1",
+    "eslint": "9.x",
+    "eslint-config-nodebb": "1.1.4",
+    "eslint-plugin-import": "2.x",
+    "husky": "9.1.7",
+    "lint-staged": "16.0.0"
+  }
+}

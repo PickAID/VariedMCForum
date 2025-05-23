@@ -112,3 +112,5 @@ webpack.common.js
 webpack.dev.js
 webpack.installer.js
 webpack.prod.js
+
+!markdown-toc/*
