@@ -61,55 +61,63 @@ function processMarkdownToc(content, settings) {
 	
 	const maxDepth = parseInt(settings.maxDepth) || 6;
 	const ids = [];
-	let parentNode = '';
-	let parentObject = {};
 	const $ = cheerio.load('<div class="markdown-toc"><div class="toc-title">' + (settings.tocTitle || 'Table of Contents') + '</div><div class="toc-content"></div></div>');
 	
 	let processedContent = content;
+	let currentUl = null;
+	let lastLevel = 0;
 	
 	titles.forEach(function (title) {
-		const str = title.replace(titleRegexp, '{"num":"$1","id":"$2"}');
-		const object = JSON.parse(str);
-		const headingLevel = parseInt(object.num);
+		const match = title.match(/<h([1-6])>(.*?)<\/h[1-6]>/);
+		if (!match) return;
+		
+		const headingLevel = parseInt(match[1]);
+		const headingText = match[2];
 		
 		if (headingLevel > maxDepth) return;
 		
-		let id = object.id.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-').toLowerCase();
+		let id = headingText
+			.replace(/<[^>]*>/g, '')
+			.replace(/[^a-zA-Z0-9\u4e00-\u9fa5\s]/g, '')
+			.replace(/\s+/g, '-')
+			.toLowerCase();
+		
+		if (!id) id = 'heading-' + ids.length;
 		
 		if (ids.indexOf(id) !== -1) {
 			id = id + '-' + ids.length;
 		}
 		ids.push(id);
 		
-		processedContent = processedContent.replace(title, '<h' + object.num + ' id="' + id + '">' + object.id + '</h' + object.num + '>');
-		const li = '<li><a href="#' + id + '">' + object.id + '</a></li>';
-		let i = 1;
+		processedContent = processedContent.replace(title, '<h' + headingLevel + ' id="' + id + '">' + headingText + '</h' + headingLevel + '>');
 		
-		if (!parentNode) {
-			$('.toc-content').append('<ul></ul>');
-			parentNode = $('.toc-content').children().first();
-			while (i < headingLevel) {
-				parentNode.append('<ul></ul>');
-				parentNode = parentNode.children().last();
-				i++;
-			}
-			parentNode.append(li);
-			parentNode = parentNode.children().last();
-		} else if (parentObject.num == headingLevel) {
-			parentNode.append(li);
-			parentNode = parentNode.children().last();
-		} else {
-			parentNode = $('.toc-content').children().first();
-			while (i < headingLevel) {
-				if (parentNode.children('ul').length === 0) {
-					parentNode.append('<ul></ul>');
-				}
-				parentNode = parentNode.children('ul').last();
-				i++;
-			}
-			parentNode.append(li);
+		const tocContent = $('.toc-content');
+		
+		if (!currentUl) {
+			tocContent.append('<ul></ul>');
+			currentUl = tocContent.find('ul').first();
+			lastLevel = headingLevel;
 		}
-		parentObject = object;
+		
+		if (headingLevel > lastLevel) {
+			for (let i = lastLevel; i < headingLevel; i++) {
+				if (currentUl.children('li').length === 0) {
+					currentUl.append('<li></li>');
+				}
+				const lastLi = currentUl.children('li').last();
+				if (lastLi.children('ul').length === 0) {
+					lastLi.append('<ul></ul>');
+				}
+				currentUl = lastLi.children('ul').last();
+			}
+		} else if (headingLevel < lastLevel) {
+			for (let i = lastLevel; i > headingLevel; i--) {
+				currentUl = currentUl.parent().parent();
+			}
+		}
+		
+		currentUl.append('<li><a href="#' + id + '">' + headingText + '</a></li>');
+		lastLevel = headingLevel;
 	});
 	
 	processedContent = processedContent.replace(tocRegexp, $.html());
