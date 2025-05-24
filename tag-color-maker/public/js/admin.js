@@ -85,7 +85,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
                     $('#tagColors').val(JSON.stringify(defaultColors));
                 }
             } catch (e) {
-                console.log('Error loading colors:', e);
+                // Silent error handling
             }
         }, 100);
     }
