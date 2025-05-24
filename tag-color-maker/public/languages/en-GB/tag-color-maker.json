@@ -1,9 +1,0 @@
-{
-    "admin_title": "Tag Color Manager",
-    "save_success": "Settings saved",
-    "save_error": "Save failed",
-    "format_success": "JSON formatted",
-    "format_error": "JSON format error",
-    "tag_added": "Tag added",
-    "tag_removed": "Tag removed"
-} 

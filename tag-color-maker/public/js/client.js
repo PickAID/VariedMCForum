@@ -2,103 +2,50 @@
 
 $(document).ready(function () {
 	console.log('Tag Color Maker plugin loaded');
-
-	var MarkdownToc = {};
-
-	$(window).on('action:composer.enhanced', function (evt, data) {
-		MarkdownToc.prepareFormattingTools();
-	});
-
-	MarkdownToc.prepareFormattingTools = async function () {
-		const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
-		
-		if (formatting && controls) {
-			formatting.addButtonDispatch('toc', function (textarea, selectionStart, selectionEnd) {
-				controls.insertIntoTextarea(textarea, '\n[TOC]\n');
-			});
-		}
+	
+	let tagColors = {
+		'forge': { background: '#DFA86A', color: '#FAF4F3' },
+		'neoforge': { background: '#E68C37', color: '#FFFFFF' },
+		'fabric': { background: '#DBD0B4', color: '#111111' },
+		'kubejs': { background: '#C186E6', color: '#FFFFFF' },
+		'unsafe': { background: 'red', color: '#FFFFFF' }
 	};
-
-	function detectTheme() {
-		const body = document.body;
-		const html = document.documentElement;
-		
-		if (body.classList.contains('dark') || 
-			html.getAttribute('data-theme') === 'dark' ||
-			html.getAttribute('data-bs-theme') === 'dark') {
-			return 'dark';
-		}
-		
-		const linkElement = document.querySelector('link[href*="bootstrap"]');
-		if (linkElement) {
-			const href = linkElement.href.toLowerCase();
-			if (href.includes('darkly') || href.includes('cyborg') || 
-				href.includes('slate') || href.includes('superhero') ||
-				href.includes('vapor') || href.includes('solar')) {
-				return 'dark';
-			}
-		}
-		
-		const computedStyle = window.getComputedStyle(body);
-		const bgColor = computedStyle.backgroundColor;
-		if (bgColor) {
-			const rgb = bgColor.match(/\d+/g);
-			if (rgb && rgb.length >= 3) {
-				const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
-				return brightness < 128 ? 'dark' : 'light';
-			}
-		}
-		
-		return 'light';
-	}
-
-	function applyThemeStyles() {
-		const theme = detectTheme();
-		const tocContainers = document.querySelectorAll('.markdown-toc');
-		
-		tocContainers.forEach(container => {
-			container.classList.remove('theme-light', 'theme-dark');
-			container.classList.add(`theme-${theme}`);
-		});
-	}
-
-	function initTOC() {
-		applyThemeStyles();
-		
-		const observer = new MutationObserver(function(mutations) {
-			mutations.forEach(function(mutation) {
-				if (mutation.type === 'attributes' && 
-					(mutation.attributeName === 'class' || 
-					 mutation.attributeName === 'data-theme' || 
-					 mutation.attributeName === 'data-bs-theme')) {
-					applyThemeStyles();
+	
+	function loadTagColors() {
+		if (typeof app !== 'undefined' && app.user && app.user.isAdmin) {
+			$.get('/api/admin/plugins/tag-color-maker/settings', function(data) {
+				if (data && data.tagColors) {
+					try {
+						const customColors = JSON.parse(data.tagColors);
+						tagColors = Object.assign(tagColors, customColors);
+						console.log('Loaded custom tag colors:', customColors);
+					} catch (e) {
+						console.log('Failed to parse custom colors, using defaults');
+					}
 				}
+				applyTagColors();
+			}).fail(function() {
+				console.log('Using default tag colors');
+				applyTagColors();
 			});
-		});
-		
-		observer.observe(document.body, { attributes: true });
-		observer.observe(document.documentElement, { attributes: true });
+		} else {
+			applyTagColors();
+		}
 	}
-
-	initTOC();
-
-	$(window).on('action:ajaxify.end', function () {
-		setTimeout(function() {
-			applyThemeStyles();
-		}, 100);
-	});
 
 	function applyTagColors() {
-		if (!window.tagColors) {
+		if (!tagColors || Object.keys(tagColors).length === 0) {
 			return;
 		}
+		
+		console.log('Applying tag colors:', tagColors);
 		
 		$('[data-tag]').each(function() {
 			const $tag = $(this);
 			const tagName = $tag.data('tag');
 			
-			if (tagName && window.tagColors[tagName] && !$tag.hasClass('tag-colored')) {
-				const colors = window.tagColors[tagName];
+			if (tagName && tagColors[tagName] && !$tag.hasClass('tag-colored')) {
+				const colors = tagColors[tagName];
 				
 				$tag.addClass('tag-colored').css({
 					'background-color': colors.background + ' !important',
@@ -112,12 +59,47 @@ $(document).ready(function () {
 			}
 		});
 		
-		$('.tag-list [data-tag], .tags-container [data-tag]').each(function() {
+		$('.tag-list [data-tag], .tags-container [data-tag], .tags [data-tag]').each(function() {
 			const $tag = $(this);
 			const tagName = $tag.data('tag');
 			
-			if (tagName && window.tagColors[tagName] && !$tag.hasClass('tag-colored')) {
-				const colors = window.tagColors[tagName];
+			if (tagName && tagColors[tagName] && !$tag.hasClass('tag-colored')) {
+				const colors = tagColors[tagName];
+				$tag.addClass('tag-colored').css({
+					'background-color': colors.background + ' !important',
+					'color': colors.color + ' !important',
+					'border-color': colors.background + ' !important'
+				});
+				
+				$tag.find('a, span, .tag-topic-count').css({
+					'color': colors.color + ' !important'
+				});
+			}
+		});
+		
+		$('a[href*="/tags/"]').each(function() {
+			const $tag = $(this);
+			const href = $tag.attr('href');
+			if (href && !$tag.hasClass('tag-colored')) {
+				const tagName = href.split('/tags/')[1];
+				
+				if (tagName && tagColors[tagName]) {
+					const colors = tagColors[tagName];
+					$tag.addClass('tag-colored').css({
+						'background-color': colors.background + ' !important',
+						'color': colors.color + ' !important',
+						'border-color': colors.background + ' !important'
+					});
+				}
+			}
+		});
+		
+		$('.badge[data-tag]').each(function() {
+			const $tag = $(this);
+			const tagName = $tag.data('tag');
+			
+			if (tagName && tagColors[tagName]) {
+				const colors = tagColors[tagName];
 				$tag.addClass('tag-colored').css({
 					'background-color': colors.background + ' !important',
 					'color': colors.color + ' !important',
@@ -127,10 +109,19 @@ $(document).ready(function () {
 		});
 	}
 
-	setTimeout(applyTagColors, 200);
+	loadTagColors();
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(applyTagColors, 300);
+		setTimeout(applyTagColors, 200);
+	});
+
+	$(document).on('DOMNodeInserted', function(e) {
+		if (e.target.nodeType === 1 && (
+			e.target.hasAttribute('data-tag') || 
+			$(e.target).find('[data-tag]').length > 0
+		)) {
+			setTimeout(applyTagColors, 100);
+		}
 	});
 
 	const observer = new MutationObserver(function(mutations) {
@@ -140,7 +131,8 @@ $(document).ready(function () {
 				mutation.addedNodes.forEach(function(node) {
 					if (node.nodeType === 1 && (
 						node.hasAttribute('data-tag') || 
-						(node.querySelector && node.querySelector('[data-tag]'))
+						(node.querySelector && node.querySelector('[data-tag]')) ||
+						(node.tagName === 'A' && node.href && node.href.includes('/tags/'))
 					)) {
 						hasNewTags = true;
 					}
@@ -148,7 +140,7 @@ $(document).ready(function () {
 			}
 		});
 		if (hasNewTags) {
-			setTimeout(applyTagColors, 150);
+			setTimeout(applyTagColors, 100);
 		}
 	});
 	
@@ -156,4 +148,10 @@ $(document).ready(function () {
 		childList: true,
 		subtree: true
 	});
+	
+	setInterval(applyTagColors, 2000);
+	
+	window.reloadTagColors = function() {
+		loadTagColors();
+	};
 }); 
