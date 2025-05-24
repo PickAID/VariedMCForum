@@ -15,6 +15,10 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
                     message: 'Tag color settings have been saved successfully!',
                     timeout: 2000
                 });
+                
+                if (window.parent && window.parent.reloadTagColors) {
+                    window.parent.reloadTagColors();
+                }
             });
         });
 
@@ -66,14 +70,24 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
         setTimeout(function() {
             try {
                 const existingColors = $('#tagColors').val();
-                if (existingColors) {
+                if (existingColors && existingColors !== '{}' && existingColors !== '') {
                     const colors = JSON.parse(existingColors);
                     updateColorPreview(colors);
+                } else {
+                    const defaultColors = {
+                        'forge': { background: '#DFA86A', color: '#FAF4F3' },
+                        'neoforge': { background: '#E68C37', color: '#FFFFFF' },
+                        'fabric': { background: '#DBD0B4', color: '#111111' },
+                        'kubejs': { background: '#C186E6', color: '#FFFFFF' },
+                        'unsafe': { background: 'red', color: '#FFFFFF' }
+                    };
+                    updateColorPreview(defaultColors);
+                    $('#tagColors').val(JSON.stringify(defaultColors));
                 }
             } catch (e) {
-                console.log('No existing colors to load');
+                console.log('Error loading colors:', e);
             }
-        }, 500);
+        }, 100);
     }
 
     function addTagColorToPreview(tagName, backgroundColor, textColor) {
@@ -83,9 +97,9 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
         }
 
         const badge = $(`
-            <span class="badge me-2 mb-2" data-tag="${tagName}" style="background-color: ${backgroundColor}; color: ${textColor};">
+            <span class="badge me-2 mb-2 position-relative" data-tag="${tagName}" style="background-color: ${backgroundColor}; color: ${textColor}; padding-right: 2rem;">
                 ${tagName}
-                <button type="button" class="btn-close ms-2" aria-label="Remove" style="filter: brightness(0) invert(1);"></button>
+                <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle-y me-2" aria-label="Remove" style="font-size: 0.7rem; opacity: 0.8;"></button>
             </span>
         `);
 
@@ -100,10 +114,14 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
 
     function updateColorPreview(colors) {
         $('#colorPreview').empty();
-        Object.keys(colors).forEach(function(tagName) {
-            const color = colors[tagName];
-            addTagColorToPreview(tagName, color.background, color.color);
-        });
+        if (Object.keys(colors).length === 0) {
+            $('#colorPreview').html('<p class="text-muted mb-0">No tag colors configured yet. Add some above!</p>');
+        } else {
+            Object.keys(colors).forEach(function(tagName) {
+                const color = colors[tagName];
+                addTagColorToPreview(tagName, color.background, color.color);
+            });
+        }
     }
 
     function updateHiddenInput() {
