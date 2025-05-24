@@ -27,6 +27,10 @@
     cursor: pointer;
     transition: all 0.2s ease;
     
+    &:hover {
+        color: $extended-markdown-tooltip-hover-color;
+    }
+    
     &.theme-light {
         color: #0d6efd;
         
@@ -52,11 +56,11 @@ a.anchor-offset {
 }
 
 .spoiler {
-    background: $extended-markdown-spoiler-bg;
+    background-color: $extended-markdown-spoiler-bg;
     color: transparent;
     cursor: pointer;
-    border-radius: 0.25rem;
     padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
     transition: all 0.3s ease;
     
     &.spoiler-revealed,
@@ -76,160 +80,124 @@ a.anchor-offset {
 }
 
 .admonition {
-    margin: 1.5rem 0;
-    border-radius: 0.5rem;
-    border: 1px solid transparent;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    border-radius: 3px;
+    margin-bottom: 0.625rem;
+    background: $extended-markdown-admonition-bg;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     
-    .admonition-title {
-        padding: 0.875rem 1.25rem;
-        margin: 0;
-        font-weight: 600;
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        border-bottom: 1px solid transparent;
+    p {
+        padding: 0 1rem;
+        margin: 0.5rem 0;
         
-        &::before {
-            font-family: "Font Awesome 5 Free";
-            font-weight: 900;
-            font-size: 1.1em;
+        &:last-child {
+            padding-bottom: 0.5rem;
         }
     }
     
-    .admonition-content {
-        padding: 1.25rem;
+    pre {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+    
+    .admonition-title {
+        font-weight: 700;
+        padding: 0.2rem 1rem;
+        font-size: 1.2rem;
+        color: $extended-markdown-admonition-title-color;
         margin: 0;
+        border-radius: 3px 3px 0 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        background: $extended-markdown-admonition-title-bg;
         
-        p {
-            margin: 0 0 0.75rem 0;
-            
-            &:last-child {
-                margin-bottom: 0;
-            }
+        i.fa {
+            margin-right: 5px;
         }
+    }
+    
+    > :nth-child(2) {
+        margin-top: 0.5rem;
+    }
+    
+    > :not(pre):last-child {
+        padding-bottom: 0.5rem;
+    }
+    
+    &.important {
+        background: $extended-markdown-admonition-important-bg;
         
-        ul, ol {
-            margin: 0.5rem 0;
-            padding-left: 1.5rem;
-            
-            li {
-                margin: 0.25rem 0;
-            }
-        }
-        
-        code {
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
-        }
-        
-        pre {
-            margin: 0.75rem 0;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            overflow-x: auto;
+        .admonition-title {
+            background: $extended-markdown-admonition-important-title-bg;
         }
     }
     
     &.info {
-        background: #f0f8ff;
-        border-color: #b3d9ff;
+        background: $extended-markdown-admonition-info-bg;
         
         .admonition-title {
-            background: #e1f0ff;
-            color: #0066cc;
-            border-bottom-color: #b3d9ff;
-            
-            &::before {
-                content: "\f05a";
-            }
-        }
-        
-        .admonition-content {
-            color: #004499;
-            
-            code {
-                background: rgba(0, 102, 204, 0.1);
-                color: #0066cc;
-            }
-            
-            pre {
-                background: rgba(0, 102, 204, 0.05);
-                border: 1px solid rgba(0, 102, 204, 0.1);
-            }
+            background: $extended-markdown-admonition-info-title-bg;
         }
     }
     
     &.warning {
-        background: #fff8e1;
-        border-color: #ffcc80;
+        background: $extended-markdown-admonition-warning-bg;
         
         .admonition-title {
-            background: #ffecb3;
-            color: #e65100;
-            border-bottom-color: #ffcc80;
-            
-            &::before {
-                content: "\f071";
-            }
-        }
-        
-        .admonition-content {
-            color: #bf360c;
-            
-            code {
-                background: rgba(230, 81, 0, 0.1);
-                color: #e65100;
-            }
-            
-            pre {
-                background: rgba(230, 81, 0, 0.05);
-                border: 1px solid rgba(230, 81, 0, 0.1);
-            }
+            background: $extended-markdown-admonition-warning-title-bg;
         }
     }
     
-    &.important {
-        background: #fce4ec;
-        border-color: #f8bbd9;
+    &.theme-dark {
+        background: rgba(33, 37, 41, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
         
         .admonition-title {
-            background: #f8bbd9;
-            color: #ad1457;
-            border-bottom-color: #f8bbd9;
+            background: rgba(33, 37, 41, 0.9);
+            color: #f8f9fa;
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        p {
+            color: #e9ecef;
+        }
+        
+        &.info {
+            background: rgba(13, 110, 253, 0.1);
+            border-color: rgba(13, 110, 253, 0.3);
             
-            &::before {
-                content: "\f06a";
+            .admonition-title {
+                background: rgba(13, 110, 253, 0.2);
+                color: #6ea8fe;
             }
         }
         
-        .admonition-content {
-            color: #880e4f;
+        &.warning {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: rgba(255, 152, 0, 0.3);
             
-            code {
-                background: rgba(173, 20, 87, 0.1);
-                color: #ad1457;
+            .admonition-title {
+                background: rgba(255, 152, 0, 0.2);
+                color: #ffb74d;
             }
+        }
+        
+        &.important {
+            background: rgba(156, 39, 176, 0.1);
+            border-color: rgba(156, 39, 176, 0.3);
             
-            pre {
-                background: rgba(173, 20, 87, 0.05);
-                border: 1px solid rgba(173, 20, 87, 0.1);
+            .admonition-title {
+                background: rgba(156, 39, 176, 0.2);
+                color: #ce93d8;
             }
         }
     }
 }
 
 .code-group-container {
-    margin: 1.5rem 0;
     border: 1px solid #dee2e6;
     border-radius: 0.5rem;
     overflow: hidden;
     background: #ffffff;
+    margin: 1rem 0;
     
     .nav-tabs {
         background: #f8f9fa;
@@ -259,8 +227,8 @@ a.anchor-offset {
                 }
                 
                 &.active {
-                    background: #ffffff;
                     color: #0d6efd;
+                    background: #ffffff;
                     border-bottom-color: #0d6efd;
                 }
             }
@@ -318,9 +286,9 @@ a.anchor-offset {
             }
         }
     }
-    
-    .carousel-control-prev,
-    .carousel-control-next,
+}
+
+.code-group-container {
     .fa-chevron-left,
     .fa-chevron-right,
     .fa-angle-left,
@@ -345,117 +313,5 @@ a.anchor-offset {
         pointer-events: none !important;
         position: absolute !important;
         left: -9999px !important;
-    }
-}
-
-[data-bs-theme="dark"] {
-    .admonition {
-        &.info {
-            background: rgba(13, 110, 253, 0.08);
-            border-color: rgba(13, 110, 253, 0.25);
-            
-            .admonition-title {
-                background: rgba(13, 110, 253, 0.15);
-                color: #6ea8fe;
-                border-bottom-color: rgba(13, 110, 253, 0.25);
-            }
-            
-            .admonition-content {
-                color: #9ec5fe;
-                
-                code {
-                    background: rgba(110, 168, 254, 0.15);
-                    color: #6ea8fe;
-                }
-                
-                pre {
-                    background: rgba(110, 168, 254, 0.05);
-                    border-color: rgba(110, 168, 254, 0.2);
-                }
-            }
-        }
-        
-        &.warning {
-            background: rgba(255, 152, 0, 0.08);
-            border-color: rgba(255, 152, 0, 0.25);
-            
-            .admonition-title {
-                background: rgba(255, 152, 0, 0.15);
-                color: #ffb74d;
-                border-bottom-color: rgba(255, 152, 0, 0.25);
-            }
-            
-            .admonition-content {
-                color: #ffcc80;
-                
-                code {
-                    background: rgba(255, 183, 77, 0.15);
-                    color: #ffb74d;
-                }
-                
-                pre {
-                    background: rgba(255, 183, 77, 0.05);
-                    border-color: rgba(255, 183, 77, 0.2);
-                }
-            }
-        }
-        
-        &.important {
-            background: rgba(156, 39, 176, 0.08);
-            border-color: rgba(156, 39, 176, 0.25);
-            
-            .admonition-title {
-                background: rgba(156, 39, 176, 0.15);
-                color: #ce93d8;
-                border-bottom-color: rgba(156, 39, 176, 0.25);
-            }
-            
-            .admonition-content {
-                color: #e1bee7;
-                
-                code {
-                    background: rgba(206, 147, 216, 0.15);
-                    color: #ce93d8;
-                }
-                
-                pre {
-                    background: rgba(206, 147, 216, 0.05);
-                    border-color: rgba(206, 147, 216, 0.2);
-                }
-            }
-        }
-    }
-    
-    .code-group-container {
-        background: #212529;
-        border-color: #495057;
-        
-        .nav-tabs {
-            background: #343a40;
-            border-bottom-color: #495057;
-            
-            .nav-item .nav-link {
-                color: #adb5bd;
-                
-                &:hover {
-                    background: rgba(255, 255, 255, 0.03);
-                    color: #f8f9fa;
-                }
-                
-                &.active {
-                    background: #212529;
-                    color: #6ea8fe;
-                    border-bottom-color: #6ea8fe;
-                }
-            }
-        }
-        
-        .tab-content .tab-pane pre {
-            background: #1e1e1e;
-            
-            code {
-                color: #f8f9fa;
-            }
-        }
     }
 }

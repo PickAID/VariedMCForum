@@ -3,11 +3,12 @@
     padding: 1.25rem;
     border-radius: 0.5rem;
     transition: all 0.3s ease;
+    border: 1px solid transparent;
     
     &.theme-light {
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-color: rgba(0, 0, 0, 0.08);
         color: #212529;
         
         .toc-title {
@@ -30,7 +31,7 @@
     
     &.theme-dark {
         background: rgba(33, 37, 41, 0.98);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.08);
         color: #f8f9fa;
         
         .toc-title {
