@@ -159,6 +159,10 @@ plugin.addAdminNavigation = (header) => {
 };
 
 plugin.addTagColors = async (data) => {
+	if (!data || !data.templateData) {
+		return data;
+	}
+	
 	const settings = await meta.settings.get('tag-color-maker');
 	let tagColors = {};
 	
@@ -203,13 +207,16 @@ plugin.addTagColors = async (data) => {
 	
 	if (css) {
 		data.templateData.customCSS = (data.templateData.customCSS || '') + css;
-		data.templateData.tagColorsData = JSON.stringify(tagColors);
 	}
 	
 	return data;
 };
 
-plugin.addTagColorsToHead = async (data) => {
+plugin.addTagColorsScript = async (data) => {
+	if (!data || !data.templateData) {
+		return data;
+	}
+	
 	const settings = await meta.settings.get('tag-color-maker');
 	let tagColors = {};
 	
@@ -219,7 +226,13 @@ plugin.addTagColorsToHead = async (data) => {
 		tagColors = defaultTagColors;
 	}
 	
-	data.templateData.tagColors = JSON.stringify(tagColors);
+	const script = `
+<script>
+window.tagColors = ${JSON.stringify(tagColors)};
+</script>`;
+	
+	data.templateData.customJS = (data.templateData.customJS || '') + script;
+	
 	return data;
 };
 

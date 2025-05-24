@@ -9,7 +9,7 @@
 		{ "hook": "static:app.load", "method": "init" },
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
 		{ "hook": "filter:middleware.render", "method": "addTagColors" },
-		{ "hook": "filter:middleware.buildHeader", "method": "addTagColorsToHead" }
+		{ "hook": "filter:scripts.get", "method": "addTagColorsScript" }
 	],
 	"scripts": [
 		"public/js/client.js"

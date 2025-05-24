@@ -89,33 +89,81 @@ $(document).ready(function () {
 	});
 
 	function applyTagColors() {
+		if (!window.tagColors) {
+			return;
+		}
+		
 		setTimeout(function() {
 			$('[data-tag]').each(function() {
 				const $tag = $(this);
 				const tagName = $tag.data('tag');
 				
-				if (tagName && window.tagColors && window.tagColors[tagName]) {
+				if (tagName && window.tagColors[tagName]) {
+					const colors = window.tagColors[tagName];
+					
+					$tag.css({
+						'background-color': colors.background + ' !important',
+						'color': colors.color + ' !important',
+						'border-color': colors.background + ' !important'
+					});
+					
+					$tag.find('.tag-topic-count, a, span').css({
+						'color': colors.color + ' !important'
+					});
+					
+					$tag.find('a').hover(
+						function() {
+							$(this).css('opacity', '0.8');
+						},
+						function() {
+							$(this).css('opacity', '1');
+						}
+					);
+				}
+			});
+			
+			$('.tag-list [data-tag], .tags-container [data-tag]').each(function() {
+				const $tag = $(this);
+				const tagName = $tag.data('tag');
+				
+				if (tagName && window.tagColors[tagName]) {
 					const colors = window.tagColors[tagName];
 					$tag.css({
 						'background-color': colors.background + ' !important',
 						'color': colors.color + ' !important'
 					});
-					
-					$tag.find('.tag-topic-count, a').css({
-						'color': colors.color + ' !important'
-					});
 				}
 			});
-		}, 100);
+		}, 50);
 	}
 
 	applyTagColors();
 
 	$(window).on('action:ajaxify.end', function () {
-		applyTagColors();
+		setTimeout(applyTagColors, 100);
 	});
 
 	$(document).on('DOMNodeInserted', function() {
 		applyTagColors();
+	});
+
+	const observer = new MutationObserver(function(mutations) {
+		mutations.forEach(function(mutation) {
+			if (mutation.type === 'childList') {
+				mutation.addedNodes.forEach(function(node) {
+					if (node.nodeType === 1 && (
+						node.hasAttribute('data-tag') || 
+						node.querySelector && node.querySelector('[data-tag]')
+					)) {
+						applyTagColors();
+					}
+				});
+			}
+		});
+	});
+	
+	observer.observe(document.body, {
+		childList: true,
+		subtree: true
 	});
 }); 
