@@ -241,14 +241,12 @@ a.anchor-offset {
                 margin: 0;
                 border: none;
                 border-radius: 0;
-                background: #f8f9fa;
                 
                 code {
-                    background: transparent;
-                    color: inherit;
                     padding: 1.5rem;
                     font-size: 0.875rem;
                     line-height: 1.5;
+                    display: block;
                 }
             }
         }
@@ -275,14 +273,6 @@ a.anchor-offset {
                     color: #6ea8fe;
                     border-bottom-color: #6ea8fe;
                 }
-            }
-        }
-        
-        .tab-content .tab-pane pre {
-            background: #1e1e1e;
-            
-            code {
-                color: #f8f9fa;
             }
         }
     }
