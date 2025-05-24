@@ -111,12 +111,26 @@ $(document).ready(function () {
 				});
 			}
 		});
+		
+		$('.tag-list [data-tag], .tags-container [data-tag]').each(function() {
+			const $tag = $(this);
+			const tagName = $tag.data('tag');
+			
+			if (tagName && window.tagColors[tagName] && !$tag.hasClass('tag-colored')) {
+				const colors = window.tagColors[tagName];
+				$tag.addClass('tag-colored').css({
+					'background-color': colors.background + ' !important',
+					'color': colors.color + ' !important',
+					'border-color': colors.background + ' !important'
+				});
+			}
+		});
 	}
 
-	setTimeout(applyTagColors, 100);
+	setTimeout(applyTagColors, 200);
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(applyTagColors, 200);
+		setTimeout(applyTagColors, 300);
 	});
 
 	const observer = new MutationObserver(function(mutations) {
@@ -134,7 +148,7 @@ $(document).ready(function () {
 			}
 		});
 		if (hasNewTags) {
-			setTimeout(applyTagColors, 100);
+			setTimeout(applyTagColors, 150);
 		}
 	});
 	

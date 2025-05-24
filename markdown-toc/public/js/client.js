@@ -20,6 +20,14 @@ $(document).ready(function () {
 	};
 
 	function detectTheme() {
+		const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
+		if (skinSwitcher) {
+			const darkSkinList = $(skinSwitcher).find('.dropdown-header').eq(1).parent();
+			if (darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length) {
+				return 'dark';
+			}
+		}
+		
 		const body = document.body;
 		const html = document.documentElement;
 		
@@ -59,10 +67,25 @@ $(document).ready(function () {
 		});
 	}
 
-	setTimeout(applyThemeStyles, 100);
+	function setupThemeWatcher() {
+		const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
+		if (skinSwitcher) {
+			skinSwitcher.addEventListener('click', function() {
+				setTimeout(applyThemeStyles, 200);
+			});
+		}
+	}
+
+	setTimeout(function() {
+		applyThemeStyles();
+		setupThemeWatcher();
+	}, 100);
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(applyThemeStyles, 200);
+		setTimeout(function() {
+			applyThemeStyles();
+			setupThemeWatcher();
+		}, 200);
 	});
 
 	const observer = new MutationObserver(function(mutations) {

@@ -16,6 +16,14 @@ $(document).ready(function () {
     });
 
     function detectTheme() {
+        const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
+        if (skinSwitcher) {
+            const darkSkinList = $(skinSwitcher).find('.dropdown-header').eq(1).parent();
+            if (darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length) {
+                return 'dark';
+            }
+        }
+        
         const body = document.body;
         const html = document.documentElement;
         
@@ -71,6 +79,15 @@ $(document).ready(function () {
                 element.classList.add(`theme-${theme}`);
             }
         });
+    }
+
+    function setupThemeWatcher() {
+        const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
+        if (skinSwitcher) {
+            skinSwitcher.addEventListener('click', function() {
+                setTimeout(applyThemeStyles, 200);
+            });
+        }
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
@@ -141,6 +158,7 @@ $(document).ready(function () {
             });
             
             applyThemeStyles();
+            setupThemeWatcher();
         }, 100);
     }
 
