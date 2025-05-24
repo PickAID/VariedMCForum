@@ -147,17 +147,13 @@ a.anchor-offset {
     }
     
     &.theme-dark {
-        background: rgba(33, 37, 41, 0.8);
+        background: rgba(33, 37, 41, 0.95);
         border-color: rgba(255, 255, 255, 0.1);
+        color: #f8f9fa;
         
         .admonition-title {
-            background: rgba(33, 37, 41, 0.9);
             color: #f8f9fa;
             border-bottom-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        p {
-            color: #e9ecef;
         }
         
         &.info {

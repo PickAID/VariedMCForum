@@ -93,73 +93,49 @@ $(document).ready(function () {
 			return;
 		}
 		
-		setTimeout(function() {
-			$('[data-tag]').each(function() {
-				const $tag = $(this);
-				const tagName = $tag.data('tag');
-				
-				if (tagName && window.tagColors[tagName]) {
-					const colors = window.tagColors[tagName];
-					
-					$tag.css({
-						'background-color': colors.background + ' !important',
-						'color': colors.color + ' !important',
-						'border-color': colors.background + ' !important'
-					});
-					
-					$tag.find('.tag-topic-count, a, span').css({
-						'color': colors.color + ' !important'
-					});
-					
-					$tag.find('a').hover(
-						function() {
-							$(this).css('opacity', '0.8');
-						},
-						function() {
-							$(this).css('opacity', '1');
-						}
-					);
-				}
-			});
+		$('[data-tag]').each(function() {
+			const $tag = $(this);
+			const tagName = $tag.data('tag');
 			
-			$('.tag-list [data-tag], .tags-container [data-tag]').each(function() {
-				const $tag = $(this);
-				const tagName = $tag.data('tag');
+			if (tagName && window.tagColors[tagName] && !$tag.hasClass('tag-colored')) {
+				const colors = window.tagColors[tagName];
 				
-				if (tagName && window.tagColors[tagName]) {
-					const colors = window.tagColors[tagName];
-					$tag.css({
-						'background-color': colors.background + ' !important',
-						'color': colors.color + ' !important'
-					});
-				}
-			});
-		}, 50);
+				$tag.addClass('tag-colored').css({
+					'background-color': colors.background + ' !important',
+					'color': colors.color + ' !important',
+					'border-color': colors.background + ' !important'
+				});
+				
+				$tag.find('.tag-topic-count, a, span').css({
+					'color': colors.color + ' !important'
+				});
+			}
+		});
 	}
 
-	applyTagColors();
+	setTimeout(applyTagColors, 100);
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(applyTagColors, 100);
-	});
-
-	$(document).on('DOMNodeInserted', function() {
-		applyTagColors();
+		setTimeout(applyTagColors, 200);
 	});
 
 	const observer = new MutationObserver(function(mutations) {
+		let hasNewTags = false;
 		mutations.forEach(function(mutation) {
 			if (mutation.type === 'childList') {
 				mutation.addedNodes.forEach(function(node) {
 					if (node.nodeType === 1 && (
 						node.hasAttribute('data-tag') || 
-						node.querySelector && node.querySelector('[data-tag]')
+						(node.querySelector && node.querySelector('[data-tag]'))
 					)) {
-						applyTagColors();
+						hasNewTags = true;
 					}
 				});
 			}
 		});
+		if (hasNewTags) {
+			setTimeout(applyTagColors, 100);
+		}
 	});
 	
 	observer.observe(document.body, {
