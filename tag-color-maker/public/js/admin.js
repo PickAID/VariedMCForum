@@ -8,13 +8,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
 
         $('#save').on('click', function () {
             Settings.save('tag-color-maker', $('.tag-color-maker-settings'), function () {
-                app.alert({
-                    type: 'success',
-                    alert_id: 'tag-color-maker-saved',
-                    title: 'Settings Saved',
-                    message: 'Tag color settings have been saved successfully!',
-                    timeout: 2000
-                });
+                console.log('设置已保存');
                 
                 if (window.parent && window.parent.reloadTagColors) {
                     window.parent.reloadTagColors();
@@ -34,13 +28,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
             const textColor = $('#textColor').val();
 
             if (!tagName) {
-                app.alert({
-                    type: 'warning',
-                    alert_id: 'tag-name-required',
-                    title: 'Tag Name Required',
-                    message: 'Please enter a tag name.',
-                    timeout: 2000
-                });
+                console.log('请输入标签名');
                 return;
             }
 
@@ -85,7 +73,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
                     $('#tagColors').val(JSON.stringify(defaultColors));
                 }
             } catch (e) {
-                // Silent error handling
+                console.log('加载颜色配置失败:', e);
             }
         }, 100);
     }
@@ -115,7 +103,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
     function updateColorPreview(colors) {
         $('#colorPreview').empty();
         if (Object.keys(colors).length === 0) {
-            $('#colorPreview').html('<p class="text-muted mb-0">No tag colors configured yet. Add some above!</p>');
+            $('#colorPreview').html('<p class="text-muted mb-0">暂无标签颜色配置</p>');
         } else {
             Object.keys(colors).forEach(function(tagName) {
                 const color = colors[tagName];

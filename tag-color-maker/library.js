@@ -19,6 +19,14 @@ plugin.init = async (params) => {
 	const { router } = params;
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/tag-color-maker', controllers.renderAdminPage);
 	
+	// 添加API路由
+	router.get('/api/admin/plugins/tag-color-maker/settings', async (req, res) => {
+		const settings = await meta.settings.get('tag-color-maker');
+		res.json(settings);
+	});
+	
+	router.post('/api/admin/plugins/tag-color-maker/settings', controllers.saveSettings);
+	
 	await initializeDefaultColors();
 };
 

@@ -5,31 +5,21 @@ $(document).ready(function () {
 	let styleElement = null;
 	
 	function loadTagColors() {
-		$.get('/api/admin/plugins/tag-color-maker/settings', function(data) {
-			if (data && data.tagColors) {
-				try {
-					tagColors = JSON.parse(data.tagColors);
-				} catch (e) {
-					setDefaultColors();
-				}
-			} else {
-				setDefaultColors();
-			}
-			generateTagColorCSS();
-		}).fail(function() {
-			setDefaultColors();
-			generateTagColorCSS();
-		});
-	}
-	
-	function setDefaultColors() {
-		tagColors = {
+		const defaultColors = {
 			'forge': { background: '#DFA86A', color: '#FAF4F3' },
 			'neoforge': { background: '#E68C37', color: '#FFFFFF' },
 			'fabric': { background: '#DBD0B4', color: '#111111' },
 			'kubejs': { background: '#C186E6', color: '#FFFFFF' },
 			'unsafe': { background: 'red', color: '#FFFFFF' }
 		};
+		
+		if (window.tagColors) {
+			tagColors = window.tagColors;
+		} else {
+			tagColors = defaultColors;
+		}
+		
+		generateTagColorCSS();
 	}
 
 	function generateTagColorCSS() {
