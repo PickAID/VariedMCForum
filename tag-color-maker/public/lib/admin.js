@@ -19,7 +19,7 @@ function handleSettingsForm() {
 
 	$('#save').on('click', () => {
 		save('tag-color-maker', $('.tag-color-maker-settings'), function() {
-			app.alertSuccess('设置已保存！请刷新页面查看效果。');
+			console.log('设置已保存！请刷新页面查看效果。');
 		});
 	});
 }
@@ -40,7 +40,7 @@ function setupEventHandlers() {
 		const color = $('#customColor').val();
 		
 		if (!tag) {
-			app.alertError('请输入标签名');
+			console.log('请输入标签名');
 			return;
 		}
 		
@@ -66,9 +66,9 @@ function setupEventHandlers() {
 		try {
 			const config = JSON.parse($('#tagColors').val());
 			$('#tagColors').val(JSON.stringify(config, null, 2));
-			app.alertSuccess('JSON已格式化');
+			console.log('JSON已格式化');
 		} catch (e) {
-			app.alertError('JSON格式错误: ' + e.message);
+			console.log('JSON格式错误: ' + e.message);
 		}
 	});
 }
@@ -84,9 +84,9 @@ function addTagToConfig(tag, background, color) {
 		config[tag] = { background, color };
 		$('#tagColors').val(JSON.stringify(config, null, 2));
 		updatePreview();
-		app.alertSuccess(`标签 "${tag}" 已添加`);
+		console.log(`标签 "${tag}" 已添加`);
 	} catch (e) {
-		app.alertError('添加失败: ' + e.message);
+		console.log('添加失败: ' + e.message);
 	}
 }
 
@@ -126,8 +126,8 @@ function removeTagFromConfig(tag) {
 		delete config[tag];
 		$('#tagColors').val(JSON.stringify(config, null, 2));
 		updatePreview();
-		app.alertSuccess(`标签 "${tag}" 已删除`);
+		console.log(`标签 "${tag}" 已删除`);
 	} catch (e) {
-		app.alertError('删除失败: ' + e.message);
+		console.log('删除失败: ' + e.message);
 	}
 }
