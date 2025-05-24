@@ -106,13 +106,12 @@ $(document).ready(function () {
         
         const linkObserver = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.tagName === 'LINK' && node.href && node.href.includes('bootstrap')) {
-                            setTimeout(applyThemeStyles, 100);
-                        }
-                    });
-                }
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.tagName === 'LINK' && 
+                        node.href && node.href.includes('bootstrap')) {
+                        setTimeout(applyThemeStyles, 100);
+                    }
+                });
             });
         });
         
@@ -123,102 +122,40 @@ $(document).ready(function () {
         const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
         
         if (formatting && controls) {
-            const formattingOptions = [
-                {
-                    name: "textheader",
-                    className: "fa fa-header",
-                    title: "[[extendedmarkdown:composer.formatting.textheader]]"
-                },
-                {
-                    name: "groupedcode",
-                    className: "fa fa-code",
-                    title: "[[extendedmarkdown:composer.formatting.groupedcode]]"
-                },
-                {
-                    name: "bubbleinfo",
-                    className: "fa fa-info-circle",
-                    title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]"
-                },
-                {
-                    name: "left",
-                    className: "fa fa-align-left",
-                    title: "[[extendedmarkdown:composer.formatting.left]]"
-                },
-                {
-                    name: "center",
-                    className: "fa fa-align-center",
-                    title: "[[extendedmarkdown:composer.formatting.center]]"
-                },
-                {
-                    name: "right",
-                    className: "fa fa-align-right",
-                    title: "[[extendedmarkdown:composer.formatting.right]]"
-                },
-                {
-                    name: "justify",
-                    className: "fa fa-align-justify",
-                    title: "[[extendedmarkdown:composer.formatting.justify]]"
-                },
-                {
-                    name: "spoiler",
-                    className: "fa fa-eye-slash",
-                    title: "[[extendedmarkdown:composer.formatting.spoiler]]"
-                },
-                {
-                    name: "noteinfo",
-                    className: "fa fa-info",
-                    title: "[[extendedmarkdown:composer.formatting.noteinfo]]"
-                },
-                {
-                    name: "notewarning",
-                    className: "fa fa-exclamation-triangle",
-                    title: "[[extendedmarkdown:composer.formatting.notewarning]]"
-                },
-                {
-                    name: "noteimportant",
-                    className: "fa fa-exclamation-circle",
-                    title: "[[extendedmarkdown:composer.formatting.noteimportant]]"
-                }
-            ];
-
-            formattingOptions.forEach(function(option) {
-                formatting.addButtonDispatch(option.name, function (textarea, selectionStart, selectionEnd) {
-                    switch(option.name) {
-                        case 'textheader':
-                            controls.insertIntoTextarea(textarea, '#anchor(' + controls.getSelectedText(textarea) + ')');
-                            break;
-                        case 'groupedcode':
-                            controls.insertIntoTextarea(textarea, '\n===group\n```language\n' + controls.getSelectedText(textarea) + '\n```\n```language2\ncode here\n```\n===\n');
-                            break;
-                        case 'bubbleinfo':
-                            controls.insertIntoTextarea(textarea, '°' + controls.getSelectedText(textarea) + '°(tooltip text)');
-                            break;
-                        case 'left':
-                            controls.insertIntoTextarea(textarea, '|-' + controls.getSelectedText(textarea));
-                            break;
-                        case 'center':
-                            controls.insertIntoTextarea(textarea, '|-' + controls.getSelectedText(textarea) + '-|');
-                            break;
-                        case 'right':
-                            controls.insertIntoTextarea(textarea, controls.getSelectedText(textarea) + '-|');
-                            break;
-                        case 'justify':
-                            controls.insertIntoTextarea(textarea, '|=' + controls.getSelectedText(textarea) + '=|');
-                            break;
-                        case 'spoiler':
-                            controls.insertIntoTextarea(textarea, '||' + controls.getSelectedText(textarea) + '||');
-                            break;
-                        case 'noteinfo':
-                            controls.insertIntoTextarea(textarea, '\n!!! info [Title]: ' + controls.getSelectedText(textarea) + '\n');
-                            break;
-                        case 'notewarning':
-                            controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: ' + controls.getSelectedText(textarea) + '\n');
-                            break;
-                        case 'noteimportant':
-                            controls.insertIntoTextarea(textarea, '\n!!! important [Title]: ' + controls.getSelectedText(textarea) + '\n');
-                            break;
-                    }
-                });
+            formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '[h=anchor]', '[/h]');
+            });
+            
+            formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n[code=java,kotlin]\n' + app.translator.translate('[[extendedmarkdown:groupedcode_firstlang]]') + '\n\n---\n\n' + app.translator.translate('[[extendedmarkdown:groupedcode_secondlang]]') + '\n[/code]\n');
+            });
+            
+            formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '°', '°(' + app.translator.translate('[[extendedmarkdown:bubbleinfo_text]]') + ')');
+            });
+            
+            formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '%(#hexColorCode)[', ']');
+            });
+            
+            formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '|-', '');
+            });
+            
+            formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
+            });
+            
+            formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '', '-|');
+            });
+            
+            formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
+            });
+            
+            formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '||', '||');
             });
         }
     };
@@ -226,13 +163,21 @@ $(document).ready(function () {
     function pageReady() {
         setTimeout(function() {
             document.querySelectorAll('.spoiler').forEach(function(spoiler) {
-                spoiler.addEventListener('click', function() {
-                    this.classList.toggle('spoiler-revealed');
-                });
+                if (!spoiler.hasAttribute('data-spoiler-initialized')) {
+                    spoiler.setAttribute('data-spoiler-initialized', 'true');
+                    spoiler.addEventListener('click', function() {
+                        this.classList.toggle('spoiler-revealed');
+                    });
+                }
             });
 
             setTimeout(function() {
                 document.querySelectorAll('.code-group-container').forEach(function(container) {
+                    if (container.hasAttribute('data-processed')) {
+                        return;
+                    }
+                    container.setAttribute('data-processed', 'true');
+                    
                     const unwantedSelectors = [
                         '.fa-chevron-left', '.fa-chevron-right', '.fa-angle-left', '.fa-angle-right',
                         '.fa-arrow-left', '.fa-arrow-right', '.fa-caret-left', '.fa-caret-right',
@@ -240,9 +185,7 @@ $(document).ready(function () {
                         '.slick-prev', '.slick-next', '.swiper-button-prev', '.swiper-button-next',
                         '.owl-prev', '.owl-next', '.prev', '.next',
                         '[class*="chevron"]', '[class*="angle"]', '[class*="arrow"]', '[class*="caret"]',
-                        '[data-slide]', '[data-bs-slide]',
-                        'i.fa-chevron-left', 'i.fa-chevron-right', 'i.fa-angle-left', 'i.fa-angle-right',
-                        'span.fa-chevron-left', 'span.fa-chevron-right', 'span.fa-angle-left', 'span.fa-angle-right'
+                        '[data-slide]', '[data-bs-slide]'
                     ];
                     
                     unwantedSelectors.forEach(function(selector) {
@@ -272,9 +215,9 @@ $(document).ready(function () {
                 });
                 
                 applyThemeStyles();
-            }, 100);
+            }, 50);
             
             initThemeWatcher();
-        }, 100);
+        }, 50);
     }
 });

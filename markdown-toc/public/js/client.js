@@ -54,9 +54,8 @@ $(document).ready(function () {
 
 	function applyThemeStyles() {
 		const theme = detectTheme();
-		const tocContainers = document.querySelectorAll('.markdown-toc');
 		
-		tocContainers.forEach(container => {
+		document.querySelectorAll('.markdown-toc').forEach(function(container) {
 			container.classList.remove('theme-light', 'theme-dark');
 			container.classList.add(`theme-${theme}`);
 			
@@ -69,14 +68,18 @@ $(document).ready(function () {
 	}
 
 	function initTOC() {
-		applyThemeStyles();
-		
+		setTimeout(function() {
+			applyThemeStyles();
+		}, 50);
+	}
+
+	function initThemeWatcher() {
 		const observer = new MutationObserver(function(mutations) {
 			mutations.forEach(function(mutation) {
 				if (mutation.type === 'attributes' && 
-					(mutation.attributeName === 'class' || 
-					 mutation.attributeName === 'data-theme' || 
-					 mutation.attributeName === 'data-bs-theme')) {
+				   (mutation.attributeName === 'class' || 
+					mutation.attributeName === 'data-theme' || 
+					mutation.attributeName === 'data-bs-theme')) {
 					setTimeout(applyThemeStyles, 50);
 				}
 			});
@@ -87,13 +90,12 @@ $(document).ready(function () {
 		
 		const linkObserver = new MutationObserver(function(mutations) {
 			mutations.forEach(function(mutation) {
-				if (mutation.type === 'childList') {
-					mutation.addedNodes.forEach(function(node) {
-						if (node.tagName === 'LINK' && node.href && node.href.includes('bootstrap')) {
-							setTimeout(applyThemeStyles, 100);
-						}
-					});
-				}
+				mutation.addedNodes.forEach(function(node) {
+					if (node.nodeType === 1 && node.tagName === 'LINK' && 
+						node.href && node.href.includes('bootstrap')) {
+						setTimeout(applyThemeStyles, 100);
+					}
+				});
 			});
 		});
 		
@@ -101,14 +103,11 @@ $(document).ready(function () {
 	}
 
 	initTOC();
+	initThemeWatcher();
 
 	$(window).on('action:ajaxify.end', function () {
 		setTimeout(function() {
 			applyThemeStyles();
 		}, 100);
-	});
-	
-	$(document).on('DOMNodeInserted', function() {
-		setTimeout(applyThemeStyles, 50);
 	});
 }); 
