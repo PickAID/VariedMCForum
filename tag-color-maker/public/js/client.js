@@ -11,108 +11,64 @@ $(document).ready(function () {
 		'unsafe': { background: 'red', color: '#FFFFFF' }
 	};
 	
+	let styleElement = null;
+	
 	function loadTagColors() {
-		if (typeof app !== 'undefined' && app.user && app.user.isAdmin) {
-			$.get('/api/admin/plugins/tag-color-maker/settings', function(data) {
-				if (data && data.tagColors) {
-					try {
-						const customColors = JSON.parse(data.tagColors);
-						tagColors = Object.assign(tagColors, customColors);
-						console.log('Loaded custom tag colors:', customColors);
-					} catch (e) {
-						console.log('Failed to parse custom colors, using defaults');
-					}
+		$.get('/api/admin/plugins/tag-color-maker/settings', function(data) {
+			if (data && data.tagColors) {
+				try {
+					const customColors = JSON.parse(data.tagColors);
+					tagColors = Object.assign(tagColors, customColors);
+					console.log('Loaded custom tag colors:', customColors);
+				} catch (e) {
+					console.log('Failed to parse custom colors, using defaults');
 				}
-				applyTagColors();
-			}).fail(function() {
-				console.log('Using default tag colors');
-				applyTagColors();
-			});
-		} else {
-			applyTagColors();
-		}
+			}
+			generateTagColorCSS();
+		}).fail(function() {
+			console.log('Using default tag colors');
+			generateTagColorCSS();
+		});
 	}
 
-	function applyTagColors() {
-		if (!tagColors || Object.keys(tagColors).length === 0) {
-			return;
+	function generateTagColorCSS() {
+		if (styleElement) {
+			styleElement.remove();
 		}
 		
-		console.log('Applying tag colors:', tagColors);
+		let css = '';
 		
-		$('[data-tag]').each(function() {
-			const $tag = $(this);
-			const tagName = $tag.data('tag');
+		Object.keys(tagColors).forEach(function(tagName) {
+			const colors = tagColors[tagName];
 			
-			if (tagName && tagColors[tagName] && !$tag.hasClass('tag-colored')) {
-				const colors = tagColors[tagName];
-				
-				$tag.addClass('tag-colored').css({
-					'background-color': colors.background + ' !important',
-					'color': colors.color + ' !important',
-					'border-color': colors.background + ' !important'
-				});
-				
-				$tag.find('.tag-topic-count, a, span').css({
-					'color': colors.color + ' !important'
-				});
-			}
+			css += `
+[data-tag="${tagName}"] {
+	background-color: ${colors.background} !important;
+	color: ${colors.color} !important;
+}
+
+.tag-list [data-tag="${tagName}"] {
+	background-color: ${colors.background} !important;
+	color: ${colors.color} !important;
+}
+
+[data-tag="${tagName}"] .tag-topic-count {
+	color: ${colors.color} !important;
+}
+
+`;
 		});
 		
-		$('.tag-list [data-tag], .tags-container [data-tag], .tags [data-tag]').each(function() {
-			const $tag = $(this);
-			const tagName = $tag.data('tag');
-			
-			if (tagName && tagColors[tagName] && !$tag.hasClass('tag-colored')) {
-				const colors = tagColors[tagName];
-				$tag.addClass('tag-colored').css({
-					'background-color': colors.background + ' !important',
-					'color': colors.color + ' !important',
-					'border-color': colors.background + ' !important'
-				});
-				
-				$tag.find('a, span, .tag-topic-count').css({
-					'color': colors.color + ' !important'
-				});
-			}
-		});
+		styleElement = $('<style>').attr('type', 'text/css').html(css);
+		$('head').append(styleElement);
 		
-		$('a[href*="/tags/"]').each(function() {
-			const $tag = $(this);
-			const href = $tag.attr('href');
-			if (href && !$tag.hasClass('tag-colored')) {
-				const tagName = href.split('/tags/')[1];
-				
-				if (tagName && tagColors[tagName]) {
-					const colors = tagColors[tagName];
-					$tag.addClass('tag-colored').css({
-						'background-color': colors.background + ' !important',
-						'color': colors.color + ' !important',
-						'border-color': colors.background + ' !important'
-					});
-				}
-			}
-		});
-		
-		$('.badge[data-tag]').each(function() {
-			const $tag = $(this);
-			const tagName = $tag.data('tag');
-			
-			if (tagName && tagColors[tagName]) {
-				const colors = tagColors[tagName];
-				$tag.addClass('tag-colored').css({
-					'background-color': colors.background + ' !important',
-					'color': colors.color + ' !important',
-					'border-color': colors.background + ' !important'
-				});
-			}
-		});
+		console.log('Generated tag color CSS for tags:', Object.keys(tagColors));
 	}
 
 	loadTagColors();
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(applyTagColors, 200);
+		setTimeout(generateTagColorCSS, 100);
 	});
 
 	$(document).on('DOMNodeInserted', function(e) {
@@ -120,7 +76,7 @@ $(document).ready(function () {
 			e.target.hasAttribute('data-tag') || 
 			$(e.target).find('[data-tag]').length > 0
 		)) {
-			setTimeout(applyTagColors, 100);
+			setTimeout(generateTagColorCSS, 100);
 		}
 	});
 
@@ -140,7 +96,7 @@ $(document).ready(function () {
 			}
 		});
 		if (hasNewTags) {
-			setTimeout(applyTagColors, 100);
+			setTimeout(generateTagColorCSS, 100);
 		}
 	});
 	
@@ -149,7 +105,7 @@ $(document).ready(function () {
 		subtree: true
 	});
 	
-	setInterval(applyTagColors, 2000);
+	setInterval(generateTagColorCSS, 3000);
 	
 	window.reloadTagColors = function() {
 		loadTagColors();
