@@ -1,9 +1,0 @@
-{
-    "admin_title": "标签颜色管理",
-    "save_success": "设置已保存",
-    "save_error": "保存失败",
-    "format_success": "JSON已格式化",
-    "format_error": "JSON格式错误",
-    "tag_added": "标签已添加",
-    "tag_removed": "标签已删除"
-} 

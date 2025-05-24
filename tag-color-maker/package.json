@@ -1,5 +1,5 @@
 {
-  "name": "nodebb-plugin-tag-color-maker",
+  "name": "nodebb-plugin-tag-color-collector",
   "version": "1.0.0",
   "description": "A NodeBB plugin to generate tag colors for posts",
   "main": "library.js",
@@ -18,25 +18,6 @@
   },
   "peerDependencies": {
     "nodebb": ">=1.0.0"
-  },
-  "keywords": [
-    "nodebb",
-    "plugin",
-    "markdown",
-    "toc",
-    "table-of-contents"
-  ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ]
   },
   "nbbpm": {
     "compatibility": "^3.0.0"
