@@ -63,15 +63,17 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
     }
 
     function loadExistingColors() {
-        try {
-            const existingColors = $('#tagColors').val();
-            if (existingColors) {
-                const colors = JSON.parse(existingColors);
-                updateColorPreview(colors);
+        setTimeout(function() {
+            try {
+                const existingColors = $('#tagColors').val();
+                if (existingColors) {
+                    const colors = JSON.parse(existingColors);
+                    updateColorPreview(colors);
+                }
+            } catch (e) {
+                console.log('No existing colors to load');
             }
-        } catch (e) {
-            console.log('No existing colors to load');
-        }
+        }, 500);
     }
 
     function addTagColorToPreview(tagName, backgroundColor, textColor) {
@@ -83,7 +85,7 @@ define('admin/plugins/tag-color-maker', ['settings'], function (Settings) {
         const badge = $(`
             <span class="badge me-2 mb-2" data-tag="${tagName}" style="background-color: ${backgroundColor}; color: ${textColor};">
                 ${tagName}
-                <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove"></button>
+                <button type="button" class="btn-close ms-2" aria-label="Remove" style="filter: brightness(0) invert(1);"></button>
             </span>
         `);
 

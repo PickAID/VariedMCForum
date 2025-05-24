@@ -18,8 +18,10 @@ $(document).ready(function () {
 			if (data && data.tagColors) {
 				try {
 					const customColors = JSON.parse(data.tagColors);
-					tagColors = Object.assign(tagColors, customColors);
-					console.log('Loaded custom tag colors:', customColors);
+					if (Object.keys(customColors).length > 0) {
+						tagColors = customColors;
+						console.log('Loaded custom tag colors:', customColors);
+					}
 				} catch (e) {
 					console.log('Failed to parse custom colors, using defaults');
 				}
@@ -68,7 +70,7 @@ $(document).ready(function () {
 	loadTagColors();
 
 	$(window).on('action:ajaxify.end', function () {
-		setTimeout(generateTagColorCSS, 100);
+		setTimeout(generateTagColorCSS, 200);
 	});
 
 	$(document).on('DOMNodeInserted', function(e) {
