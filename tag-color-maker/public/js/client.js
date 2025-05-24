@@ -1,7 +1,7 @@
 'use strict';
 
 $(document).ready(function () {
-	console.log('NodeBB Markdown TOC plugin loaded');
+	console.log('Tag Color Maker plugin loaded');
 
 	var MarkdownToc = {};
 
@@ -59,12 +59,6 @@ $(document).ready(function () {
 		tocContainers.forEach(container => {
 			container.classList.remove('theme-light', 'theme-dark');
 			container.classList.add(`theme-${theme}`);
-			
-			const title = container.querySelector('.toc-title');
-			if (title) {
-				title.classList.remove('theme-light', 'theme-dark');
-				title.classList.add(`theme-${theme}`);
-			}
 		});
 	}
 
@@ -77,27 +71,13 @@ $(document).ready(function () {
 					(mutation.attributeName === 'class' || 
 					 mutation.attributeName === 'data-theme' || 
 					 mutation.attributeName === 'data-bs-theme')) {
-					setTimeout(applyThemeStyles, 50);
+					applyThemeStyles();
 				}
 			});
 		});
 		
 		observer.observe(document.body, { attributes: true });
 		observer.observe(document.documentElement, { attributes: true });
-		
-		const linkObserver = new MutationObserver(function(mutations) {
-			mutations.forEach(function(mutation) {
-				if (mutation.type === 'childList') {
-					mutation.addedNodes.forEach(function(node) {
-						if (node.tagName === 'LINK' && node.href && node.href.includes('bootstrap')) {
-							setTimeout(applyThemeStyles, 100);
-						}
-					});
-				}
-			});
-		});
-		
-		linkObserver.observe(document.head, { childList: true });
 	}
 
 	initTOC();
@@ -107,8 +87,35 @@ $(document).ready(function () {
 			applyThemeStyles();
 		}, 100);
 	});
-	
+
+	function applyTagColors() {
+		setTimeout(function() {
+			$('[data-tag]').each(function() {
+				const $tag = $(this);
+				const tagName = $tag.data('tag');
+				
+				if (tagName && window.tagColors && window.tagColors[tagName]) {
+					const colors = window.tagColors[tagName];
+					$tag.css({
+						'background-color': colors.background + ' !important',
+						'color': colors.color + ' !important'
+					});
+					
+					$tag.find('.tag-topic-count, a').css({
+						'color': colors.color + ' !important'
+					});
+				}
+			});
+		}, 100);
+	}
+
+	applyTagColors();
+
+	$(window).on('action:ajaxify.end', function () {
+		applyTagColors();
+	});
+
 	$(document).on('DOMNodeInserted', function() {
-		setTimeout(applyThemeStyles, 50);
+		applyTagColors();
 	});
 }); 

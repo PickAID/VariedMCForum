@@ -1,13 +1,10 @@
 {
-    "name": "nodebb-plugin-extended-markdown",
+    "name": "nodebb-plugin-extended-markdown-fixed",
     "version": "1.0.0",
     "description": "Extended Markdown plugin for NodeBB",
     "main": "library.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "dependencies": {
-        "shiki": "^1.0.0"
     },
     "peerDependencies": {
         "nodebb": ">=1.0.0"

@@ -1,0 +1,22 @@
+{
+	"id": "nodebb-plugin-tag-color-maker",
+	"url": "https://github.com/NodeBB/nodebb-plugin-tag-color-maker",
+	"library": "./library.js",
+	"scss": [
+		"public/scss/style.scss"
+	],
+	"hooks": [
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
+		{ "hook": "filter:middleware.render", "method": "addTagColors" },
+		{ "hook": "filter:middleware.buildHeader", "method": "addTagColorsToHead" }
+	],
+	"scripts": [
+		"public/js/client.js"
+	],
+	"modules": {
+		"../admin/plugins/tag-color-maker.js": "./public/lib/admin.js"
+	},
+	"templates": "templates",
+	"languages": "public/languages"
+}
