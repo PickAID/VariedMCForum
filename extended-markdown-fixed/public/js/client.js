@@ -51,28 +51,45 @@ $(document).ready(function () {
     function applyThemeStyles() {
         const theme = detectTheme();
         
-        const selectors = [
-            '.code-group-container',
-            '.text-header',
-            '.extended-markdown-tooltip',
-            '.admonition',
-            '.admonition .admonition-title',
-            '.extended-markdown-spoiler',
-            '.spoiler'
-        ];
+        document.querySelectorAll('.admonition').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
+        });
         
-        selectors.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-                element.classList.remove('theme-light', 'theme-dark');
-                element.classList.add(`theme-${theme}`);
-            });
+        document.querySelectorAll('.code-group-container').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
+            
+            const navTabs = element.querySelector('.nav-tabs');
+            if (navTabs) {
+                navTabs.classList.remove('theme-light', 'theme-dark');
+                navTabs.classList.add(`theme-${theme}`);
+            }
+            
+            const tabContent = element.querySelector('.tab-content');
+            if (tabContent) {
+                tabContent.classList.remove('theme-light', 'theme-dark');
+                tabContent.classList.add(`theme-${theme}`);
+            }
+        });
+        
+        document.querySelectorAll('.spoiler').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
+        });
+        
+        document.querySelectorAll('.text-header').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
+        });
+        
+        document.querySelectorAll('.extended-markdown-tooltip').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
         });
     }
 
     function initThemeWatcher() {
-        applyThemeStyles();
-        
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && 
@@ -106,71 +123,113 @@ $(document).ready(function () {
         const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
         
         if (formatting && controls) {
-            formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '#anchor(', ')');
-            });
-            
-            formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n===group\n```java\n// Java code here\n```\n```kotlin\n// Kotlin code here\n```\n===\n');
-            });
-            
-            formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '°', '°(tooltip text)');
-            });
-            
-            formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '%(#FF0000)[', ']');
-            });
-            
-            formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '<p align="left">', '</p>');
-            });
-            
-            formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '<p align="center">', '</p>');
-            });
-            
-            formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '<p align="right">', '</p>');
-            });
-            
-            formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '<p align="justify">', '</p>');
-            });
-            
-            formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '||', '||');
-            });
-            
-            formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
-            });
-            
-            formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: Content\n');
-            });
-            
-            formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
+            const formattingOptions = [
+                {
+                    name: "textheader",
+                    className: "fa fa-header",
+                    title: "[[extendedmarkdown:composer.formatting.textheader]]"
+                },
+                {
+                    name: "groupedcode",
+                    className: "fa fa-code",
+                    title: "[[extendedmarkdown:composer.formatting.groupedcode]]"
+                },
+                {
+                    name: "bubbleinfo",
+                    className: "fa fa-info-circle",
+                    title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]"
+                },
+                {
+                    name: "left",
+                    className: "fa fa-align-left",
+                    title: "[[extendedmarkdown:composer.formatting.left]]"
+                },
+                {
+                    name: "center",
+                    className: "fa fa-align-center",
+                    title: "[[extendedmarkdown:composer.formatting.center]]"
+                },
+                {
+                    name: "right",
+                    className: "fa fa-align-right",
+                    title: "[[extendedmarkdown:composer.formatting.right]]"
+                },
+                {
+                    name: "justify",
+                    className: "fa fa-align-justify",
+                    title: "[[extendedmarkdown:composer.formatting.justify]]"
+                },
+                {
+                    name: "spoiler",
+                    className: "fa fa-eye-slash",
+                    title: "[[extendedmarkdown:composer.formatting.spoiler]]"
+                },
+                {
+                    name: "noteinfo",
+                    className: "fa fa-info",
+                    title: "[[extendedmarkdown:composer.formatting.noteinfo]]"
+                },
+                {
+                    name: "notewarning",
+                    className: "fa fa-exclamation-triangle",
+                    title: "[[extendedmarkdown:composer.formatting.notewarning]]"
+                },
+                {
+                    name: "noteimportant",
+                    className: "fa fa-exclamation-circle",
+                    title: "[[extendedmarkdown:composer.formatting.noteimportant]]"
+                }
+            ];
+
+            formattingOptions.forEach(function(option) {
+                formatting.addButtonDispatch(option.name, function (textarea, selectionStart, selectionEnd) {
+                    switch(option.name) {
+                        case 'textheader':
+                            controls.insertIntoTextarea(textarea, '#anchor(' + controls.getSelectedText(textarea) + ')');
+                            break;
+                        case 'groupedcode':
+                            controls.insertIntoTextarea(textarea, '\n===group\n```language\n' + controls.getSelectedText(textarea) + '\n```\n```language2\ncode here\n```\n===\n');
+                            break;
+                        case 'bubbleinfo':
+                            controls.insertIntoTextarea(textarea, '°' + controls.getSelectedText(textarea) + '°(tooltip text)');
+                            break;
+                        case 'left':
+                            controls.insertIntoTextarea(textarea, '|-' + controls.getSelectedText(textarea));
+                            break;
+                        case 'center':
+                            controls.insertIntoTextarea(textarea, '|-' + controls.getSelectedText(textarea) + '-|');
+                            break;
+                        case 'right':
+                            controls.insertIntoTextarea(textarea, controls.getSelectedText(textarea) + '-|');
+                            break;
+                        case 'justify':
+                            controls.insertIntoTextarea(textarea, '|=' + controls.getSelectedText(textarea) + '=|');
+                            break;
+                        case 'spoiler':
+                            controls.insertIntoTextarea(textarea, '||' + controls.getSelectedText(textarea) + '||');
+                            break;
+                        case 'noteinfo':
+                            controls.insertIntoTextarea(textarea, '\n!!! info [Title]: ' + controls.getSelectedText(textarea) + '\n');
+                            break;
+                        case 'notewarning':
+                            controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: ' + controls.getSelectedText(textarea) + '\n');
+                            break;
+                        case 'noteimportant':
+                            controls.insertIntoTextarea(textarea, '\n!!! important [Title]: ' + controls.getSelectedText(textarea) + '\n');
+                            break;
+                    }
+                });
             });
         }
     };
 
     function pageReady() {
         setTimeout(function() {
-            if (window.hljs) {
-                document.querySelectorAll('pre code').forEach(function(codeBlock) {
-                    if (!codeBlock.classList.contains('hljs')) {
-                        window.hljs.highlightElement(codeBlock);
-                    }
+            document.querySelectorAll('.spoiler').forEach(function(spoiler) {
+                spoiler.addEventListener('click', function() {
+                    this.classList.toggle('spoiler-revealed');
                 });
-            }
-
-            if (window.hljs) {
-                document.querySelectorAll('.code-group-container code').forEach(function(codeBlock) {
-                    window.hljs.highlightElement(codeBlock);
-                });
-            }
+            });
 
             setTimeout(function() {
                 document.querySelectorAll('.code-group-container').forEach(function(container) {
