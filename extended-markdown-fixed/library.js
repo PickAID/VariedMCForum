@@ -117,7 +117,7 @@ function applyTabs(textContent, id) {
         let tabMatches = [];
         let tabMatch;
         
-        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?\s*([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?(?:\n|<br \/>|<p dir="auto">)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
         while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
             const tabContent = cleanContent(tabMatch[2]);
                 
@@ -148,7 +148,7 @@ function applySteps(textContent, id) {
         let stepMatches = [];
         let stepMatch;
         
-        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?\s*([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?(?:\n|<br \/>|<p dir="auto">)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
         while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
             const stepContent = cleanContent(stepMatch[1]);
             if (stepContent) {
