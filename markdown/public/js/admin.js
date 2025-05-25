@@ -1,34 +1,66 @@
 'use strict';
 
-import { save, load } from 'settings';
+define('admin/plugins/markdown', ['settings'], function (Settings) {
+	var Markdown = {};
 
-export function init() {
-	handleSettingsForm();
-}
+	Markdown.init = function () {
+		Settings.load('markdown', $('.markdown-settings'), function (err, settings) {
+			if (err) {
+				settings = {};
+			}
 
-function handleSettingsForm() {
-	load('markdown', $('.markdown-settings'));
+			var defaults = {
+				html: false,
+				langPrefix: 'language-',
+				highlight: true,
+				highlightTheme: 'github-light',
+				highlightDarkTheme: 'github-dark',
+				useShiki: true,
+				xhtmlOut: true,
+				breaks: true,
+				linkify: true,
+				typographer: false,
+				externalBlank: false,
+				nofollow: true,
+				allowRTLO: false,
+				checkboxes: true,
+				multimdTables: true,
+			};
 
-	$('#save').on('click', () => {
-		save('markdown', $('.markdown-settings'));
-	});
+			for (const setting of Object.keys(defaults)) {
+				if (!settings.hasOwnProperty(setting)) {
+					if (typeof defaults[setting] === 'boolean') {
+						$('#' + setting).prop('checked', defaults[setting]);
+					} else {
+						$('#' + setting).val(defaults[setting]);
+					}
+				}
+			}
+		});
 
-	$('#useShiki').on('change', function() {
-		const isEnabled = $(this).is(':checked');
-		$('#highlightTheme, #highlightDarkTheme').closest('.mb-3').toggle(isEnabled);
-		$('.alert-info').toggle(isEnabled);
-	});
+		$('#save').on('click', function () {
+			Settings.save('markdown', $('.markdown-settings'));
+		});
 
-	$('#highlight').on('change', function() {
-		const isEnabled = $(this).is(':checked');
-		$('#useShiki').closest('.mb-3').toggle(isEnabled);
-		if (!isEnabled) {
-			$('#useShiki').prop('checked', false).trigger('change');
-		}
-	});
+		$('#useShiki').on('change', function() {
+			const isEnabled = $(this).is(':checked');
+			$('#highlightTheme, #highlightDarkTheme').closest('.mb-3').toggle(isEnabled);
+			$('.alert-info').toggle(isEnabled);
+		});
 
-	$(document).ready(function() {
-		$('#highlight').trigger('change');
-		$('#useShiki').trigger('change');
-	});
-}
+		$('#highlight').on('change', function() {
+			const isEnabled = $(this).is(':checked');
+			$('#useShiki').closest('.mb-3').toggle(isEnabled);
+			if (!isEnabled) {
+				$('#useShiki').prop('checked', false).trigger('change');
+			}
+		});
+
+		$(document).ready(function() {
+			$('#highlight').trigger('change');
+			$('#useShiki').trigger('change');
+		});
+	};
+
+	return Markdown;
+});

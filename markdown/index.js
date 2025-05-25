@@ -142,8 +142,10 @@ const Markdown = {
 					};
 				} catch (error) {
 					winston.error(`[plugin/markdown] Failed to initialize Shiki: ${error.message}`);
-					_self.config.highlight = false;
+					_self.config.highlight = _self.highlight;
 				}
+			} else if (_self.highlight) {
+				_self.config.highlight = true;
 			} else {
 				_self.config.highlight = false;
 			}

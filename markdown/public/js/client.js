@@ -57,9 +57,7 @@
 			markdown.markExternalLinks();
 		});
 	});
-}());
 
-$(document).ready(function() {
 	function initShikiThemeSwitcher() {
 		let darkSkinList = $(`[component="skinSwitcher"] .dropdown-header`).eq(1).parent();
 		
@@ -127,7 +125,6 @@ $(document).ready(function() {
 	function enhanceShikiBlocks() {
 		$('.shiki').each(function() {
 			const $block = $(this);
-			const $pre = $block.find('pre').length ? $block.find('pre') : $block;
 			
 			if ($block.hasClass('line-numbers')) {
 				$block.find('.line').each(function(index) {
@@ -138,13 +135,11 @@ $(document).ready(function() {
 				});
 			}
 
-			$block.on('mouseenter', function() {
+			$block.off('mouseenter mouseleave').on('mouseenter', function() {
 				if ($block.hasClass('has-focused-lines')) {
 					$block.find('.line.blurred').removeClass('blurred-hover');
 				}
-			});
-
-			$block.on('mouseleave', function() {
+			}).on('mouseleave', function() {
 				if ($block.hasClass('has-focused-lines')) {
 					$block.find('.line').addClass('blurred-hover');
 				}
@@ -155,19 +150,18 @@ $(document).ready(function() {
 	function initShikiFeatures() {
 		enhanceShikiBlocks();
 		
-		$(document).on('DOMNodeInserted', function(e) {
-			if ($(e.target).find('.shiki').length || $(e.target).hasClass('shiki')) {
-				enhanceShikiBlocks();
-			}
-		});
-
 		if (typeof MutationObserver !== 'undefined') {
 			const observer = new MutationObserver(function(mutations) {
 				mutations.forEach(function(mutation) {
 					if (mutation.addedNodes.length) {
-						$(mutation.addedNodes).find('.shiki').each(function() {
-							enhanceShikiBlocks();
-						});
+						for (let node of mutation.addedNodes) {
+							if (node.nodeType === 1) {
+								const $node = $(node);
+								if ($node.hasClass('shiki') || $node.find('.shiki').length) {
+									enhanceShikiBlocks();
+								}
+							}
+						}
 					}
 				});
 			});
@@ -179,6 +173,8 @@ $(document).ready(function() {
 		}
 	}
 
-	initShikiThemeSwitcher();
-	initShikiFeatures();
-});
+	$(document).ready(function() {
+		initShikiThemeSwitcher();
+		initShikiFeatures();
+	});
+}());
