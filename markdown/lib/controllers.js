@@ -8,13 +8,25 @@ const file = require.main.require('./src/file');
 const Controllers = {};
 
 Controllers.renderAdmin = async function renderAdmin(req, res) {
-	let hljsLanguages = await file.walk(path.resolve(require.main.path, 'node_modules/highlight.js/lib/languages'));
-	hljsLanguages = hljsLanguages.map(language => path.basename(language, '.js')).filter(language => !language.endsWith('.js'));
-
+	const data = await plugins.hooks.fire('filter:admin.header.build', {});
+	const { themes } = require('../index');
+	
 	res.render('admin/plugins/markdown', {
-		themes: parent.themes,
-		hljsLanguages,
 		title: 'Markdown',
+		themes,
+		shikiThemes: [
+			'github-light',
+			'github-dark',
+			'vs-code-light',
+			'vs-code-dark',
+			'material-theme',
+			'material-theme-darker',
+			'dracula',
+			'nord',
+			'one-dark-pro',
+			'solarized-light',
+			'solarized-dark'
+		]
 	});
 };
 

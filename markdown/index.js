@@ -92,9 +92,10 @@ const Markdown = {
 		};
 		const notCheckboxes = ['langPrefix', 'highlightTheme', 'highlightDarkTheme'];
 
-		meta.settings.get('markdown', async (err, options) => {
+		meta.settings.get('markdown', (err, options) => {
 			if (err) {
 				winston.warn(`[plugin/markdown] Unable to retrieve settings, assuming defaults: ${err.message}`);
+				options = {};
 			}
 
 			Object.keys(defaults).forEach((field) => {
@@ -113,31 +114,36 @@ const Markdown = {
 			delete _self.config.useShiki;
 
 			if (_self.useShiki && _self.highlight) {
-				try {
-					await _self.initShikiParser();
-				} catch (error) {
-					winston.error(`[plugin/markdown] Failed to initialize Shiki, falling back to highlight.js: ${error.message}`);
-					_self.config.highlight = _self.highlight;
-					parser = new MarkdownIt(_self.config);
-					Markdown.updateParserRules(parser);
-				}
+				_self.initShikiParser()
+					.then(() => {
+						winston.info('[plugin/markdown] Shiki initialization completed');
+					})
+					.catch((error) => {
+						winston.error(`[plugin/markdown] Shiki failed, using highlight.js: ${error.message}`);
+						_self.initHighlightJsParser();
+					});
+			} else if (_self.highlight) {
+				_self.initHighlightJsParser();
 			} else {
-				_self.config.highlight = _self.highlight;
+				_self.config.highlight = false;
 				parser = new MarkdownIt(_self.config);
 				Markdown.updateParserRules(parser);
 			}
 		});
 	},
 
+	initHighlightJsParser: function() {
+		this.config.highlight = true;
+		parser = new MarkdownIt(this.config);
+		Markdown.updateParserRules(parser);
+		winston.info('[plugin/markdown] Highlight.js syntax highlighting enabled');
+	},
+
 	initShikiParser: async function() {
+		const _self = this;
+		
 		try {
 			const { createHighlighter } = require('shiki');
-			const { 
-				transformerNotationDiff,
-				transformerNotationFocus,
-				transformerNotationHighlight,
-				transformerNotationErrorLevel
-			} = require('@shikijs/transformers');
 			
 			const highlighter = await createHighlighter({
 				themes: [
@@ -152,16 +158,6 @@ const Markdown = {
 				]
 			});
 			
-			const transformers = [
-				transformerNotationDiff(),
-				transformerNotationFocus({
-					classActiveLine: 'has-focus',
-					classActivePre: 'has-focused-lines'
-				}),
-				transformerNotationHighlight(),
-				transformerNotationErrorLevel()
-			];
-			
 			parser = new MarkdownIt({
 				...this.config,
 				highlight: function (str, lang, attrs) {
@@ -169,43 +165,20 @@ const Markdown = {
 					lang = lang || defaultLang;
 					
 					try {
-						if (!highlighter.getLoadedLanguages().includes(lang)) {
+						const loadedLangs = highlighter.getLoadedLanguages();
+						if (!loadedLangs.includes(lang)) {
 							lang = defaultLang;
 						}
-						
-						const lineOptions = _self.parseLineOptions(attrs || '');
 						
 						return highlighter.codeToHtml(str, {
 							lang,
 							themes: {
 								light: _self.config.highlightTheme || 'github-light',
 								dark: _self.config.highlightDarkTheme || 'github-dark'
-							},
-							transformers: [
-								...transformers,
-								{
-									name: 'nodebb-line-options',
-									code(node) {
-										if (lineOptions.length > 0) {
-											lineOptions.forEach(option => {
-												const lineIndex = option.line - 1;
-												if (node.children[lineIndex]) {
-													const lineNode = node.children[lineIndex];
-													if (lineNode.type === 'element' && lineNode.tagName === 'span') {
-														lineNode.properties = lineNode.properties || {};
-														lineNode.properties.class = lineNode.properties.class || [];
-														lineNode.properties.class.push(...option.classes);
-													}
-												}
-											});
-										}
-									}
-								}
-							],
-							meta: { __raw: attrs }
+							}
 						});
 					} catch (err) {
-						winston.error(`[plugin/markdown] Shiki highlighting error: ${err.message}`);
+						winston.error(`[plugin/markdown] Shiki error: ${err.message}`);
 						return `<pre><code class="language-${lang}">${_self.escapeHtml(str)}</code></pre>`;
 					}
 				}
@@ -214,10 +187,8 @@ const Markdown = {
 			Markdown.updateParserRules(parser);
 			winston.info('[plugin/markdown] Shiki syntax highlighting enabled');
 		} catch (error) {
-			winston.error(`[plugin/markdown] Failed to initialize Shiki: ${error.message}`);
-			this.config.highlight = this.highlight;
-			parser = new MarkdownIt(this.config);
-			Markdown.updateParserRules(parser);
+			winston.error(`[plugin/markdown] Shiki initialization failed: ${error.message}`);
+			throw error;
 		}
 	},
 
