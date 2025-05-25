@@ -19,9 +19,9 @@ const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
-const tabsRegex = /<p dir="auto">:{3}tabs<\/p>(.*?)<p dir="auto">:{3}<\/p>/gs;
-const stepsRegex = /<p dir="auto">:{3}steps<\/p>(.*?)<p dir="auto">:{3}<\/p>/gs;
-const collapsibleRegex = /<p dir="auto">\+{3}\s+([^<]+)<\/p>(.*?)<p dir="auto">\+{3}<\/p>/gs;
+const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\s*(.*?)\s*<p dir="auto">:{3}<\/p>/gs;
+const stepsRegex = /<p dir="auto">:{3}steps<\/p>\s*(.*?)\s*<p dir="auto">:{3}<\/p>/gs;
+const collapsibleRegex = /<p dir="auto">\+{3}\s+([^<]+)<\/p>\s*(.*?)\s*<p dir="auto">\+{3}<\/p>/gs;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -271,18 +271,15 @@ function applyTabs(textContent, id) {
     return textContent.replace(tabsRegex, (match, content) => {
         const tabsId = `tabs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        // 简化解析：直接分割@tab标记
-        const parts = content.split(/<p dir="auto">@tab\s+/);
+        const tabPattern = /<p dir="auto">@tab\s+([^<]+)<\/p>\s*(.*?)(?=<p dir="auto">@tab|$)/gs;
         const tabs = [];
+        let tabMatch;
         
-        for (let i = 1; i < parts.length; i++) {
-            const part = parts[i];
-            const endIndex = part.indexOf('</p>');
-            if (endIndex > -1) {
-                const title = part.substring(0, endIndex);
-                const content = part.substring(endIndex + 4);
-                tabs.push({ title, content });
-            }
+        while ((tabMatch = tabPattern.exec(content)) !== null) {
+            tabs.push({
+                title: tabMatch[1].trim(),
+                content: tabMatch[2].trim()
+            });
         }
         
         if (tabs.length === 0) return match;
@@ -317,20 +314,17 @@ function applySteps(textContent, id) {
     return textContent.replace(stepsRegex, (match, content) => {
         const stepsId = `steps-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        // 简化解析：查找数字开头的段落
-        const stepMatches = content.match(/<p dir="auto">(\d+)\.\s+([^<]+)<\/p>(.*?)(?=<p dir="auto">\d+\.|$)/gs) || [];
+        const stepPattern = /<p dir="auto">(\d+)\.\s+([^<]+)<\/p>\s*(.*?)(?=<p dir="auto">\d+\.|$)/gs;
         const steps = [];
+        let stepMatch;
         
-        stepMatches.forEach(stepMatch => {
-            const match = stepMatch.match(/<p dir="auto">(\d+)\.\s+([^<]+)<\/p>(.*)/s);
-            if (match) {
-                steps.push({
-                    number: match[1],
-                    title: match[2],
-                    content: match[3] || ''
-                });
-            }
-        });
+        while ((stepMatch = stepPattern.exec(content)) !== null) {
+            steps.push({
+                number: stepMatch[1],
+                title: stepMatch[2].trim(),
+                content: stepMatch[3].trim()
+            });
+        }
         
         if (steps.length === 0) return match;
         
@@ -385,10 +379,10 @@ function applyCollapsible(textContent, id) {
         
         return `<div class="collapsible-wrapper">
             <button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false">
-                <i class="fa fa-chevron-right collapse-icon"></i> ${title}
+                <i class="fa fa-chevron-right collapse-icon"></i> ${title.trim()}
             </button>
             <div class="collapse" id="${collapseId}">
-                <div class="card card-body mt-2 collapsible-content">${content}</div>
+                <div class="card card-body mt-2 collapsible-content">${content.trim()}</div>
             </div>
         </div>`;
     });
