@@ -15,49 +15,8 @@ $(document).ready(function () {
         ExtendedMarkdown.prepareFormattingTools();
     });
 
-    function detectTheme() {
-        const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
-        if (skinSwitcher) {
-            const darkSkinList = $(skinSwitcher).find('.dropdown-header').eq(1).parent();
-            if (darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length) {
-                return 'dark';
-            }
-        }
-        
-        const body = document.body;
-        const html = document.documentElement;
-        
-        if (body.classList.contains('dark') || 
-            html.getAttribute('data-theme') === 'dark' ||
-            html.getAttribute('data-bs-theme') === 'dark') {
-            return 'dark';
-        }
-        
-        const linkElement = document.querySelector('link[href*="bootstrap"]');
-        if (linkElement) {
-            const href = linkElement.href.toLowerCase();
-            if (href.includes('darkly') || href.includes('cyborg') || 
-                href.includes('slate') || href.includes('superhero') ||
-                href.includes('vapor') || href.includes('solar')) {
-                return 'dark';
-            }
-        }
-        
-        const computedStyle = window.getComputedStyle(body);
-        const bgColor = computedStyle.backgroundColor;
-        if (bgColor) {
-            const rgb = bgColor.match(/\d+/g);
-            if (rgb && rgb.length >= 3) {
-                const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
-                return brightness < 128 ? 'dark' : 'light';
-            }
-        }
-        
-        return 'light';
-    }
-
-    function applyThemeStyles() {
-        const theme = detectTheme();
+    function applyThemeStyles(isDark) {
+        const theme = isDark ? 'dark' : 'light';
         
         document.querySelectorAll('.admonition, .alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             element.classList.remove('theme-light', 'theme-dark');
@@ -66,10 +25,13 @@ $(document).ready(function () {
     }
 
     function setupThemeWatcher() {
-        const skinSwitcher = document.querySelector(`[component="skinSwitcher"]`);
-        if (skinSwitcher) {
-            skinSwitcher.addEventListener('click', function() {
-                setTimeout(applyThemeStyles, 200);
+        const skinSwitcher = $(`[component="skinSwitcher"]`);
+        if (skinSwitcher.length) {
+            let darkSkinList = skinSwitcher.find('.dropdown-header').eq(1).parent();
+            applyThemeStyles(darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length);
+            
+            skinSwitcher.find('li').off('click.extended-markdown').on('click.extended-markdown', function (e) {
+                applyThemeStyles($(this).parent().find(".dropdown-header").text() == "Dark");
             });
         }
     }
@@ -119,11 +81,11 @@ $(document).ready(function () {
             if (isExpanded) {
                 $target.removeClass('show');
                 $button.attr('aria-expanded', 'false');
-                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+                $icon.css('transform', 'rotate(0deg)');
             } else {
                 $target.addClass('show');
                 $button.attr('aria-expanded', 'true');
-                $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+                $icon.css('transform', 'rotate(90deg)');
             }
         });
     }
@@ -158,94 +120,95 @@ $(document).ready(function () {
         });
     }
 
-    ExtendedMarkdown.prepareFormattingTools = async function () {
-        try {
-            const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
-            
+    ExtendedMarkdown.prepareFormattingTools = function () {
+        require(['composer/formatting', 'composer/controls'], function (formatting, controls) {
             if (formatting && controls) {
                 formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '#anchor(', ')');
+                    if (selectionStart === selectionEnd) {
+                        controls.insertIntoTextarea(textarea, '#my-text-header(Header text)');
+                        controls.updateTextareaSelection(textarea, selectionStart + 16, selectionStart + 27);
+                    } else {
+                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        controls.replaceSelectionInTextarea(textarea, '#text-header(' + selectedText + ')');
+                    }
                 });
-                
+
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n===group\n```java\nJava代码\n```\n```kotlin\nKotlin代码\n```\n===\n');
-                });
-                
-                formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '°', '°(提示文本)');
-                });
-                
-                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
-                });
-                
-                formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '|-', '');
-                });
-                
-                formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
-                });
-                
-                formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '', '-|');
-                });
-                
-                formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
-                });
-                
-                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! info [标题]: 内容\n');
-                });
-                
-                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! warning [标题]: 内容\n');
-                });
-                
-                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! important [标题]: 内容\n');
+                    controls.insertIntoTextarea(textarea, '===group\n```java\npublic class Test {\n    \n}\n```\n\n```kotlin\nclass Test {\n    \n}\n```\n===');
                 });
 
                 formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]\n');
-                });
-
-                formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, 'E=mc^', '^');
-                });
-
-                formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, 'H~', '~O');
-                });
-
-                formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n[spoiler=点击展开]\n隐藏内容\n[/spoiler]\n');
+                    controls.insertIntoTextarea(textarea, '[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]');
                 });
 
                 formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n[steps]\n[step]\n第一步内容\n[step]\n第二步内容\n[/steps]\n');
+                    controls.insertIntoTextarea(textarea, '[steps]\n[step]\n步骤1内容\n[step]\n步骤2内容\n[/steps]');
                 });
 
-                formatting.addButtonDispatch('ruby', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '@中国(', ')');
+                formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                    if (selectionStart === selectionEnd) {
+                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]\n隐藏内容\n[/spoiler]');
+                    } else {
+                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        controls.replaceSelectionInTextarea(textarea, '[spoiler=点击展开]\n' + selectedText + '\n[/spoiler]');
+                    }
+                });
+
+                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '!!! info [信息]: 这是一条信息提示。');
+                });
+
+                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '!!! warning [警告]: 这是一条警告提示。');
+                });
+
+                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '!!! important [重要]: 这是一条重要提示。');
+                });
+
+                formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
+                    if (selectionStart === selectionEnd) {
+                        controls.insertIntoTextarea(textarea, '°文本°(提示信息)');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 3);
+                    } else {
+                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        controls.replaceSelectionInTextarea(textarea, '°' + selectedText + '°(提示信息)');
+                    }
+                });
+
+                formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                    if (selectionStart === selectionEnd) {
+                        controls.insertIntoTextarea(textarea, 'x^2^');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 3);
+                    } else {
+                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        controls.replaceSelectionInTextarea(textarea, '^' + selectedText + '^');
+                    }
+                });
+
+                formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                    if (selectionStart === selectionEnd) {
+                        controls.insertIntoTextarea(textarea, 'H~2~O');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 3);
+                    } else {
+                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        controls.replaceSelectionInTextarea(textarea, '~' + selectedText + '~');
+                    }
                 });
             }
-        } catch (error) {
-            console.warn('Extended Markdown: Could not load formatting tools', error);
-        }
+        });
     };
 
     function pageReady() {
-        if ($('[data-bs-toggle="tooltip"]').length) {
-            $('[data-bs-toggle="tooltip"]').tooltip();
-        }
-        
-        applyThemeStyles();
         setupThemeWatcher();
         initializeTabComponents();
         initializeCollapse();
         initExtendedMarkdownComponents();
+        
+        $('[data-bs-toggle="tooltip"]').tooltip({
+            boundary: 'window',
+            container: 'body'
+        });
     }
 
     const observer = new MutationObserver(function(mutations) {
@@ -277,7 +240,7 @@ $(document).ready(function () {
         
         if (shouldUpdate) {
             setTimeout(() => {
-                applyThemeStyles();
+                setupThemeWatcher();
                 initializeTabComponents();
                 initializeCollapse();
                 initExtendedMarkdownComponents();

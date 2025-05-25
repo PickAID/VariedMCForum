@@ -36,11 +36,13 @@ const noteIcons = {
 function cleanContent(content) {
     return content
         .replace(/^<p dir="auto">\s*/, '')
-        .replace(/\s*<\/p>$/, '')
+        .replace(/\s*<\/p>$/g, '')
         .replace(/^<p>\s*/, '')
-        .replace(/\s*<\/p>$/, '')
-        .replace(/^\s+/, '')
-        .replace(/\s+$/, '')
+        .replace(/\s*<\/p>$/g, '')
+        .replace(/^<br \/>\s*/g, '')
+        .replace(/\s*<br \/>$/g, '')
+        .replace(/^\s+/g, '')
+        .replace(/\s+$/g, '')
         .trim();
 }
 
@@ -80,38 +82,33 @@ const ExtendedMarkdown = {
 
     async parseRaw(data) {
         if (data) {
-            data = applyTabs(data, "preview");
-            data = applySteps(data, "preview");
-            data = applyCollapsible(data, "preview");
+            data = applyTabs(data, "raw");
+            data = applySteps(data, "raw");
+            data = applyCollapsible(data, "raw");
             data = await applyExtendedMarkdown(data);
-            data = applyGroupCode(data, "preview");
+            data = applyGroupCode(data, "raw");
         }
         return data;
     },
 
-    async registerFormatting(payload) {
+    async registerFormatting(data) {
         const formatting = [
-            { name: "color", className: "fa fa-eyedropper", title: "[[extendedmarkdown:composer.formatting.color]]" },
-            { name: "left", className: "fa fa-align-left", title: "[[extendedmarkdown:composer.formatting.left]]" },
-            { name: "center", className: "fa fa-align-center", title: "[[extendedmarkdown:composer.formatting.center]]" },
-            { name: "right", className: "fa fa-align-right", title: "[[extendedmarkdown:composer.formatting.right]]" },
-            { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
-            { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
-            { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
-            { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
-            { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
-            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
-            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" },
-            { name: "superscript", className: "fa fa-superscript", title: "[[extendedmarkdown:composer.formatting.superscript]]" },
-            { name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]" },
-            { name: "tabs", className: "fa fa-folder-open", title: "插入标签页" },
-            { name: "steps", className: "fa fa-tasks", title: "插入步骤" },
-            { name: "collapsible", className: "fa fa-compress", title: "插入折叠框" },
-            { name: "ruby", className: "fa fa-language", title: "插入音注标记" }
+            {name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]"},
+            {name: "groupedcode", className: "fa fa-code", title: "[[extendedmarkdown:composer.formatting.groupedcode]]"},
+            {name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]"},
+            {name: "spoiler", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]"},
+            {name: "noteinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.noteinfo]]"},
+            {name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]"},
+            {name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]"},
+            {name: "tabs", className: "fa fa-folder-open", title: "[[extendedmarkdown:composer.formatting.tabs]]"},
+            {name: "steps", className: "fa fa-tasks", title: "[[extendedmarkdown:composer.formatting.steps]]"},
+            {name: "superscript", className: "fa fa-superscript", title: "[[extendedmarkdown:composer.formatting.superscript]]"},
+            {name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]"},
+            {name: "collapsible", className: "fa fa-compress", title: "[[extendedmarkdown:composer.formatting.collapsible]]"},
         ];
-
-        payload.options = payload.options.concat(formatting);
-        return payload;
+        
+        data.formatting = data.formatting.concat(formatting);
+        return data;
     },
 
     async sanitizerConfig(config) {
@@ -167,7 +164,10 @@ function createTabComponent(type, items, uniqueId) {
     navTabs += '</ul>';
     tabContent += '</div>';
     
-    return `<div class="${containerClass}">${navTabs}${tabContent}</div>`;
+    return `<div class="${containerClass}">
+        ${navTabs}
+        ${tabContent}
+    </div>`;
 }
 
 function createStepComponent(items, uniqueId) {
@@ -206,19 +206,20 @@ function createStepComponent(items, uniqueId) {
     navTabs += '</ul>';
     tabContent += '</div>';
     
-    const navigation = `<div class="steps-navigation">
-        <button class="btn btn-secondary step-prev" disabled>
-            <i class="fa fa-chevron-left"></i> 上一步
-        </button>
-        <span class="step-indicator">
-            <span class="current-step">1</span> / <span class="total-steps">${items.length}</span>
-        </span>
-        <button class="btn btn-primary step-next">
-            下一步 <i class="fa fa-chevron-right"></i>
-        </button>
-    </div>`;
+    const stepsNavigation = `
+        <div class="steps-navigation">
+            <button class="step-prev">‹ 上一步</button>
+            <div class="step-indicator">
+                <span class="current-step">1</span> / <span class="total-steps">${items.length}</span>
+            </div>
+            <button class="step-next">下一步 ›</button>
+        </div>`;
     
-    return `<div class="steps-container">${navTabs}${tabContent}${navigation}</div>`;
+    return `<div class="steps-container">
+        ${stepsNavigation}
+        ${navTabs}
+        ${tabContent}
+    </div>`;
 }
 
 function applyTabs(textContent, id) {
@@ -226,25 +227,18 @@ function applyTabs(textContent, id) {
     
     let count = 0;
     return textContent.replace(tabsRegex, (match, content) => {
-        const items = [];
-        const cleanContent = content.trim();
-        
-        tabRegex.lastIndex = 0;
+        let items = [];
         let tabMatch;
-        while ((tabMatch = tabRegex.exec(cleanContent)) !== null) {
-            const tabTitle = tabMatch[1].trim();
-            const tabContent = tabMatch[2].trim();
-            
+        
+        while ((tabMatch = tabRegex.exec(content)) !== null) {
             items.push({
-                label: tabTitle,
-                content: tabContent
+                label: tabMatch[1].trim(),
+                content: tabMatch[2].trim()
             });
         }
         
-        if (items.length === 0) return match;
-        
         count++;
-        return createTabComponent('extended-tabs', items, `tabs-${count}-${id}`);
+        return createTabComponent('extended-tabs', items, `tab-${count}-${id}`);
     });
 }
 
@@ -253,20 +247,14 @@ function applySteps(textContent, id) {
     
     let count = 0;
     return textContent.replace(stepsRegex, (match, content) => {
-        const items = [];
-        const cleanContent = content.trim();
-        
-        stepRegex.lastIndex = 0;
+        let items = [];
         let stepMatch;
-        while ((stepMatch = stepRegex.exec(cleanContent)) !== null) {
-            const stepContent = stepMatch[1].trim();
-            
+        
+        while ((stepMatch = stepRegex.exec(content)) !== null) {
             items.push({
-                content: stepContent
+                content: stepMatch[1].trim()
             });
         }
-        
-        if (items.length === 0) return match;
         
         count++;
         return createStepComponent(items, `steps-${count}-${id}`);
@@ -297,75 +285,44 @@ function applyCollapsible(textContent, id) {
 }
 
 async function applyExtendedMarkdown(textContent) {
-    if (textContent.match(rubyRegex)) {
-        textContent = textContent.replace(rubyRegex, '<ruby>$1<rt>$2</rt></ruby>');
-    }
-    
-    if (textContent.match(textHeaderRegex)) {
-        textContent = applyTextHeaders(textContent);
-    }
-    
-    if (textContent.match(tooltipRegex)) {
-        textContent = applyTooltips(textContent);
-    }
-    
-    if (textContent.match(colorRegex)) {
-        textContent = applyColors(textContent);
-    }
-    
-    if (textContent.match(noteRegex)) {
-        textContent = applyNotes(textContent);
-    }
-    
-    if (textContent.match(paragraphAndHeadingRegex)) {
-        textContent = applyAnchors(textContent);
-    }
-    
-    if (textContent.match(superscriptRegex)) {
-        textContent = applySuperscript(textContent);
-    }
-    
-    if (textContent.match(subscriptRegex)) {
-        textContent = applySubscript(textContent);
-    }
-    
+    textContent = applyTextHeader(textContent);
+    textContent = applyTooltip(textContent);
+    textContent = applyColors(textContent);
+    textContent = applySuperscriptAndSubscript(textContent);
+    textContent = applyRuby(textContent);
+    textContent = applyNotes(textContent);
+    textContent = applyAnchors(textContent);
     return textContent;
 }
 
-function applyTextHeaders(textContent) {
-    return textContent.replace(textHeaderRegex, function (match, id, text) {
-        return `<span id="${id}">${text}</span>`;
-    });
+function applyTextHeader(textContent) {
+    return textContent.replace(textHeaderRegex, '<div class="text-header" id="$1">$2</div>');
 }
 
-function applyTooltips(textContent) {
-    return textContent.replace(tooltipRegex, function (match, code, text, tooltipText) {
-        if (typeof (code) !== "undefined") {
-            return code;
+function applyTooltip(textContent) {
+    return textContent.replace(tooltipRegex, function (match, codeMatch, text, tooltipText) {
+        if (codeMatch) {
+            return codeMatch;
         }
-        
-        if (text.trim() === "") {
-            return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
-        } else {
-            return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
-        }
+        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
     });
 }
 
 function applyColors(textContent) {
-    return textContent.replace(colorRegex, function (match, code, color, text) {
-        if (typeof (code) !== "undefined") {
-            return code;
+    return textContent.replace(colorRegex, function (match, codeMatch, color, text) {
+        if (codeMatch) {
+            return codeMatch;
         }
         return `<span style="color: ${color};">${text}</span>`;
     });
 }
 
-function applySuperscript(textContent) {
-    return textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
+function applyRuby(textContent) {
+    return textContent.replace(rubyRegex, '<ruby>$1<rt>$2</rt></ruby>');
 }
 
-function applySubscript(textContent) {
+function applySuperscriptAndSubscript(textContent) {
+    textContent = textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
     return textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
 }
 
