@@ -18,7 +18,7 @@ $(document).ready(function () {
     function applyExtendedMarkdownTheme(isDark) {
         const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .bubble-info').forEach(element => {
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .bubble-info').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
@@ -75,54 +75,52 @@ $(document).ready(function () {
     }
 
     function initializeCollapse() {
-        $('.extended-markdown-collapsible:not([data-collapse-initialized])').each(function() {
-            const $button = $(this);
-            $button.attr('data-collapse-initialized', 'true');
+        $('.collapsible-wrapper').each(function() {
+            const $wrapper = $(this);
+            const $button = $wrapper.find('.extended-markdown-collapsible').first();
             
-            const targetId = $button.attr('data-bs-target');
-            const $target = $(targetId);
-            
-            if ($target.length) {
-                const $icon = $button.find('.collapse-icon');
+            if ($button.length && !$button.data('collapse-initialized')) {
+                $button.data('collapse-initialized', true);
                 
-                $button.off('click.extended-collapse').on('click.extended-collapse', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                const targetId = $button.attr('data-bs-target');
+                const $target = $(targetId);
+                
+                if ($target.length) {
+                    const $icon = $button.find('.collapse-icon');
                     
-                    const isExpanded = $button.attr('aria-expanded') === 'true';
+                    $button.on('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if ($target.hasClass('show')) {
+                            $target.removeClass('show');
+                            $button.attr('aria-expanded', 'false');
+                            $icon.css('transform', 'rotate(0deg)');
+                        } else {
+                            $target.addClass('show');
+                            $button.attr('aria-expanded', 'true');
+                            $icon.css('transform', 'rotate(90deg)');
+                        }
+                    });
                     
-                    if (isExpanded) {
-                        $target.removeClass('show');
-                        $button.attr('aria-expanded', 'false');
-                        $icon.css('transform', 'rotate(0deg)');
-                    } else {
+                    if ($button.attr('aria-expanded') === 'true') {
                         $target.addClass('show');
-                        $button.attr('aria-expanded', 'true');
                         $icon.css('transform', 'rotate(90deg)');
+                    } else {
+                        $target.removeClass('show');
+                        $icon.css('transform', 'rotate(0deg)');
                     }
-                });
-                
-                if ($button.attr('aria-expanded') === 'true') {
-                    $target.addClass('show');
-                    $icon.css('transform', 'rotate(90deg)');
-                } else {
-                    $target.removeClass('show');
-                    $icon.css('transform', 'rotate(0deg)');
                 }
             }
         });
     }
 
     function initializeTooltips() {
-        $('.extended-markdown-tooltip').each(function() {
-            const $tooltip = $(this);
-            if (!$tooltip.data('tooltip-initialized')) {
-                $tooltip.data('tooltip-initialized', true);
-                
-                const tooltipText = $tooltip.data('tooltip');
-                if (tooltipText) {
-                    $tooltip.attr('title', tooltipText);
-                }
+        $('.extended-markdown-tooltip').off('click.tooltip').on('click.tooltip', function(e) {
+            e.preventDefault();
+            const tooltip = $(this).attr('data-tooltip');
+            if (tooltip) {
+                alert(tooltip);
             }
         });
     }
@@ -226,7 +224,6 @@ $(document).ready(function () {
             clearTimeout(initTimeout);
             initTimeout = setTimeout(() => {
                 pageReady();
-                setupExtendedMarkdownTheme();
             }, 100);
         }
     });
@@ -240,7 +237,6 @@ $(document).ready(function () {
         clearTimeout(initTimeout);
         initTimeout = setTimeout(() => {
             pageReady();
-            setupExtendedMarkdownTheme();
         }, 150);
     });
     

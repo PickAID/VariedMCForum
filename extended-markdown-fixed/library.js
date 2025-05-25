@@ -19,7 +19,7 @@ const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
 const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
 
-const tabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
+const extendedTabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
 
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
@@ -112,7 +112,7 @@ function applyColors(textContent) {
 }
 
 function applyTabs(textContent, id) {
-    return textContent.replace(tabsRegex, function (match, tabsContent) {
+    return textContent.replace(extendedTabsRegex, function (match, tabsContent) {
         const cleanTabsContent = cleanContent(tabsContent);
         let tabMatches = [];
         let tabMatch;
@@ -231,7 +231,7 @@ function applySuperscriptAndSubscript(textContent) {
 function applyNotes(textContent) {
     return textContent.replace(noteRegex, function (match, type, title, content) {
         const icon = noteIcons[type] || 'fa-info-circle';
-        return `<div class="alert alert-${type}" role="alert">
+        return `<div class="markdown-alert markdown-alert-${type}" role="alert">
             <h6><i class="fa ${icon}"></i> ${title || capitalizeFirstLetter(type)}</h6>
             <div>${content}</div>
         </div>`;
@@ -291,8 +291,8 @@ function applyGroupCode(textContent, id) {
     return textContent;
 }
 
-function capitalizeFirstLetter(name) {
-    return name.charAt(0).toUpperCase() + name.slice(1);
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 function generateAnchorFromHeading(heading) {
