@@ -24,7 +24,7 @@ const tabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="aut
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
 
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
-const stepRegex = /(?:<p dir="auto">)?\[step=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step=|(?:<p dir="auto">)?\[\/steps\]|$)/gi;
+const stepRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|(?:<p dir="auto">)?\[\/steps\]|$)/gi;
 
 const collapsibleRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
@@ -113,14 +113,12 @@ const ExtendedMarkdown = {
     }
 };
 
-function createTabComponent(componentType, items, id, extraContent = '') {
-    if (!items || items.length === 0) return '';
+function createTabComponent(componentType, items, componentId, extraContent = '') {
+    const containerClass = componentType === 'steps' ? 'steps-container' : 
+                          componentType === 'code-group' ? 'code-group-container' : 
+                          'extended-tabs-container';
     
-    const componentId = `${componentType}-${id}`;
-    const containerClass = componentType === 'codegroup' ? 'code-group-container' : 
-                          componentType === 'steps' ? 'steps-container' : 'extended-tabs-container';
-    
-    let html = `<div class="${containerClass}">
+    let html = `<div class="${containerClass}" data-component-type="${componentType}">
         <ul class="nav nav-tabs" role="tablist" id="${componentId}-tabs">`;
     
     items.forEach((item, index) => {
@@ -152,7 +150,7 @@ function createTabComponent(componentType, items, id, extraContent = '') {
                      role="tabpanel" 
                      aria-labelledby="${tabId}-tab" 
                      tabindex="0">
-            ${item.content}
+            <div class="tab-content-wrapper">${item.content}</div>
         </div>`;
     });
     
@@ -280,7 +278,7 @@ function applyTabs(textContent, id) {
             
             tabs.push({
                 label: tabTitle,
-                content: `<div class="tab-content-body">${tabContent}</div>`
+                content: tabContent
             });
         }
         
@@ -301,19 +299,15 @@ function applySteps(textContent, id) {
         
         stepRegex.lastIndex = 0;
         let stepMatch;
+        let stepNumber = 1;
         while ((stepMatch = stepRegex.exec(cleanContent)) !== null) {
-            const stepNumber = stepMatch[1].trim();
-            const stepContent = stepMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+            const stepContent = stepMatch[1].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
             
             steps.push({
-                label: `<span class="step-number">${stepNumber}</span> 步骤 ${stepNumber}`,
-                content: `<div class="step-content-wrapper">
-                    <div class="step-header">
-                        <h4><span class="step-badge">${stepNumber}</span> 步骤 ${stepNumber}</h4>
-                    </div>
-                    <div class="step-body">${stepContent}</div>
-                </div>`
+                label: `<span class="step-number">${stepNumber}</span>步骤 ${stepNumber}`,
+                content: stepContent
             });
+            stepNumber++;
         }
         
         if (steps.length === 0) return match;

@@ -17,7 +17,7 @@ $(document).ready(function() {
                 name: 'steps', 
                 className: 'fa fa-tasks',
                 title: '插入步骤',
-                text: '[steps]\n[step=1]\n第一步描述\n[step=2]\n第二步描述\n[/steps]'
+                text: '[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]'
             },
             {
                 name: 'collapsible',
@@ -66,7 +66,7 @@ $(document).ready(function() {
         $(document).on('click.extended-markdown', '[data-format="steps"]', function(e) {
             e.preventDefault();
             const textarea = $('.composer textarea');
-            const text = '\n[steps]\n[step=1]\n第一步描述\n[step=2]\n第二步描述\n[/steps]\n';
+            const text = '\n[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]\n';
             insertText(textarea, text);
         });
         
