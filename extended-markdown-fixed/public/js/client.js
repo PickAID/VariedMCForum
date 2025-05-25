@@ -395,4 +395,58 @@ $(document).ready(function () {
         subtree: true 
     });
     observer.observe(document.documentElement, { attributes: true });
+
+    // 步骤导航功能
+    $(document).on('click', '.step-prev, .step-next', function() {
+        const isNext = $(this).hasClass('step-next');
+        const container = $(this).closest('.steps-container');
+        const tabs = container.find('.nav-link');
+        const currentIndex = tabs.filter('.active').index();
+        const newIndex = isNext ? currentIndex + 1 : currentIndex - 1;
+        
+        if (newIndex >= 0 && newIndex < tabs.length) {
+            tabs.eq(newIndex).tab('show');
+            updateStepNavigation(container, newIndex);
+        }
+    });
+    
+    // 当步骤标签页切换时更新导航按钮
+    $(document).on('shown.bs.tab', '.steps-nav .nav-link', function() {
+        const container = $(this).closest('.steps-container');
+        const index = $(this).index();
+        updateStepNavigation(container, index);
+    });
+    
+    // 折叠框图标旋转
+    $(document).on('click', '.extended-markdown-collapsible', function() {
+        const icon = $(this).find('.collapse-icon');
+        const isExpanded = $(this).attr('aria-expanded') === 'true';
+        
+        if (isExpanded) {
+            icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+        } else {
+            icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+        }
+    });
+    
+    function updateStepNavigation(container, currentIndex) {
+        const prevBtn = container.find('.step-prev');
+        const nextBtn = container.find('.step-next');
+        const indicator = container.find('.current-step');
+        const totalSteps = container.find('.nav-link').length;
+        
+        // 更新按钮状态
+        prevBtn.prop('disabled', currentIndex === 0);
+        nextBtn.prop('disabled', currentIndex === totalSteps - 1);
+        
+        // 更新指示器
+        indicator.text(currentIndex + 1);
+        
+        // 更新按钮文本
+        if (currentIndex === totalSteps - 1) {
+            nextBtn.html('<i class="fa fa-check"></i> 完成');
+        } else {
+            nextBtn.html('下一步 <i class="fa fa-chevron-right"></i>');
+        }
+    }
 });
