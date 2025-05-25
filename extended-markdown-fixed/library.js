@@ -113,6 +113,7 @@ const ExtendedMarkdown = {
         config.allowedClasses['*'].push('current-step', 'total-steps', 'step-number');
         config.allowedClasses['*'].push('collapsible-wrapper', 'extended-markdown-collapsible', 'collapse-icon', 'collapsible-content');
         config.allowedClasses['*'].push('btn', 'btn-outline-primary', 'btn-outline-secondary', 'collapse', 'card', 'card-body', 'mt-2');
+        config.allowedClasses['*'].push('alert', 'alert-info', 'alert-warning', 'alert-important');
         return config;
     }
 };
@@ -142,11 +143,13 @@ function createTabComponent(type, items, uniqueId) {
             </button>
         </li>`;
         
+        const cleanContent = item.content.replace(/^<p dir="auto">|<\/p>$/g, '').trim();
+        
         tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
                            id="${tabId}" 
                            role="tabpanel" 
                            aria-labelledby="${tabId}-tab">
-            ${item.content}
+            ${cleanContent}
         </div>`;
     });
     
@@ -175,15 +178,17 @@ function createStepComponent(items, uniqueId) {
                     role="tab" 
                     aria-controls="${tabId}" 
                     aria-selected="${isActive}">
-                ${item.label}
+                步骤 ${index + 1}
             </button>
         </li>`;
+        
+        const cleanContent = item.content.replace(/^<p dir="auto">|<\/p>$/g, '').trim();
         
         tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
                            id="${tabId}" 
                            role="tabpanel" 
                            aria-labelledby="${tabId}-tab">
-            ${item.content}
+            ${cleanContent}
         </div>`;
     });
     
@@ -217,7 +222,7 @@ function applyTabs(textContent, id) {
         let tabMatch;
         while ((tabMatch = tabRegex.exec(cleanContent)) !== null) {
             const tabTitle = tabMatch[1].trim();
-            const tabContent = tabMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+            const tabContent = tabMatch[2].trim();
             
             items.push({
                 label: tabTitle,
@@ -242,15 +247,12 @@ function applySteps(textContent, id) {
         
         stepRegex.lastIndex = 0;
         let stepMatch;
-        let stepNumber = 1;
         while ((stepMatch = stepRegex.exec(cleanContent)) !== null) {
-            const stepContent = stepMatch[1].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+            const stepContent = stepMatch[1].trim();
             
             items.push({
-                label: `<span class="step-number">${stepNumber}</span>步骤 ${stepNumber}`,
                 content: stepContent
             });
-            stepNumber++;
         }
         
         if (items.length === 0) return match;
@@ -270,7 +272,7 @@ function applyCollapsible(textContent, id) {
                 <i class="fa fa-chevron-right collapse-icon"></i> ${title.trim()}
             </button>
             <div class="collapse" id="${spoilerId}">
-                <div class="card card-body mt-2 collapsible-content">${cleanContent}</div>
+                <div class="collapsible-content">${cleanContent}</div>
             </div>
         </div>`;
     });
@@ -352,7 +354,7 @@ function applySubscript(textContent) {
 function applyNotes(textContent) {
     return textContent.replace(noteRegex, function (match, type, title, content) {
         const icon = noteIcons[type] || 'fa-info-circle';
-        return `<div class="alert alert-${type} extended-markdown-note" role="alert">
+        return `<div class="alert alert-${type}" role="alert">
             <h6><i class="fa ${icon}"></i> ${title || capitalizeFirstLetter(type)}</h6>
             <div>${content}</div>
         </div>`;
@@ -407,77 +409,6 @@ function applyGroupCode(textContent, id) {
             
             count++;
             return createTabComponent('code-group', items, `cg-${count}-${id}`);
-        });
-    }
-    return textContent;
-}
-
-function parseTabsContent(textContent, id) {
-    if (textContent.match(tabsRegex)) {
-        let count = 0;
-        textContent = textContent.replace(tabsRegex, (match, content) => {
-            const items = [];
-            let tabMatch;
-            
-            tabRegex.lastIndex = 0;
-            while ((tabMatch = tabRegex.exec(content)) !== null) {
-                const label = tabMatch[1].trim();
-                const tabContent = tabMatch[2].trim();
-                
-                items.push({
-                    label: label,
-                    content: tabContent
-                });
-            }
-            
-            count++;
-            return createTabComponent('extended-tabs', items, `tabs-${count}-${id}`);
-        });
-    }
-    return textContent;
-}
-
-function parseStepsContent(textContent, id) {
-    if (textContent.match(stepsRegex)) {
-        let count = 0;
-        textContent = textContent.replace(stepsRegex, (match, content) => {
-            const items = [];
-            let stepMatch;
-            
-            stepRegex.lastIndex = 0;
-            while ((stepMatch = stepRegex.exec(content)) !== null) {
-                const stepContent = stepMatch[1].trim();
-                items.push({
-                    label: `步骤 ${items.length + 1}`,
-                    content: stepContent
-                });
-            }
-            
-            count++;
-            return createStepComponent(items, `steps-${count}-${id}`);
-        });
-    }
-    return textContent;
-}
-
-function parseSpoilerContent(textContent, id) {
-    if (textContent.match(spoilerRegex)) {
-        let count = 0;
-        textContent = textContent.replace(spoilerRegex, (match, title, content) => {
-            count++;
-            const spoilerId = `spoiler-${count}-${id}`;
-            
-            return `<div class="collapsible-wrapper">
-                <button class="extended-markdown-collapsible" type="button" 
-                        data-bs-toggle="collapse" data-bs-target="#${spoilerId}" 
-                        aria-expanded="false" aria-controls="${spoilerId}">
-                    <i class="fa fa-chevron-right collapse-icon"></i>
-                    ${title}
-                </button>
-                <div class="collapse" id="${spoilerId}">
-                    <div class="collapsible-content">${content.trim()}</div>
-                </div>
-            </div>`;
         });
     }
     return textContent;

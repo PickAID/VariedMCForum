@@ -59,7 +59,7 @@ $(document).ready(function () {
     function applyThemeStyles() {
         const theme = detectTheme();
         
-        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+        document.querySelectorAll('.admonition, .alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             element.classList.remove('theme-light', 'theme-dark');
             element.classList.add(`theme-${theme}`);
         });
@@ -167,7 +167,9 @@ $(document).ready(function () {
 
     function initializeCollapse() {
         document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
                 const targetId = this.getAttribute('data-bs-target');
                 const target = document.querySelector(targetId);
                 const icon = this.querySelector('.collapse-icon');
@@ -412,13 +414,21 @@ function initStepsNavigation() {
 }
 
 function initCollapsibleButtons() {
-    $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function() {
+    $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function(e) {
+        e.preventDefault();
+        
+        const targetId = $(this).data('bs-target');
+        const target = $(targetId);
         const icon = $(this).find('.collapse-icon');
         const isExpanded = $(this).attr('aria-expanded') === 'true';
         
         if (isExpanded) {
+            target.removeClass('show');
+            $(this).attr('aria-expanded', 'false');
             icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
         } else {
+            target.addClass('show');
+            $(this).attr('aria-expanded', 'true');
             icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
         }
     });

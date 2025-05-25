@@ -48,10 +48,9 @@
     }
 }
 
-.admonition {
+.admonition, .alert {
     border-radius: 0.375rem;
     margin-bottom: 1rem;
-    background: #c8e7fa;
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 2px #dbdbdb;
     overflow: hidden;
@@ -70,47 +69,51 @@
         margin-right: 1rem;
     }
     
-    .admonition-title {
+    .admonition-title, h6 {
         font-weight: 700;
         padding: 0.75rem 1rem;
         font-size: 1rem;
-        color: #333;
         margin: 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        background: #fbf9f9;
         
         i.fa {
             margin-right: 8px;
         }
     }
     
-    &.important {
-        background: #c0f2e8;
-        border-color: rgba(125, 232, 210, 0.3);
+    &.alert-info, &.info {
+        background: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
         
-        .admonition-title {
-            background: #7de8d2;
-            color: #2d5a3d;
+        .admonition-title, h6 {
+            background: #5bc0de;
+            color: #fff;
+            border-bottom-color: #46b8da;
         }
     }
     
-    &.info {
-        background: #c0dcf2;
-        border-color: rgba(125, 186, 232, 0.3);
+    &.alert-warning, &.warning {
+        background: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
         
-        .admonition-title {
-            background: #7dbae8;
-            color: #1e3a5f;
+        .admonition-title, h6 {
+            background: #ffc107;
+            color: #212529;
+            border-bottom-color: #ffca2c;
         }
     }
     
-    &.warning {
-        background: #f2d9c0;
-        border-color: rgba(232, 179, 125, 0.3);
+    &.alert-important, &.important {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
         
-        .admonition-title {
-            background: #e8b37d;
-            color: #5f3e1e;
+        .admonition-title, h6 {
+            background: #dc3545;
+            color: #fff;
+            border-bottom-color: #bd2130;
         }
     }
     
@@ -118,43 +121,46 @@
         background: rgba(33, 37, 41, 0.9);
         border-color: rgba(255, 255, 255, 0.15);
         
-        .admonition-title {
+        .admonition-title, h6 {
             background: rgba(33, 37, 41, 0.95);
             color: #f8f9fa;
             border-bottom-color: rgba(255, 255, 255, 0.15);
         }
         
-        p {
+        p, div {
             color: #e9ecef;
         }
         
-        &.info {
+        &.alert-info, &.info {
             background: rgba(13, 110, 253, 0.15);
             border-color: rgba(13, 110, 253, 0.4);
+            color: #9ec5fe;
             
-            .admonition-title {
-                background: rgba(13, 110, 253, 0.3);
-                color: #9ec5fe;
+            .admonition-title, h6 {
+                background: rgba(13, 110, 253, 0.8);
+                color: #fff;
             }
         }
         
-        &.warning {
-            background: rgba(255, 152, 0, 0.15);
-            border-color: rgba(255, 152, 0, 0.4);
+        &.alert-warning, &.warning {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: rgba(255, 193, 7, 0.4);
+            color: #fff3cd;
             
-            .admonition-title {
-                background: rgba(255, 152, 0, 0.3);
-                color: #ffcc80;
+            .admonition-title, h6 {
+                background: rgba(255, 193, 7, 0.8);
+                color: #212529;
             }
         }
         
-        &.important {
-            background: rgba(156, 39, 176, 0.15);
-            border-color: rgba(156, 39, 176, 0.4);
+        &.alert-important, &.important {
+            background: rgba(220, 53, 69, 0.15);
+            border-color: rgba(220, 53, 69, 0.4);
+            color: #f8d7da;
             
-            .admonition-title {
-                background: rgba(156, 39, 176, 0.3);
-                color: #ce93d8;
+            .admonition-title, h6 {
+                background: rgba(220, 53, 69, 0.8);
+                color: #fff;
             }
         }
     }
@@ -195,8 +201,8 @@
                 }
                 
                 &.active {
-                    color: #ffffff;
-                    background: #007bff;
+                    color: #fff;
+                    background: #28a745;
                     border-bottom-color: transparent;
                     font-weight: 600;
                 }
@@ -238,7 +244,7 @@
                 }
                 
                 &.active {
-                    background: #0d6efd;
+                    background: #198754;
                     color: #ffffff;
                     border-bottom-color: transparent;
                     font-weight: 600;
@@ -284,7 +290,7 @@
                 }
                 
                 &.active {
-                    background: #007bff;
+                    background: #e79e63;
                     color: #ffffff;
                     border-bottom-color: transparent;
                     font-weight: 600;
@@ -301,6 +307,14 @@
         .tab-pane {
             margin: 0;
             padding: 0;
+            
+            > p:first-child {
+                margin-top: 0;
+            }
+            
+            > *:first-child {
+                margin-top: 0;
+            }
         }
     }
     
@@ -321,7 +335,7 @@
                 }
                 
                 &.active {
-                    background: #0d6efd;
+                    background: #414769;
                     color: #ffffff;
                 }
             }
@@ -362,7 +376,7 @@
         
         &.active::before {
             background: #ffffff;
-            color: #007bff;
+            color: #e79e63;
         }
     }
     
@@ -398,7 +412,7 @@
             
             &.active::before {
                 background: #fff;
-                color: #0d6efd;
+                color: #414769;
             }
         }
         
@@ -451,6 +465,14 @@
         border-top: none;
         border-radius: 0 0 0.375rem 0.375rem;
         padding: 1rem;
+        
+        > p:first-child {
+            margin-top: 0;
+        }
+        
+        > *:first-child {
+            margin-top: 0;
+        }
     }
     
     &.theme-dark {
