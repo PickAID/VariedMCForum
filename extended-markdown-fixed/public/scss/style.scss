@@ -149,10 +149,50 @@
     margin: 1rem 0;
     
     .nav-tabs {
-        background: transparent;
-        border-bottom: none;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
         margin: 0;
-        display: none;
+        border-radius: 0;
+        
+        .nav-item {
+            margin-bottom: 0;
+            
+            .nav-link {
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                color: #495057;
+                font-weight: 500;
+                border-right: 1px solid #dee2e6;
+                
+                &:hover {
+                    background: #e9ecef;
+                    border-color: transparent;
+                    color: #212529;
+                }
+                
+                &.active {
+                    background: #ffffff;
+                    border-color: transparent;
+                    color: #0d6efd;
+                    position: relative;
+                    
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -1px;
+                        left: 0;
+                        right: 0;
+                        height: 1px;
+                        background: #ffffff;
+                    }
+                }
+            }
+            
+            &:last-child .nav-link {
+                border-right: none;
+            }
+        }
     }
     
     .tab-content {
@@ -213,6 +253,30 @@
         background: #212529;
         border-color: #495057;
         
+        .nav-tabs {
+            background: #343a40;
+            border-bottom-color: #495057;
+            
+            .nav-link {
+                color: #adb5bd;
+                border-right-color: #495057;
+                
+                &:hover {
+                    background: #495057;
+                    color: #ffffff;
+                }
+                
+                &.active {
+                    background: #212529;
+                    color: #6ea8fe;
+                    
+                    &::after {
+                        background: #212529;
+                    }
+                }
+            }
+        }
+        
         .steps-header {
             background: #343a40;
             color: #f8f9fa;
@@ -243,47 +307,72 @@
 }
 
 .code-group-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #ffffff;
     margin: 1rem 0;
     
     .nav-tabs {
-        margin: 0 !important;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        margin: 0;
+        display: flex;
+        border-radius: 0;
         
-        .nav-link {
-            padding: 0.5rem 1rem !important;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #495057;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            transition: all 0.2s ease;
-            border-bottom: 2px solid transparent;
+        .nav-item {
+            flex: 1;
+            margin: 0;
             
-            &:hover {
-                color: #198754;
-                background: #e9ecef;
-                border-color: #adb5bd;
-                text-decoration: none;
+            .nav-link {
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                color: #6c757d;
+                text-align: center;
+                padding: 0.75rem 1rem;
+                font-weight: 500;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+                border-right: 1px solid #dee2e6;
+                
+                &:hover {
+                    background: rgba(0, 0, 0, 0.03);
+                    color: #495057;
+                }
+                
+                &.active {
+                    color: #0d6efd;
+                    background: #ffffff;
+                    position: relative;
+                    
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -1px;
+                        left: 0;
+                        right: 0;
+                        height: 1px;
+                        background: #ffffff;
+                    }
+                }
             }
             
-            &.active {
-                color: #198754;
-                background: #ffffff;
-                border-bottom-color: #198754;
+            &:last-child .nav-link {
+                border-right: none;
             }
         }
     }
     
     .tab-content {
         .tab-pane {
-            padding: 0 !important;
-            margin: 0 !important;
-            
             pre {
-                margin: 0 !important;
-                border-radius: 0 !important;
+                margin: 0;
+                border: none;
+                border-radius: 0;
                 
                 code {
-                    padding: 1.5rem !important;
+                    padding: 1.5rem;
                     font-size: 0.875rem;
                     line-height: 1.5;
                     display: block;
@@ -293,28 +382,31 @@
     }
     
     &.extended-dark-theme {
+        background: #212529;
+        border-color: #495057;
+        
         .nav-tabs {
-            .nav-link {
+            background: #343a40;
+            border-bottom-color: #495057;
+            
+            .nav-item .nav-link {
                 color: #adb5bd;
-                background: #495057;
-                border-color: #6c757d;
+                border-right-color: #495057;
                 
                 &:hover {
-                    color: #20c997;
-                    background: #6c757d;
-                    border-color: #adb5bd;
+                    background: rgba(255, 255, 255, 0.03);
+                    color: #f8f9fa;
                 }
                 
                 &.active {
                     background: #212529;
-                    color: #20c997;
-                    border-bottom-color: #20c997;
+                    color: #6ea8fe;
+                    
+                    &::after {
+                        background: #212529;
+                    }
                 }
             }
-        }
-        
-        .tab-content .tab-pane {
-            color: #e9ecef;
         }
     }
 }

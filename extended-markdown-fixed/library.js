@@ -117,29 +117,19 @@ function applyTabs(textContent, id) {
         let tabMatches = [];
         let tabMatch;
         
-        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?[\s\r\n]*<p dir="auto">([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?(?:<br\s*\/?>|<p\s+dir="auto">|\s)*([^]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
         
         while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
-            const tabContent = cleanContent(tabMatch[2]);
+            let tabContent = tabMatch[2];
+            
+            tabContent = tabContent.replace(/^<p\s+dir="auto">\s*/, '');
+            tabContent = cleanContent(tabContent);
                 
             if (tabContent) {
                 tabMatches.push({
                     title: tabMatch[1].trim(),
                     content: tabContent
                 });
-            }
-        }
-        
-        if (tabMatches.length === 0) {
-            const fallbackRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?[\s\r\n]*([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
-            while ((tabMatch = fallbackRegex.exec(cleanTabsContent)) !== null) {
-                const tabContent = cleanContent(tabMatch[2]);
-                if (tabContent) {
-                    tabMatches.push({
-                        title: tabMatch[1].trim(),
-                        content: tabContent
-                    });
-                }
             }
         }
         
@@ -162,22 +152,16 @@ function applySteps(textContent, id) {
         let stepMatches = [];
         let stepMatch;
         
-        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?[\s\r\n]*<p dir="auto">([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?(?:<br\s*\/?>|<p\s+dir="auto">|\s)*([^]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
         
         while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
-            const stepContent = cleanContent(stepMatch[1]);
+            let stepContent = stepMatch[1];
+            
+            stepContent = stepContent.replace(/^<p\s+dir="auto">\s*/, '');
+            stepContent = cleanContent(stepContent);
+            
             if (stepContent) {
                 stepMatches.push(stepContent);
-            }
-        }
-        
-        if (stepMatches.length === 0) {
-            const fallbackRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?[\s\r\n]*([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
-            while ((stepMatch = fallbackRegex.exec(cleanStepsContent)) !== null) {
-                const stepContent = cleanContent(stepMatch[1]);
-                if (stepContent) {
-                    stepMatches.push(stepContent);
-                }
             }
         }
         
