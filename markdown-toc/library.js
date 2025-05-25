@@ -4,6 +4,7 @@ const cheerio = require('cheerio');
 const meta = require.main.require('./src/meta');
 const controllers = require('./lib/controllers');
 const routeHelpers = require.main.require('./src/routes/helpers');
+const slugify = require.main.require('./src/slugify');
 
 const plugin = {};
 
@@ -61,11 +62,13 @@ function processMarkdownToc(content, settings) {
 	
 	const maxDepth = parseInt(settings.maxDepth) || 6;
 	const ids = [];
-	const $ = cheerio.load('<div class="markdown-toc"><div class="toc-title">' + (settings.tocTitle || 'Table of Contents') + '</div><div class="toc-content"></div></div>');
-	
 	let processedContent = content;
-	let currentUl = null;
-	let lastLevel = 0;
+	let tocHtml = '';
+	
+	// 生成目录HTML
+	tocHtml += '<div class="markdown-toc">';
+	tocHtml += '<div class="toc-title">' + (settings.tocTitle || 'Table of Contents') + '</div>';
+	tocHtml += '<div class="toc-content"><ul>';
 	
 	titles.forEach(function (title) {
 		const match = title.match(/<h([1-6])>(.*?)<\/h[1-6]>/);
@@ -76,51 +79,33 @@ function processMarkdownToc(content, settings) {
 		
 		if (headingLevel > maxDepth) return;
 		
-		let id = headingText
-			.replace(/<[^>]*>/g, '')
-			.replace(/[^a-zA-Z0-9\u4e00-\u9fa5\s]/g, '')
-			.replace(/\s+/g, '-')
-			.toLowerCase();
+		// 生成唯一的ID
+		let id = slugify(headingText.replace(/<[^>]*>/g, ''));
 		
 		if (!id) id = 'heading-' + ids.length;
 		
-		if (ids.indexOf(id) !== -1) {
-			id = id + '-' + ids.length;
+		// 确保ID唯一
+		let uniqueId = id;
+		let counter = 1;
+		while (ids.indexOf(uniqueId) !== -1) {
+			uniqueId = id + '-' + counter;
+			counter++;
 		}
-		ids.push(id);
+		ids.push(uniqueId);
 		
-		processedContent = processedContent.replace(title, '<h' + headingLevel + ' id="' + id + '">' + headingText + '</h' + headingLevel + '>');
+		// 为标题添加ID
+		const newTitle = '<h' + headingLevel + ' id="' + uniqueId + '">' + headingText + '</h' + headingLevel + '>';
+		processedContent = processedContent.replace(title, newTitle);
 		
-		const tocContent = $('.toc-content');
-		
-		if (!currentUl) {
-			tocContent.append('<ul></ul>');
-			currentUl = tocContent.find('ul').first();
-			lastLevel = headingLevel;
-		}
-		
-		if (headingLevel > lastLevel) {
-			for (let i = lastLevel; i < headingLevel; i++) {
-				if (currentUl.children('li').length === 0) {
-					currentUl.append('<li></li>');
-				}
-				const lastLi = currentUl.children('li').last();
-				if (lastLi.children('ul').length === 0) {
-					lastLi.append('<ul></ul>');
-				}
-				currentUl = lastLi.children('ul').last();
-			}
-		} else if (headingLevel < lastLevel) {
-			for (let i = lastLevel; i > headingLevel; i--) {
-				currentUl = currentUl.parent().parent();
-			}
-		}
-		
-		currentUl.append('<li><a href="#' + id + '">' + headingText + '</a></li>');
-		lastLevel = headingLevel;
+		// 添加到目录
+		const indent = '  '.repeat(headingLevel - 1);
+		tocHtml += indent + '<li class="toc-h' + headingLevel + '"><a href="#' + uniqueId + '">' + headingText.replace(/<[^>]*>/g, '') + '</a></li>';
 	});
 	
-	processedContent = processedContent.replace(tocRegexp, $.html());
+	tocHtml += '</ul></div></div>';
+	
+	// 替换TOC标记
+	processedContent = processedContent.replace(tocRegexp, tocHtml);
 	return processedContent;
 }
 
