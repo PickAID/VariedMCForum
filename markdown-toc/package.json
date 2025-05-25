@@ -26,28 +26,7 @@
     "toc",
     "table-of-contents"
   ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ]
-  },
   "nbbpm": {
     "compatibility": "^3.0.0"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "19.8.1",
-    "@commitlint/config-angular": "19.8.1",
-    "eslint": "9.x",
-    "eslint-config-nodebb": "1.1.4",
-    "eslint-plugin-import": "2.x",
-    "husky": "9.1.7",
-    "lint-staged": "16.0.0"
   }
 }
