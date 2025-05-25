@@ -67,11 +67,11 @@ const ExtendedMarkdown = {
     async parseRaw(data) {
         if (data) {
             data = await applyExtendedMarkdown(data);
-            data = applyGroupCode(data, "");
-            data = await applySpoiler(data, "");
-            data = applyTabs(data, "");
+            data = applyGroupCode(data, "preview");
+            data = await applySpoiler(data, "preview");
+            data = applyTabs(data, "preview");
             data = applySteps(data);
-            data = applyCollapsible(data, "");
+            data = applyCollapsible(data, "preview");
         }
         return data;
     },
@@ -106,19 +106,22 @@ const ExtendedMarkdown = {
         config.allowedAttributes['a'].push('name');
         
         config.allowedAttributes['span'] = config.allowedAttributes['span'] || [];
-        config.allowedAttributes['span'].push('class');
+        config.allowedAttributes['span'].push('class', 'style');
         
         config.allowedAttributes['div'] = config.allowedAttributes['div'] || [];
-        config.allowedAttributes['div'].push('class', 'id');
+        config.allowedAttributes['div'].push('class', 'id', 'role');
         
         config.allowedAttributes['button'] = config.allowedAttributes['button'] || [];
-        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-toggle', 'data-bs-target', 'data-target', 'aria-expanded', 'aria-controls');
+        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-toggle', 'data-bs-target', 'data-target', 'aria-expanded', 'aria-controls', 'role', 'aria-selected', 'tabindex');
         
         config.allowedAttributes['ul'] = config.allowedAttributes['ul'] || [];
-        config.allowedAttributes['ul'].push('class', 'role');
+        config.allowedAttributes['ul'].push('class', 'role', 'id');
         
         config.allowedAttributes['li'] = config.allowedAttributes['li'] || [];
         config.allowedAttributes['li'].push('class', 'role');
+        
+        config.allowedAttributes['h4'] = config.allowedAttributes['h4'] || [];
+        config.allowedAttributes['h4'].push('class');
         
         if (!config.allowedTags.includes('button')) {
             config.allowedTags.push('button');
@@ -135,6 +138,18 @@ const ExtendedMarkdown = {
 };
 
 async function applyExtendedMarkdown(textContent) {
+    if (textContent.match(superscriptRegex)) {
+        textContent = textContent.replace(superscriptRegex, function (match, prefix, text) {
+            return `${prefix}<sup>${text}</sup>`;
+        });
+    }
+
+    if (textContent.match(subscriptRegex)) {
+        textContent = textContent.replace(subscriptRegex, function (match, prefix, text) {
+            return `${prefix}<sub>${text}</sub>`;
+        });
+    }
+
     if (textContent.match(noteRegex)) {
         textContent = textContent.replace(noteRegex, function (match, type, title, text) {
             return `<div class="admonition ${type.toLowerCase()}"><p class="admonition-title"><i class="fa ${noteIcons[type.toLowerCase()]}"></i>${title}</p><p>${text}</p></div>`;
@@ -152,9 +167,9 @@ async function applyExtendedMarkdown(textContent) {
             if (typeof (code) !== "undefined") {
                 return code;
             } else if ("fa-info" === text) {
-                return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-toggle="tooltip" data-bs-placement="top" data-placement="top" title="${tooltipText}"></i>`;
+                return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
             } else {
-                return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-toggle="tooltip" data-bs-placement="top" data-placement="top" title="${tooltipText}">${text}</span>`;
+                return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
             }
         });
     }
@@ -165,18 +180,6 @@ async function applyExtendedMarkdown(textContent) {
                 return code;
             }
             return `<span style="color: ${color};">${text}</span>`;
-        });
-    }
-
-    if (textContent.match(superscriptRegex)) {
-        textContent = textContent.replace(superscriptRegex, function (match, prefix, text) {
-            return `${prefix}<sup>${text}</sup>`;
-        });
-    }
-
-    if (textContent.match(subscriptRegex)) {
-        textContent = textContent.replace(subscriptRegex, function (match, prefix, text) {
-            return `${prefix}<sub>${text}</sub>`;
         });
     }
 
@@ -227,7 +230,7 @@ function applyGroupCode(textContent, id) {
             }
             
             const groupId = `codegroup-${count}-${id}`;
-            let menuTab = `<ul class='nav nav-tabs code-group-tabs' role='tablist' id='${groupId}-tabs'>`;
+            let menuTab = `<ul class='nav nav-tabs' role='tablist' id='${groupId}-tabs'>`;
             let contentTab = `<div class='tab-content' id='${groupId}-content'>`;
             
             for (let i = 0; i < lang.length; i++) {
@@ -238,9 +241,7 @@ function applyGroupCode(textContent, id) {
                     <button class="nav-link ${isActive ? "active" : ""}" 
                             id="${tabId}-tab" 
                             data-bs-toggle="tab" 
-                            data-toggle="tab"
                             data-bs-target="#${tabId}" 
-                            data-target="#${tabId}"
                             type="button" 
                             role="tab" 
                             aria-controls="${tabId}" 
@@ -273,55 +274,75 @@ function applyTabs(textContent, id) {
         let count = 0;
         textContent = textContent.replace(tabsRegex, (match, tabsContent) => {
             const tabs = [];
-            const regex = /<p dir="auto">@tab ([^]*?)<\/p>\s*((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)/g;
-            let tabMatch;
             
-            while ((tabMatch = regex.exec(tabsContent)) !== null) {
-                tabs.push({
-                    title: tabMatch[1].trim(),
-                    content: tabMatch[2].trim()
-                });
+            // 解析标签页内容
+            const tabBlocks = tabsContent.split(/<p dir="auto">@tab\s/);
+            
+            for (let i = 1; i < tabBlocks.length; i++) { // 跳过第一个空元素
+                const block = tabBlocks[i];
+                const endOfTitle = block.indexOf('</p>');
+                
+                if (endOfTitle !== -1) {
+                    const title = block.substring(0, endOfTitle).trim();
+                    const content = block.substring(endOfTitle + 4).trim();
+                    
+                    tabs.push({
+                        title: title,
+                        content: content || `<p dir="auto">${title}</p>`
+                    });
+                }
             }
             
             if (tabs.length === 0) return match;
             
-            const tabsId = `tabs-${count}-${id}`;
-            let menuTab = `<ul class='nav nav-tabs extended-tabs-nav' role='tablist' id='${tabsId}-nav'>`;
-            let contentTab = `<div class='tab-content extended-tabs-content' id='${tabsId}-content'>`;
+            const tabsId = `tabs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            let tabsHtml = `<div class="extended-tabs-container" id="${tabsId}">`;
+            tabsHtml += `<ul class="nav nav-tabs" role="tablist">`;
             
             for (let i = 0; i < tabs.length; i++) {
                 const tabId = `${tabsId}-tab-${i}`;
                 const isActive = i === 0;
                 
-                menuTab += `<li class="nav-item" role='presentation'>
-                    <button class='nav-link ${isActive ? "active" : ""}' 
-                            id='${tabId}-btn'
-                            data-bs-toggle='tab' 
-                            data-toggle='tab'
-                            data-bs-target='#${tabId}' 
-                            data-target='#${tabId}'
-                            type='button' 
-                            role='tab' 
-                            aria-controls='${tabId}' 
-                            aria-selected='${isActive ? "true" : "false"}'>
+                tabsHtml += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${isActive ? "active" : ""}" 
+                            id="${tabId}-tab" 
+                            data-bs-toggle="tab" 
+                            data-toggle="tab"
+                            data-bs-target="#${tabId}" 
+                            data-target="#${tabId}"
+                            type="button" 
+                            role="tab" 
+                            aria-controls="${tabId}" 
+                            aria-selected="${isActive ? "true" : "false"}">
                         ${tabs[i].title}
                     </button>
                 </li>`;
+            }
+            
+            tabsHtml += `</ul>`;
+            tabsHtml += `<div class="tab-content">`;
+            
+            for (let i = 0; i < tabs.length; i++) {
+                const tabId = `${tabsId}-tab-${i}`;
+                const isActive = i === 0;
                 
-                contentTab += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
-                                   id="${tabId}" 
-                                   role="tabpanel" 
-                                   aria-labelledby="${tabId}-btn" 
-                                   tabindex="0">
-                    ${tabs[i].content}
+                tabsHtml += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                                  id="${tabId}" 
+                                  role="tabpanel" 
+                                  aria-labelledby="${tabId}-tab" 
+                                  tabindex="0">
+                    <div class="tab-content-wrapper">
+                        ${tabs[i].content}
+                    </div>
                 </div>`;
             }
             
-            menuTab += "</ul>";
-            contentTab += "</div>";
-            count++;
+            tabsHtml += `</div>`;
+            tabsHtml += `</div>`;
             
-            return `<div class="extended-tabs-container">${menuTab}${contentTab}</div>`;
+            count++;
+            return tabsHtml;
         });
     }
     return textContent;
@@ -333,6 +354,7 @@ function applySteps(textContent) {
         textContent = textContent.replace(stepsRegex, (match, stepsContent) => {
             const steps = [];
             
+            // 解析步骤内容
             const stepBlocks = stepsContent.split(/<p dir="auto">(?=\d+\.)/);
             
             for (let i = 0; i < stepBlocks.length; i++) {
