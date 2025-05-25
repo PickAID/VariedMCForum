@@ -49,11 +49,12 @@
 }
 
 .admonition {
-    border-radius: 3px;
-    margin-bottom: 0.625rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
     background: #c8e7fa;
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 2px #dbdbdb;
+    overflow: hidden;
     
     p {
         padding: 0 1rem;
@@ -71,59 +72,56 @@
     
     .admonition-title {
         font-weight: 700;
-        padding: 0.2rem 1rem;
-        font-size: 1.2rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
         color: #333;
         margin: 0;
-        border-radius: 3px 3px 0 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         background: #fbf9f9;
         
         i.fa {
-            margin-right: 5px;
+            margin-right: 8px;
         }
-    }
-    
-    > :nth-child(2) {
-        margin-top: 0.5rem;
-    }
-    
-    > :not(pre):last-child {
-        padding-bottom: 0.5rem;
     }
     
     &.important {
         background: #c0f2e8;
+        border-color: rgba(125, 232, 210, 0.3);
         
         .admonition-title {
             background: #7de8d2;
+            color: #2d5a3d;
         }
     }
     
     &.info {
         background: #c0dcf2;
+        border-color: rgba(125, 186, 232, 0.3);
         
         .admonition-title {
             background: #7dbae8;
+            color: #1e3a5f;
         }
     }
     
     &.warning {
         background: #f2d9c0;
+        border-color: rgba(232, 179, 125, 0.3);
         
         .admonition-title {
             background: #e8b37d;
+            color: #5f3e1e;
         }
     }
     
     &.theme-dark {
-        background: rgba(33, 37, 41, 0.8);
-        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(33, 37, 41, 0.9);
+        border-color: rgba(255, 255, 255, 0.15);
         
         .admonition-title {
-            background: rgba(33, 37, 41, 0.9);
+            background: rgba(33, 37, 41, 0.95);
             color: #f8f9fa;
-            border-bottom-color: rgba(255, 255, 255, 0.1);
+            border-bottom-color: rgba(255, 255, 255, 0.15);
         }
         
         p {
@@ -131,31 +129,31 @@
         }
         
         &.info {
-            background: rgba(13, 110, 253, 0.1);
-            border-color: rgba(13, 110, 253, 0.3);
+            background: rgba(13, 110, 253, 0.15);
+            border-color: rgba(13, 110, 253, 0.4);
             
             .admonition-title {
-                background: rgba(13, 110, 253, 0.2);
-                color: #6ea8fe;
+                background: rgba(13, 110, 253, 0.3);
+                color: #9ec5fe;
             }
         }
         
         &.warning {
-            background: rgba(255, 152, 0, 0.1);
-            border-color: rgba(255, 152, 0, 0.3);
+            background: rgba(255, 152, 0, 0.15);
+            border-color: rgba(255, 152, 0, 0.4);
             
             .admonition-title {
-                background: rgba(255, 152, 0, 0.2);
-                color: #ffb74d;
+                background: rgba(255, 152, 0, 0.3);
+                color: #ffcc80;
             }
         }
         
         &.important {
-            background: rgba(156, 39, 176, 0.1);
-            border-color: rgba(156, 39, 176, 0.3);
+            background: rgba(156, 39, 176, 0.15);
+            border-color: rgba(156, 39, 176, 0.4);
             
             .admonition-title {
-                background: rgba(156, 39, 176, 0.2);
+                background: rgba(156, 39, 176, 0.3);
                 color: #ce93d8;
             }
         }
@@ -164,7 +162,7 @@
 
 .code-group-container {
     border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     overflow: hidden;
     background: #ffffff;
     margin: 1rem 0;
@@ -192,14 +190,15 @@
                 border-bottom: 2px solid transparent;
                 
                 &:hover {
-                    background: rgba(0, 0, 0, 0.03);
+                    background: rgba(0, 0, 0, 0.05);
                     color: #495057;
                 }
                 
                 &.active {
-                    color: #0d6efd;
-                    background: #ffffff;
-                    border-bottom-color: #0d6efd;
+                    color: #ffffff;
+                    background: #007bff;
+                    border-bottom-color: transparent;
+                    font-weight: 600;
                 }
             }
         }
@@ -234,43 +233,18 @@
                 color: #adb5bd;
                 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.03);
+                    background: rgba(255, 255, 255, 0.05);
                     color: #f8f9fa;
                 }
                 
                 &.active {
-                    background: #212529;
-                    color: #6ea8fe;
-                    border-bottom-color: #6ea8fe;
+                    background: #0d6efd;
+                    color: #ffffff;
+                    border-bottom-color: transparent;
+                    font-weight: 600;
                 }
             }
         }
-    }
-    
-    .fa-chevron-left,
-    .fa-chevron-right,
-    .fa-angle-left,
-    .fa-angle-right,
-    .fa-arrow-left,
-    .fa-arrow-right,
-    .fa-caret-left,
-    .fa-caret-right,
-    .slick-prev,
-    .slick-next,
-    .swiper-button-prev,
-    .swiper-button-next,
-    .owl-prev,
-    .owl-next,
-    [data-slide="prev"],
-    [data-slide="next"],
-    [data-bs-slide="prev"],
-    [data-bs-slide="next"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: absolute !important;
-        left: -9999px !important;
     }
 }
 
@@ -302,6 +276,7 @@
                 text-align: center;
                 width: 100%;
                 border-bottom: 2px solid transparent;
+                font-weight: 500;
                 
                 &:hover {
                     background: #e9ecef;
@@ -310,8 +285,9 @@
                 
                 &.active {
                     background: #007bff;
-                    color: #fff;
+                    color: #ffffff;
                     border-bottom-color: transparent;
+                    font-weight: 600;
                 }
             }
         }
@@ -346,7 +322,7 @@
                 
                 &.active {
                     background: #0d6efd;
-                    color: #fff;
+                    color: #ffffff;
                 }
             }
         }
@@ -381,32 +357,35 @@
             text-align: center;
             line-height: 1.25rem;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
         }
         
         &.active::before {
-            background: #fff;
+            background: #ffffff;
             color: #007bff;
         }
     }
     
     .steps-navigation {
-        padding: 1rem 1.5rem;
-        background: #f8f9fa;
-        border-top: 1px solid #dee2e6;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 1rem 1.5rem;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+        
+        .btn {
+            font-weight: 500;
+            
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
         
         .step-indicator {
             font-weight: 500;
             color: #495057;
-            font-size: 0.9rem;
-        }
-        
-        .btn {
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
         }
     }
     
@@ -436,26 +415,29 @@
 
 .collapsible-wrapper {
     margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
     
     .extended-markdown-collapsible {
         width: 100%;
-        text-align: left;
-        border: 1px solid #dee2e6;
-        background: #f8f9fa;
-        color: #495057;
         padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border: none;
+        border-radius: 0.375rem 0.375rem 0 0;
+        text-align: left;
+        font-weight: 500;
+        color: #495057;
         transition: all 0.2s ease;
-        border-radius: 0.375rem;
         cursor: pointer;
         
         &:hover {
             background: #e9ecef;
-            border-color: #adb5bd;
+            color: #212529;
         }
         
         .collapse-icon {
-            transition: transform 0.2s ease;
             margin-right: 0.5rem;
+            transition: transform 0.2s ease;
         }
         
         &[aria-expanded="true"] .collapse-icon {
@@ -472,14 +454,15 @@
     }
     
     &.theme-dark {
+        border-color: #495057;
+        
         .extended-markdown-collapsible {
             background: #343a40;
-            border-color: #495057;
             color: #adb5bd;
             
             &:hover {
                 background: #495057;
-                border-color: #6c757d;
+                color: #f8f9fa;
             }
         }
         

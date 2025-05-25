@@ -25,7 +25,7 @@ const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
 const stepRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|(?:<p dir="auto">)?\[\/steps\]|$)/gi;
 
-const collapsibleRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
+const spoilerRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -117,59 +117,92 @@ const ExtendedMarkdown = {
     }
 };
 
-function createTabComponent(componentType, items, componentId, extraContent = '') {
-    const containerClass = componentType === 'steps' ? 'steps-container' : 
-                          componentType === 'code-group' ? 'code-group-container' : 
-                          'extended-tabs-container';
+function createTabComponent(type, items, uniqueId) {
+    if (items.length === 0) return '';
     
-    let html = `<div class="${containerClass}" data-component-type="${componentType}">
-        <ul class="nav nav-tabs" role="tablist" id="${componentId}-tabs">`;
+    const containerClass = type === 'code-group' ? 'code-group-container' : 'extended-tabs-container';
+    
+    let navTabs = `<ul class="nav nav-tabs" role="tablist">`;
+    let tabContent = `<div class="tab-content">`;
     
     items.forEach((item, index) => {
-        const tabId = `${componentId}-tab-${index}`;
-        const paneId = `${componentId}-pane-${index}`;
-        const isActive = index === 0 ? 'active' : '';
-        const ariaSelected = index === 0 ? 'true' : 'false';
+        const tabId = `${uniqueId}-${index}`;
+        const isActive = index === 0;
         
-        html += `<li class="nav-item" role="presentation">
-            <button class="nav-link ${isActive}" 
-                    id="${tabId}" 
+        navTabs += `<li class="nav-item" role="presentation">
+            <button class="nav-link${isActive ? ' active' : ''}" 
+                    id="${tabId}-tab" 
                     data-bs-toggle="tab" 
-                    data-bs-target="#${paneId}" 
+                    data-bs-target="#${tabId}" 
                     type="button" 
                     role="tab" 
-                    aria-controls="${paneId}" 
-                    aria-selected="${ariaSelected}">
+                    aria-controls="${tabId}" 
+                    aria-selected="${isActive}">
                 ${item.label}
             </button>
         </li>`;
-    });
-    
-    html += '</ul><div class="tab-content" id="' + componentId + '-content">';
-    
-    items.forEach((item, index) => {
-        const paneId = `${componentId}-pane-${index}`;
-        const tabId = `${componentId}-tab-${index}`;
-        const isActive = index === 0 ? 'show active' : '';
         
-        html += `<div class="tab-pane fade ${isActive}" 
-                      id="${paneId}" 
-                      role="tabpanel" 
-                      aria-labelledby="${tabId}" 
-                      tabindex="0">
-            <div class="tab-content-wrapper">${item.content}</div>
+        tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
+                           id="${tabId}" 
+                           role="tabpanel" 
+                           aria-labelledby="${tabId}-tab">
+            ${item.content}
         </div>`;
     });
     
-    html += '</div>';
+    navTabs += '</ul>';
+    tabContent += '</div>';
     
-    if (extraContent) {
-        html += extraContent;
-    }
+    return `<div class="${containerClass}">${navTabs}${tabContent}</div>`;
+}
+
+function createStepComponent(items, uniqueId) {
+    if (items.length === 0) return '';
     
-    html += '</div>';
+    let navTabs = `<ul class="nav nav-tabs" role="tablist">`;
+    let tabContent = `<div class="tab-content">`;
     
-    return html;
+    items.forEach((item, index) => {
+        const tabId = `${uniqueId}-${index}`;
+        const isActive = index === 0;
+        
+        navTabs += `<li class="nav-item" role="presentation">
+            <button class="nav-link${isActive ? ' active' : ''}" 
+                    id="${tabId}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#${tabId}" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="${tabId}" 
+                    aria-selected="${isActive}">
+                ${item.label}
+            </button>
+        </li>`;
+        
+        tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
+                           id="${tabId}" 
+                           role="tabpanel" 
+                           aria-labelledby="${tabId}-tab">
+            ${item.content}
+        </div>`;
+    });
+    
+    navTabs += '</ul>';
+    tabContent += '</div>';
+    
+    const navigation = `<div class="steps-navigation">
+        <button class="btn btn-secondary step-prev" disabled>
+            <i class="fa fa-chevron-left"></i> 上一步
+        </button>
+        <span class="step-indicator">
+            <span class="current-step">1</span> / <span class="total-steps">${items.length}</span>
+        </span>
+        <button class="btn btn-primary step-next">
+            下一步 <i class="fa fa-chevron-right"></i>
+        </button>
+    </div>`;
+    
+    return `<div class="steps-container">${navTabs}${tabContent}${navigation}</div>`;
 }
 
 function applyTabs(textContent, id) {
@@ -177,7 +210,7 @@ function applyTabs(textContent, id) {
     
     let count = 0;
     return textContent.replace(tabsRegex, (match, content) => {
-        const tabs = [];
+        const items = [];
         const cleanContent = content.trim();
         
         tabRegex.lastIndex = 0;
@@ -186,16 +219,16 @@ function applyTabs(textContent, id) {
             const tabTitle = tabMatch[1].trim();
             const tabContent = tabMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
             
-            tabs.push({
+            items.push({
                 label: tabTitle,
                 content: tabContent
             });
         }
         
-        if (tabs.length === 0) return match;
+        if (items.length === 0) return match;
         
         count++;
-        return createTabComponent('tabs', tabs, `tb-${count}-${id}`);
+        return createTabComponent('extended-tabs', items, `tabs-${count}-${id}`);
     });
 }
 
@@ -204,7 +237,7 @@ function applySteps(textContent, id) {
     
     let count = 0;
     return textContent.replace(stepsRegex, (match, content) => {
-        const steps = [];
+        const items = [];
         const cleanContent = content.trim();
         
         stepRegex.lastIndex = 0;
@@ -213,42 +246,30 @@ function applySteps(textContent, id) {
         while ((stepMatch = stepRegex.exec(cleanContent)) !== null) {
             const stepContent = stepMatch[1].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
             
-            steps.push({
+            items.push({
                 label: `<span class="step-number">${stepNumber}</span>步骤 ${stepNumber}`,
                 content: stepContent
             });
             stepNumber++;
         }
         
-        if (steps.length === 0) return match;
-        
-        const extraContent = `<div class="steps-navigation">
-            <button class="btn btn-outline-secondary step-prev" type="button" disabled>
-                <i class="fa fa-chevron-left"></i> 上一步
-            </button>
-            <span class="step-indicator">
-                <span class="current-step">1</span> / <span class="total-steps">${steps.length}</span>
-            </span>
-            <button class="btn btn-outline-secondary step-next" type="button">
-                下一步 <i class="fa fa-chevron-right"></i>
-            </button>
-        </div>`;
+        if (items.length === 0) return match;
         
         count++;
-        return createTabComponent('steps', steps, `st-${count}-${id}`, extraContent);
+        return createStepComponent(items, `st-${count}-${id}`);
     });
 }
 
 function applyCollapsible(textContent, id) {
-    return textContent.replace(collapsibleRegex, (match, title, content) => {
-        const collapseId = `collapse-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return textContent.replace(spoilerRegex, (match, title, content) => {
+        const spoilerId = `spoiler-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const cleanContent = content.trim().replace(/^<p dir="auto">|<\/p>$/g, '');
         
         return `<div class="collapsible-wrapper">
-            <button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false">
+            <button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${spoilerId}" aria-expanded="false">
                 <i class="fa fa-chevron-right collapse-icon"></i> ${title.trim()}
             </button>
-            <div class="collapse" id="${collapseId}">
+            <div class="collapse" id="${spoilerId}">
                 <div class="card card-body mt-2 collapsible-content">${cleanContent}</div>
             </div>
         </div>`;
@@ -360,34 +381,106 @@ function applyAnchors(textContent) {
 }
 
 function applyGroupCode(textContent, id) {
-    if (!textContent.match(codeTabRegex)) return textContent;
-    
-    let count = 0;
-    return textContent.replace(codeTabRegex, (match, codes) => {
-        const items = [];
-        let cleanCodes = codes.trim();
-        let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
-        
-        for (let i = 0; i < codeArray.length; i++) {
-            const langMatch = langCodeRegex.exec(codeArray[i]);
-            if (langMatch) {
-                const lang = langMatch[1];
-                let codeContent = codeArray[i]
-                    .replace(/<\/?pre[^>]*>/g, '')
-                    .replace(/<code[^>]*>/g, '')
-                    .replace(/<\/code>/g, '')
-                    .trim();
+    if (textContent.match(codeTabRegex)) {
+        let count = 0;
+        textContent = textContent.replace(codeTabRegex, (match, codes) => {
+            let cleanCodes = codes.trim();
+            let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
+            let items = [];
+            
+            for (let i in codeArray) {
+                const langMatch = langCodeRegex.exec(codeArray[i]);
+                if (langMatch) {
+                    const lang = langMatch[1];
+                    let codeContent = codeArray[i]
+                        .replace(/<\/?pre[^>]*>/g, '')
+                        .replace(/<code[^>]*>/g, '')
+                        .replace(/<\/code>/g, '')
+                        .trim();
+                    
+                    items.push({
+                        label: capitalizeFirstLetter(lang),
+                        content: `<pre><code class="${lang}">${codeContent}</code></pre>`
+                    });
+                }
+            }
+            
+            count++;
+            return createTabComponent('code-group', items, `cg-${count}-${id}`);
+        });
+    }
+    return textContent;
+}
+
+function parseTabsContent(textContent, id) {
+    if (textContent.match(tabsRegex)) {
+        let count = 0;
+        textContent = textContent.replace(tabsRegex, (match, content) => {
+            const items = [];
+            let tabMatch;
+            
+            tabRegex.lastIndex = 0;
+            while ((tabMatch = tabRegex.exec(content)) !== null) {
+                const label = tabMatch[1].trim();
+                const tabContent = tabMatch[2].trim();
                 
                 items.push({
-                    label: capitalizeFirstLetter(lang),
-                    content: `<pre><code class="${lang}">${codeContent}</code></pre>`
+                    label: label,
+                    content: tabContent
                 });
             }
-        }
-        
-        count++;
-        return createTabComponent('code-group', items, `cg-${count}-${id}`);
-    });
+            
+            count++;
+            return createTabComponent('extended-tabs', items, `tabs-${count}-${id}`);
+        });
+    }
+    return textContent;
+}
+
+function parseStepsContent(textContent, id) {
+    if (textContent.match(stepsRegex)) {
+        let count = 0;
+        textContent = textContent.replace(stepsRegex, (match, content) => {
+            const items = [];
+            let stepMatch;
+            
+            stepRegex.lastIndex = 0;
+            while ((stepMatch = stepRegex.exec(content)) !== null) {
+                const stepContent = stepMatch[1].trim();
+                items.push({
+                    label: `步骤 ${items.length + 1}`,
+                    content: stepContent
+                });
+            }
+            
+            count++;
+            return createStepComponent(items, `steps-${count}-${id}`);
+        });
+    }
+    return textContent;
+}
+
+function parseSpoilerContent(textContent, id) {
+    if (textContent.match(spoilerRegex)) {
+        let count = 0;
+        textContent = textContent.replace(spoilerRegex, (match, title, content) => {
+            count++;
+            const spoilerId = `spoiler-${count}-${id}`;
+            
+            return `<div class="collapsible-wrapper">
+                <button class="extended-markdown-collapsible" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#${spoilerId}" 
+                        aria-expanded="false" aria-controls="${spoilerId}">
+                    <i class="fa fa-chevron-right collapse-icon"></i>
+                    ${title}
+                </button>
+                <div class="collapse" id="${spoilerId}">
+                    <div class="collapsible-content">${content.trim()}</div>
+                </div>
+            </div>`;
+        });
+    }
+    return textContent;
 }
 
 function capitalizeFirstLetter(name) {
