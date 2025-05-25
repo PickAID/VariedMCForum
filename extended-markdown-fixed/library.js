@@ -14,8 +14,6 @@ const paragraphAndHeadingRegex = /<(h[1-6]|p dir="auto")>([^]*?)<\/(h[1-6]|p)>/g
 
 const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|<br \/>\n)*)<\/p>/g;
 
-const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
-
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
@@ -24,7 +22,7 @@ const tabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="aut
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\])/gi;
 
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
-const stepRegex = /(?:<p dir="auto">)?\[step=(\d+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step=|(?:<p dir="auto">)?\[\/steps\])/gi;
+const stepRegex = /(?:<p dir="auto">)?\[step=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step=|(?:<p dir="auto">)?\[\/steps\])/gi;
 
 const collapsibleRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
@@ -42,7 +40,6 @@ const ExtendedMarkdown = {
             data.postData.content = applyCollapsible(data.postData.content, data.postData.pid);
             data.postData.content = await applyExtendedMarkdown(data.postData.content);
             data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
-            data.postData.content = await applySpoiler(data.postData.content, data.postData.pid);
         }
         return data;
     },
@@ -76,7 +73,6 @@ const ExtendedMarkdown = {
             data = applyCollapsible(data, "preview");
             data = await applyExtendedMarkdown(data);
             data = applyGroupCode(data, "preview");
-            data = await applySpoiler(data, "preview");
         }
         return data;
     },
@@ -91,19 +87,21 @@ const ExtendedMarkdown = {
             { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
             { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
             { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
-            { name: "spoiler", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
             { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
             { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
             { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" },
             { name: "superscript", className: "fa fa-superscript", title: "[[extendedmarkdown:composer.formatting.superscript]]" },
             { name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]" },
+            { name: "tabs", className: "fa fa-folder-open", title: "插入标签页" },
+            { name: "steps", className: "fa fa-tasks", title: "插入步骤" },
+            { name: "collapsible", className: "fa fa-compress", title: "插入折叠框" }
         ];
 
         payload.options = payload.options.concat(formatting);
         return payload;
     },
 
-    sanitizerConfig(config) {
+    async sanitizerConfig(config) {
         config.allowedTags.push('div', 'span', 'button', 'ul', 'li', 'nav');
         config.allowedAttributes['*'].push('data-bs-toggle', 'data-bs-target', 'data-target', 'data-toggle', 'aria-expanded', 'aria-controls', 'role', 'type');
         config.allowedClasses['*'] = ['*'];
@@ -115,17 +113,17 @@ const ExtendedMarkdown = {
 function createTabComponent(componentType, items, id, extraContent = '') {
     if (!items || items.length === 0) return '';
     
-    const componentId = `${componentType}-${id}-${Date.now()}`;
+    const componentId = `${componentType}-${id}`;
     const containerClass = componentType === 'codegroup' ? 'code-group-container' : 
                           componentType === 'steps' ? 'steps-container' : 'extended-tabs-container';
     
     let html = `<div class="${containerClass}">
-        <ul class="nav nav-tabs ${componentType}-nav" role="tablist" id="${componentId}-tabs">`;
+        <ul class="nav nav-tabs ${componentType}-nav" role="tablist">`;
     
-    items.forEach((item, i) => {
-        const isActive = i === 0;
-        const tabId = `${componentId}-tab-${i}`;
-        const paneId = `${componentId}-pane-${i}`;
+    items.forEach((item, index) => {
+        const isActive = index === 0;
+        const tabId = `${componentId}-tab-${index}`;
+        const paneId = `${componentId}-pane-${index}`;
         
         html += `<li class="nav-item" role="presentation">
             <button class="nav-link ${isActive ? 'active' : ''}" 
@@ -141,17 +139,17 @@ function createTabComponent(componentType, items, id, extraContent = '') {
         </li>`;
     });
     
-    html += `</ul><div class="tab-content ${componentType}-content" id="${componentId}-content">`;
+    html += `</ul><div class="tab-content ${componentType}-content">`;
     
-    items.forEach((item, i) => {
-        const isActive = i === 0;
-        const paneId = `${componentId}-pane-${i}`;
+    items.forEach((item, index) => {
+        const isActive = index === 0;
+        const paneId = `${componentId}-pane-${index}`;
+        const tabId = `${componentId}-tab-${index}`;
         
         html += `<div class="tab-pane fade ${isActive ? 'show active' : ''}" 
-                      id="${paneId}" 
-                      role="tabpanel" 
-                      aria-labelledby="${componentId}-tab-${i}" 
-                      tabindex="0">
+                     id="${paneId}" 
+                     role="tabpanel" 
+                     aria-labelledby="${tabId}">
             ${item.content}
         </div>`;
     });
@@ -160,7 +158,7 @@ function createTabComponent(componentType, items, id, extraContent = '') {
     return html;
 }
 
-async function applyExtendedMarkdown(textContent) {
+function applyExtendedMarkdown(textContent) {
     if (textContent.match(noteRegex)) {
         textContent = textContent.replace(noteRegex, function (match, type, title, text) {
             return `<div class="admonition ${type.toLowerCase()}"><p class="admonition-title"><i class="fa ${noteIcons[type.toLowerCase()]}"></i>${title}</p><p>${text}</p></div>`;
@@ -169,7 +167,7 @@ async function applyExtendedMarkdown(textContent) {
 
     if (textContent.match(textHeaderRegex)) {
         textContent = textContent.replace(textHeaderRegex, function (match, anchorId, text) {
-            return `${generateAnchorFromHeading(text)}<div class="text-header" id="${anchorId}">${text}</div>`;
+            return `<h2 class="text-header"><a class="anchor-offset" name="${anchorId}"></a>${text}</h2>`;
         });
     }
 
@@ -194,14 +192,6 @@ async function applyExtendedMarkdown(textContent) {
         });
     }
 
-    textContent = textContent.replace(superscriptRegex, (match, before, text) => {
-        return `${before}<sup>${text}</sup>`;
-    });
-    
-    textContent = textContent.replace(subscriptRegex, (match, before, text) => {
-        return `${before}<sub>${text}</sub>`;
-    });
-
     if (textContent.match(paragraphAndHeadingRegex)) {
         textContent = textContent.replace(paragraphAndHeadingRegex, function (match, tag, text, closeTag) {
             let anchor = tag.charAt(0) == "h" ? generateAnchorFromHeading(text) : "";
@@ -223,6 +213,14 @@ async function applyExtendedMarkdown(textContent) {
         });
     }
 
+    if (textContent.match(superscriptRegex)) {
+        textContent = textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
+    }
+
+    if (textContent.match(subscriptRegex)) {
+        textContent = textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
+    }
+
     return textContent;
 }
 
@@ -231,11 +229,11 @@ function applyGroupCode(textContent, id) {
     
     let count = 0;
     return textContent.replace(codeTabRegex, (match, codes) => {
+        const items = [];
         let cleanCodes = codes.trim();
         let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
         
-        const items = [];
-        for (let i in codeArray) {
+        for (let i = 0; i < codeArray.length; i++) {
             const langMatch = langCodeRegex.exec(codeArray[i]);
             if (langMatch) {
                 const lang = langMatch[1];
@@ -253,7 +251,7 @@ function applyGroupCode(textContent, id) {
         }
         
         count++;
-        return createTabComponent('codegroup', items, `${count}-${id}`);
+        return createTabComponent('codegroup', items, `cg-${count}-${id}`);
     });
 }
 
@@ -263,21 +261,24 @@ function applyTabs(textContent, id) {
     let count = 0;
     return textContent.replace(tabsRegex, (match, content) => {
         const tabs = [];
-        let tempContent = content;
-        let tabMatch;
+        const cleanContent = content.trim();
         
         tabRegex.lastIndex = 0;
-        while ((tabMatch = tabRegex.exec(tempContent)) !== null) {
+        let tabMatch;
+        while ((tabMatch = tabRegex.exec(cleanContent)) !== null) {
+            const tabTitle = tabMatch[1].trim();
+            const tabContent = tabMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+            
             tabs.push({
-                label: tabMatch[1].trim(),
-                content: `<div class="tab-content-body">${tabMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '')}</div>`
+                label: tabTitle,
+                content: `<div class="tab-content-body">${tabContent}</div>`
             });
         }
         
         if (tabs.length === 0) return match;
         
         count++;
-        return createTabComponent('tabs', tabs, `${count}-${id}`);
+        return createTabComponent('tabs', tabs, `tb-${count}-${id}`);
     });
 }
 
@@ -287,18 +288,21 @@ function applySteps(textContent, id) {
     let count = 0;
     return textContent.replace(stepsRegex, (match, content) => {
         const steps = [];
-        let tempContent = content;
-        let stepMatch;
+        const cleanContent = content.trim();
         
         stepRegex.lastIndex = 0;
-        while ((stepMatch = stepRegex.exec(tempContent)) !== null) {
+        let stepMatch;
+        while ((stepMatch = stepRegex.exec(cleanContent)) !== null) {
+            const stepNumber = stepMatch[1].trim();
+            const stepContent = stepMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+            
             steps.push({
-                label: `<span class="step-number">${stepMatch[1]}</span> 步骤 ${stepMatch[1]}`,
+                label: `<span class="step-number">${stepNumber}</span> 步骤 ${stepNumber}`,
                 content: `<div class="step-content-wrapper">
                     <div class="step-header">
-                        <h4><span class="step-badge">${stepMatch[1]}</span> 步骤 ${stepMatch[1]}</h4>
+                        <h4><span class="step-badge">${stepNumber}</span> 步骤 ${stepNumber}</h4>
                     </div>
-                    <div class="step-body">${stepMatch[2].trim().replace(/^<p dir="auto">|<\/p>$/g, '')}</div>
+                    <div class="step-body">${stepContent}</div>
                 </div>`
             });
         }
@@ -318,7 +322,7 @@ function applySteps(textContent, id) {
         </div>`;
         
         count++;
-        return createTabComponent('steps', steps, `${count}-${id}`, extraContent);
+        return createTabComponent('steps', steps, `st-${count}-${id}`, extraContent);
     });
 }
 
@@ -344,29 +348,6 @@ function capitalizeFirstLetter(name) {
 
 function generateAnchorFromHeading(heading) {
     return `<a class="anchor-offset" name="${slugify(heading)}"></a>`;
-}
-
-async function applySpoiler(textContent, id) {
-    if (textContent.match(spoilerRegex)) {
-        const translator = require.main.require('./src/translator');
-        const spoilerText = await translator.translate('[[extendedmarkdown:spoiler]]');
-        
-        let count = 0;
-        textContent = textContent.replace(spoilerRegex, (match, text) => {
-            const spoilerButton = `
-                <button class="btn btn-primary extended-markdown-spoiler" type="button" name="spoiler" data-bs-toggle="collapse" data-bs-target="#spoiler${count + id}" aria-expanded="false" aria-controls="spoiler${count + id}">
-                    ${spoilerText} <i class="fa fa-eye-slash"></i>
-                </button>`;
-
-            const spoilerContent = `
-                <div class="collapse" id="spoiler${count + id}">
-                    <div class="card card-body spoiler"><p dir="auto">${text}</p></div>
-                </div>`;
-            count++;
-            return `<p>${spoilerButton}${spoilerContent}</p>`;
-        });
-    }
-    return textContent;
 }
 
 module.exports = ExtendedMarkdown;
