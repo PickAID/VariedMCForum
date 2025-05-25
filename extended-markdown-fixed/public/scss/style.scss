@@ -144,7 +144,6 @@
                 font-size: 0.9rem;
                 transition: all 0.2s ease;
                 border-bottom: 2px solid transparent;
-                margin: 0 !important;
                 
                 &:hover {
                     background: rgba(0, 0, 0, 0.03);
@@ -161,12 +160,9 @@
     }
     
     .tab-content {
-        margin: 0 !important;
-        padding: 0 !important;
-        
         .tab-pane {
-            margin: 0 !important;
             padding: 0 !important;
+            margin: 0 !important;
             
             pre {
                 margin: 0 !important;
@@ -174,11 +170,10 @@
                 border-radius: 0;
                 
                 code {
-                    padding: 1.5rem;
+                    padding: 1.5rem !important;
                     font-size: 0.875rem;
                     line-height: 1.5;
                     display: block;
-                    margin: 0 !important;
                 }
             }
         }
@@ -245,9 +240,9 @@
                 }
                 
                 &.active {
-                    color: #fd7e14;
+                    color: #198754;
                     background: #ffffff;
-                    border-bottom-color: #fd7e14;
+                    border-bottom-color: #198754;
                 }
             }
         }
@@ -285,14 +280,13 @@
                 
                 &.active {
                     background: #212529;
-                    color: #fd7e14;
-                    border-bottom-color: #fd7e14;
+                    color: #20c997;
+                    border-bottom-color: #20c997;
                 }
             }
         }
         
         .tab-content .tab-pane {
-            background: #212529;
             color: #e9ecef;
         }
     }
@@ -305,7 +299,7 @@
     background: #ffffff;
     margin: 1rem 0;
     
-    .steps-navigation {
+    .steps-header {
         background: #f8f9fa;
         border-bottom: 1px solid #dee2e6;
         padding: 1rem;
@@ -313,37 +307,41 @@
         justify-content: space-between;
         align-items: center;
         
-        .step-nav-buttons {
+        .steps-counter {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .steps-navigation {
             display: flex;
             gap: 0.5rem;
-        }
-        
-        .step-indicator {
-            font-weight: bold;
-            color: #6f42c1;
-        }
-        
-        .btn {
-            &.step-prev, &.step-next {
-                background: #6f42c1;
-                border-color: #6f42c1;
-                color: white;
+            
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+                border-radius: 0.25rem;
+                border: 1px solid #dee2e6;
+                background: #ffffff;
+                color: #6c757d;
+                transition: all 0.2s ease;
                 
                 &:hover:not(:disabled) {
-                    background: #5a359a;
-                    border-color: #5a359a;
+                    background: #e9ecef;
+                    color: #495057;
+                    border-color: #adb5bd;
                 }
                 
                 &:disabled {
-                    background: #6c757d;
-                    border-color: #6c757d;
+                    opacity: 0.5;
+                    cursor: not-allowed;
                 }
             }
         }
     }
     
     .nav-tabs {
-        background: #f8f9fa;
+        background: #ffffff;
         border-bottom: 1px solid #dee2e6;
         margin: 0;
         display: flex;
@@ -371,7 +369,7 @@
                 
                 &.active {
                     color: #6f42c1;
-                    background: #ffffff;
+                    background: #f8f9fa;
                     border-bottom-color: #6f42c1;
                 }
             }
@@ -396,17 +394,29 @@
         background: #212529;
         border-color: #495057;
         
-        .steps-navigation {
+        .steps-header {
             background: #343a40;
             border-bottom-color: #495057;
             
-            .step-indicator {
-                color: #bd7edd;
+            .steps-counter {
+                color: #adb5bd;
+            }
+            
+            .btn {
+                background: #495057;
+                border-color: #6c757d;
+                color: #adb5bd;
+                
+                &:hover:not(:disabled) {
+                    background: #5a6268;
+                    color: #f8f9fa;
+                    border-color: #adb5bd;
+                }
             }
         }
         
         .nav-tabs {
-            background: #343a40;
+            background: #212529;
             border-bottom-color: #495057;
             
             .nav-item .nav-link {
@@ -418,15 +428,14 @@
                 }
                 
                 &.active {
-                    background: #212529;
-                    color: #bd7edd;
-                    border-bottom-color: #bd7edd;
+                    background: #343a40;
+                    color: #a855f7;
+                    border-bottom-color: #a855f7;
                 }
             }
         }
         
         .tab-content .tab-pane {
-            background: #212529;
             color: #e9ecef;
         }
     }

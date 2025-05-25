@@ -43,7 +43,82 @@ function cleanContent(content) {
         .replace(/\s*<br \/>$/g, '')
         .replace(/^\s+/gm, '')
         .replace(/\s+$/gm, '')
+        .replace(/^\n+/, '')
+        .replace(/\n+$/, '')
         .trim();
+}
+
+function createTabComponent(type, items, id) {
+    let menuTab = `<ul class='nav nav-tabs' role='tablist' id='${id}-tabs'>`;
+    let contentTab = `<div class='tab-content' id='${id}-content'>`;
+    
+    for (let i = 0; i < items.length; i++) {
+        const tabId = `${id}-${i}`;
+        const isActive = i === 0;
+        
+        menuTab += `<li class="nav-item" role="presentation">
+            <button class="nav-link ${isActive ? "active" : ""}" 
+                    id="${tabId}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#${tabId}" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="${tabId}" 
+                    aria-selected="${isActive ? "true" : "false"}">
+                ${items[i].label}
+            </button>
+        </li>`;
+        
+        contentTab += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                           id="${tabId}" 
+                           role="tabpanel" 
+                           aria-labelledby="${tabId}-tab" 
+                           tabindex="0">
+            ${items[i].content}
+        </div>`;
+    }
+    
+    menuTab += "</ul>";
+    contentTab += "</div>";
+    
+    return `<div class="${type}-container">${menuTab}${contentTab}</div>`;
+}
+
+function applySteps(textContent, id) {
+    return textContent.replace(stepsRegex, function (match, stepsContent) {
+        const cleanStepsContent = cleanContent(stepsContent);
+        let stepMatches = [];
+        let stepMatch;
+        
+        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
+            stepMatches.push(cleanContent(stepMatch[1]));
+        }
+        
+        if (stepMatches.length === 0) return match;
+        
+        const stepsId = `steps-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        let stepsHeader = `
+        <div class="steps-header">
+            <div class="steps-counter">
+                <span class="current-step">1</span> / <span class="total-steps">${stepMatches.length}</span>
+            </div>
+            <div class="steps-navigation">
+                <button class="btn step-prev" disabled>上一步</button>
+                <button class="btn step-next">下一步</button>
+            </div>
+        </div>`;
+        
+        let items = stepMatches.map((content, index) => ({
+            label: `步骤 ${index + 1}`,
+            content: content
+        }));
+        
+        const tabsContent = createTabComponent('', items, stepsId);
+        
+        return `<div class="steps-container">${stepsHeader}${tabsContent}</div>`;
+    });
 }
 
 const ExtendedMarkdown = {
@@ -82,246 +157,136 @@ const ExtendedMarkdown = {
 
     async parseRaw(data) {
         if (data) {
-            data = applyTabs(data, "raw");
-            data = applySteps(data, "raw");
-            data = applyCollapsible(data, "raw");
+            data = applyTabs(data, "");
+            data = applySteps(data, "");
+            data = applyCollapsible(data, "");
             data = await applyExtendedMarkdown(data);
-            data = applyGroupCode(data, "raw");
+            data = applyGroupCode(data, "");
         }
         return data;
     },
-
-    async registerFormatting(data) {
+    
+    async registerFormatting(payload) {
         const formatting = [
-            {name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]"},
-            {name: "groupedcode", className: "fa fa-code", title: "[[extendedmarkdown:composer.formatting.groupedcode]]"},
-            {name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]"},
-            {name: "spoiler", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]"},
-            {name: "noteinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.noteinfo]]"},
-            {name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]"},
-            {name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]"},
-            {name: "tabs", className: "fa fa-folder-open", title: "[[extendedmarkdown:composer.formatting.tabs]]"},
-            {name: "steps", className: "fa fa-tasks", title: "[[extendedmarkdown:composer.formatting.steps]]"},
-            {name: "superscript", className: "fa fa-superscript", title: "[[extendedmarkdown:composer.formatting.superscript]]"},
-            {name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]"},
-            {name: "collapsible", className: "fa fa-compress", title: "[[extendedmarkdown:composer.formatting.collapsible]]"},
+            { name: "color", className: "fa fa-eyedropper", title: "[[extendedmarkdown:composer.formatting.color]]" },
+            { name: "left", className: "fa fa-align-left", title: "[[extendedmarkdown:composer.formatting.left]]" },
+            { name: "center", className: "fa fa-align-center", title: "[[extendedmarkdown:composer.formatting.center]]" },
+            { name: "right", className: "fa fa-align-right", title: "[[extendedmarkdown:composer.formatting.right]]" },
+            { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
+            { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
+            { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
+            { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
+            { name: "collapsible", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
+            { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
+            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
+            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" }
         ];
-        
-        data.formatting = data.formatting.concat(formatting);
-        return data;
-    },
 
+        payload.options = payload.options.concat(formatting);
+
+        return payload;
+    },
+    
     async sanitizerConfig(config) {
-        config.allowedTags.push('div', 'span', 'button', 'ul', 'li', 'nav', 'ruby', 'rt', 'rp');
-        config.allowedAttributes['*'].push('data-bs-toggle', 'data-bs-target', 'data-target', 'data-toggle', 'aria-expanded', 'aria-controls', 'role', 'type');
-        config.allowedAttributes['*'].push('aria-labelledby', 'aria-selected', 'tabindex');
-        config.allowedClasses['*'].push('nav', 'nav-tabs', 'nav-item', 'nav-link', 'tab-content', 'tab-pane', 'fade', 'show', 'active');
-        config.allowedClasses['*'].push('extended-tabs-container', 'steps-container', 'code-group-container');
-        config.allowedClasses['*'].push('tab-content-wrapper', 'steps-navigation', 'step-prev', 'step-next', 'step-indicator');
-        config.allowedClasses['*'].push('current-step', 'total-steps', 'step-number');
-        config.allowedClasses['*'].push('collapsible-wrapper', 'extended-markdown-collapsible', 'collapse-icon', 'collapsible-content');
-        config.allowedClasses['*'].push('btn', 'btn-outline-primary', 'btn-outline-secondary', 'collapse', 'card', 'card-body', 'mt-2');
-        config.allowedClasses['*'].push('alert', 'alert-info', 'alert-warning', 'alert-important');
+        config.allowedAttributes['a'].push('name');
         return config;
     }
 };
 
-function createTabComponent(type, items, uniqueId) {
-    if (items.length === 0) return '';
-    
-    const containerClass = type === 'code-group' ? 'code-group-container' : 'extended-tabs-container';
-    
-    let navTabs = `<ul class="nav nav-tabs" role="tablist">`;
-    let tabContent = `<div class="tab-content">`;
-    
-    items.forEach((item, index) => {
-        const tabId = `${uniqueId}-${index}`;
-        const isActive = index === 0;
-        
-        navTabs += `<li class="nav-item" role="presentation">
-            <button class="nav-link${isActive ? ' active' : ''}" 
-                    id="${tabId}-tab" 
-                    data-bs-toggle="tab" 
-                    data-bs-target="#${tabId}" 
-                    type="button" 
-                    role="tab" 
-                    aria-controls="${tabId}" 
-                    aria-selected="${isActive}">
-                ${item.label}
-            </button>
-        </li>`;
-        
-        const cleanedContent = cleanContent(item.content);
-        
-        tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
-                           id="${tabId}" 
-                           role="tabpanel" 
-                           aria-labelledby="${tabId}-tab">
-            ${cleanedContent}
-        </div>`;
-    });
-    
-    navTabs += '</ul>';
-    tabContent += '</div>';
-    
-    return `<div class="${containerClass}">
-        ${navTabs}
-        ${tabContent}
-    </div>`;
-}
-
-function createStepComponent(items, uniqueId) {
-    if (items.length === 0) return '';
-    
-    let navTabs = `<ul class="nav nav-tabs" role="tablist">`;
-    let tabContent = `<div class="tab-content">`;
-    
-    items.forEach((item, index) => {
-        const tabId = `${uniqueId}-${index}`;
-        const isActive = index === 0;
-        
-        navTabs += `<li class="nav-item" role="presentation">
-            <button class="nav-link${isActive ? ' active' : ''}" 
-                    id="${tabId}-tab" 
-                    data-bs-toggle="tab" 
-                    data-bs-target="#${tabId}" 
-                    type="button" 
-                    role="tab" 
-                    aria-controls="${tabId}" 
-                    aria-selected="${isActive}">
-                步骤 ${index + 1}
-            </button>
-        </li>`;
-        
-        const cleanedContent = cleanContent(item.content);
-        
-        tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
-                           id="${tabId}" 
-                           role="tabpanel" 
-                           aria-labelledby="${tabId}-tab">
-            ${cleanedContent}
-        </div>`;
-    });
-    
-    navTabs += '</ul>';
-    tabContent += '</div>';
-    
-    const stepsNavigation = `
-        <div class="steps-navigation">
-            <button class="step-prev">‹ 上一步</button>
-            <div class="step-indicator">
-                <span class="current-step">1</span> / <span class="total-steps">${items.length}</span>
-            </div>
-            <button class="step-next">下一步 ›</button>
-        </div>`;
-    
-    return `<div class="steps-container">
-        ${stepsNavigation}
-        ${navTabs}
-        ${tabContent}
-    </div>`;
-}
-
 function applyTabs(textContent, id) {
-    if (!textContent.match(tabsRegex)) return textContent;
-    
-    let count = 0;
-    return textContent.replace(tabsRegex, (match, content) => {
-        let items = [];
+    return textContent.replace(tabsRegex, function (match, tabsContent) {
+        const cleanTabsContent = cleanContent(tabsContent);
+        let tabMatches = [];
         let tabMatch;
         
-        while ((tabMatch = tabRegex.exec(content)) !== null) {
-            items.push({
-                label: tabMatch[1].trim(),
-                content: tabMatch[2].trim()
+        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
+            tabMatches.push({
+                title: tabMatch[1].trim(),
+                content: cleanContent(tabMatch[2])
             });
         }
         
-        count++;
-        return createTabComponent('extended-tabs', items, `tab-${count}-${id}`);
-    });
-}
-
-function applySteps(textContent, id) {
-    if (!textContent.match(stepsRegex)) return textContent;
-    
-    let count = 0;
-    return textContent.replace(stepsRegex, (match, content) => {
-        let items = [];
-        let stepMatch;
+        if (tabMatches.length === 0) return match;
         
-        while ((stepMatch = stepRegex.exec(content)) !== null) {
-            items.push({
-                content: stepMatch[1].trim()
-            });
-        }
+        const tabsId = `tabs-${id}-${Math.random().toString(36).substr(2, 9)}`;
         
-        count++;
-        return createStepComponent(items, `steps-${count}-${id}`);
+        let items = tabMatches.map(tab => ({
+            label: tab.title,
+            content: tab.content
+        }));
+        
+        return createTabComponent('extended-tabs', items, tabsId);
     });
 }
 
 function applyCollapsible(textContent, id) {
-    if (!textContent.match(spoilerRegex)) return textContent;
-    
-    let count = 0;
-    return textContent.replace(spoilerRegex, (match, title, content) => {
-        count++;
-        const spoilerId = `spoiler-${count}-${id}`;
-        const cleanedContent = cleanContent(content);
+    return textContent.replace(spoilerRegex, function (match, title, content) {
+        const collapsibleId = `collapsible-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        const cleanContent = content.trim();
         
         return `<div class="collapsible-wrapper">
-            <button class="extended-markdown-collapsible" type="button" 
-                    data-bs-toggle="collapse" data-bs-target="#${spoilerId}" 
-                    aria-expanded="false" aria-controls="${spoilerId}">
+            <button class="extended-markdown-collapsible" type="button" data-bs-target="#${collapsibleId}" aria-expanded="false" aria-controls="${collapsibleId}">
                 <i class="fa fa-chevron-right collapse-icon"></i>
                 ${title}
             </button>
-            <div class="collapse" id="${spoilerId}">
-                <div class="collapsible-content">${cleanedContent}</div>
+            <div class="collapse" id="${collapsibleId}">
+                <div class="collapsible-content">
+                    ${cleanContent}
+                </div>
             </div>
         </div>`;
     });
 }
 
-async function applyExtendedMarkdown(textContent) {
-    textContent = applyTextHeader(textContent);
-    textContent = applyTooltip(textContent);
-    textContent = applyColors(textContent);
-    textContent = applySuperscriptAndSubscript(textContent);
-    textContent = applyRuby(textContent);
+function applyExtendedMarkdown(textContent) {
     textContent = applyNotes(textContent);
+    textContent = applyTextHeaders(textContent);
+    textContent = applyTooltips(textContent);
+    textContent = applyColors(textContent);
+    textContent = applyRuby(textContent);
+    textContent = applySuperscriptAndSubscript(textContent);
     textContent = applyAnchors(textContent);
+    
     return textContent;
 }
 
-function applyTextHeader(textContent) {
-    return textContent.replace(textHeaderRegex, '<div class="text-header" id="$1">$2</div>');
+function applyTextHeaders(textContent) {
+    return textContent.replace(textHeaderRegex, function (match, anchorId, text) {
+        return `<h2 class="text-header"><a class="anchor-offset" name="${anchorId}"></a>${text}</h2>`;
+    });
 }
 
-function applyTooltip(textContent) {
-    return textContent.replace(tooltipRegex, function (match, codeMatch, text, tooltipText) {
-        if (codeMatch) {
-            return codeMatch;
+function applyTooltips(textContent) {
+    return textContent.replace(tooltipRegex, function (match, code, text, tooltipText) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        } else if ("fa-info" === text) {
+            return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
+        } else {
+            return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
         }
-        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
     });
 }
 
 function applyColors(textContent) {
-    return textContent.replace(colorRegex, function (match, codeMatch, color, text) {
-        if (codeMatch) {
-            return codeMatch;
+    return textContent.replace(colorRegex, function (match, code, color, text) {
+        if (typeof (code) !== "undefined") {
+            return code;
         }
         return `<span style="color: ${color};">${text}</span>`;
     });
 }
 
 function applyRuby(textContent) {
+    const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
     return textContent.replace(rubyRegex, '<ruby>$1<rt>$2</rt></ruby>');
 }
 
 function applySuperscriptAndSubscript(textContent) {
+    const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
+    const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
+    
     textContent = textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
     return textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
 }

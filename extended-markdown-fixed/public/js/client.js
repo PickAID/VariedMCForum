@@ -40,103 +40,126 @@ $(document).ready(function () {
     }
 
     function initializeTabComponents() {
-        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(function(container) {
-            const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
+        $('.code-group-container, .extended-tabs-container').each(function() {
+            const $container = $(this);
+            const containerId = $container.attr('id') || 'tab-' + Math.random().toString(36).substr(2, 9);
             
-            tabButtons.forEach(function(button) {
-                button.addEventListener('click', function(e) {
+            if (!$container.data('tabs-initialized')) {
+                $container.data('tabs-initialized', true);
+                
+                $container.find('[data-bs-toggle="tab"]').off('click.extended-tabs').on('click.extended-tabs', function(e) {
                     e.preventDefault();
                     
-                    const targetId = this.getAttribute('data-bs-target');
-                    const target = document.querySelector(targetId);
+                    const targetId = $(this).data('bs-target');
+                    const $target = $(targetId);
                     
-                    if (target) {
-                        const allPanes = container.querySelectorAll('.tab-pane');
-                        allPanes.forEach(pane => {
-                            pane.classList.remove('show', 'active');
-                        });
+                    if ($target.length) {
+                        $container.find('.nav-link').removeClass('active').attr('aria-selected', 'false');
+                        $container.find('.tab-pane').removeClass('show active');
                         
-                        tabButtons.forEach(btn => {
-                            btn.classList.remove('active');
-                            btn.setAttribute('aria-selected', 'false');
-                        });
-                        
-                        target.classList.add('show', 'active');
-                        this.classList.add('active');
-                        this.setAttribute('aria-selected', 'true');
+                        $(this).addClass('active').attr('aria-selected', 'true');
+                        $target.addClass('show active');
                     }
                 });
-            });
+            }
         });
     }
 
     function initializeCollapse() {
         $('.extended-markdown-collapsible').each(function() {
             const $button = $(this);
-            const targetSelector = $button.attr('data-bs-target');
-            const $target = $(targetSelector);
-            const $icon = $button.find('.collapse-icon');
+            const buttonId = $button.attr('data-bs-target') || 'collapse-' + Math.random().toString(36).substr(2, 9);
             
-            if ($target.length === 0) return;
-            
-            const isExpanded = $target.hasClass('show');
-            $button.attr('aria-expanded', isExpanded);
-            $icon.css('transform', isExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
-        });
-
-        $('.extended-markdown-collapsible').off('click.extended-collapse').on('click.extended-collapse', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const $button = $(this);
-            const targetSelector = $button.attr('data-bs-target');
-            const $target = $(targetSelector);
-            const $icon = $button.find('.collapse-icon');
-            
-            if ($target.length === 0) return;
-            
-            const isCurrentlyExpanded = $target.hasClass('show');
-            
-            if (isCurrentlyExpanded) {
-                $target.removeClass('show');
-                $button.attr('aria-expanded', 'false');
-                $icon.css('transform', 'rotate(0deg)');
-            } else {
-                $target.addClass('show');
-                $button.attr('aria-expanded', 'true');
-                $icon.css('transform', 'rotate(90deg)');
+            if (!$button.data('collapse-initialized')) {
+                $button.data('collapse-initialized', true);
+                
+                const $icon = $button.find('.collapse-icon');
+                const targetId = $button.attr('data-bs-target');
+                const $target = $(targetId);
+                
+                if ($target.length) {
+                    const isInitiallyExpanded = $target.hasClass('show');
+                    $icon.css('transform', isInitiallyExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
+                    
+                    $button.off('click.extended-collapse').on('click.extended-collapse', function(e) {
+                        const isCurrentlyCollapsed = !$target.hasClass('show');
+                        
+                        $target.collapse('toggle');
+                        
+                        setTimeout(() => {
+                            const isNowExpanded = $target.hasClass('show');
+                            $icon.css('transform', isNowExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
+                        }, 100);
+                    });
+                }
             }
         });
     }
 
     function initializeTooltips() {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
-            element.addEventListener('mouseenter', function() {
-                const title = this.getAttribute('title') || this.getAttribute('data-bs-title');
-                if (title) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'tooltip bs-tooltip-top';
-                    tooltip.innerHTML = `<div class="tooltip-inner">${title}</div>`;
-                    
-                    document.body.appendChild(tooltip);
-                    
-                    const rect = this.getBoundingClientRect();
-                    tooltip.style.position = 'absolute';
-                    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-                    tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-                    tooltip.style.zIndex = '1070';
-                    tooltip.style.opacity = '1';
-                    
-                    this._tooltip = tooltip;
+        $('[data-bs-toggle="tooltip"]').each(function() {
+            const $tooltip = $(this);
+            if (!$tooltip.data('tooltip-initialized')) {
+                $tooltip.data('tooltip-initialized', true);
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    new bootstrap.Tooltip(this);
                 }
-            });
+            }
+        });
+    }
+
+    function initStepsNavigation() {
+        $('.steps-container').each(function() {
+            const $container = $(this);
+            const containerId = $container.attr('id') || 'steps-' + Math.random().toString(36).substr(2, 9);
             
-            element.addEventListener('mouseleave', function() {
-                if (this._tooltip) {
-                    this._tooltip.remove();
-                    this._tooltip = null;
+            if (!$container.data('steps-initialized')) {
+                $container.data('steps-initialized', true);
+                
+                const $prevBtn = $container.find('.step-prev');
+                const $nextBtn = $container.find('.step-next');
+                const $currentStepSpan = $container.find('.current-step');
+                const $totalStepsSpan = $container.find('.total-steps');
+                const $tabs = $container.find('.nav-link');
+                
+                let currentStep = 0;
+                const totalSteps = $tabs.length;
+                
+                function updateNavigation() {
+                    $currentStepSpan.text(currentStep + 1);
+                    $totalStepsSpan.text(totalSteps);
+                    
+                    $prevBtn.prop('disabled', currentStep === 0);
+                    $nextBtn.prop('disabled', currentStep === totalSteps - 1);
+                    
+                    $tabs.removeClass('active').attr('aria-selected', 'false');
+                    $container.find('.tab-pane').removeClass('show active');
+                    
+                    $tabs.eq(currentStep).addClass('active').attr('aria-selected', 'true');
+                    $container.find('.tab-pane').eq(currentStep).addClass('show active');
                 }
-            });
+                
+                $prevBtn.off('click.extended-steps').on('click.extended-steps', function() {
+                    if (currentStep > 0) {
+                        currentStep--;
+                        updateNavigation();
+                    }
+                });
+                
+                $nextBtn.off('click.extended-steps').on('click.extended-steps', function() {
+                    if (currentStep < totalSteps - 1) {
+                        currentStep++;
+                        updateNavigation();
+                    }
+                });
+                
+                $tabs.off('click.extended-steps').on('click.extended-steps', function() {
+                    currentStep = $tabs.index(this);
+                    updateNavigation();
+                });
+                
+                updateNavigation();
+            }
         });
     }
 
@@ -253,38 +276,31 @@ $(document).ready(function () {
         setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
-        initExtendedMarkdownComponents();
         initializeTooltips();
+        initStepsNavigation();
     }
 
+    let initTimeout;
     const observer = new MutationObserver(function(mutations) {
-        let shouldUpdate = false;
+        let shouldInit = false;
         mutations.forEach(function(mutation) {
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                     if (node.nodeType === 1) {
-                        const hasExtendedMarkdown = node.querySelector && (
-                            node.querySelector('.extended-tabs-container') ||
-                            node.querySelector('.steps-container') ||
-                            node.querySelector('.code-group-container') ||
-                            node.querySelector('.collapsible-wrapper') ||
-                            node.querySelector('.alert')
-                        );
-                        if (hasExtendedMarkdown) {
-                            shouldUpdate = true;
+                        if (node.matches && (
+                            node.matches('.code-group-container, .extended-tabs-container, .steps-container, .collapsible-wrapper') ||
+                            node.querySelector('.code-group-container, .extended-tabs-container, .steps-container, .collapsible-wrapper')
+                        )) {
+                            shouldInit = true;
                         }
                     }
                 });
             }
         });
         
-        if (shouldUpdate) {
-            setTimeout(() => {
-                setupExtendedMarkdownTheme();
-                initializeTabComponents();
-                initializeCollapse();
-                initExtendedMarkdownComponents();
-            }, 100);
+        if (shouldInit) {
+            clearTimeout(initTimeout);
+            initTimeout = setTimeout(pageReady, 100);
         }
     });
     
@@ -293,78 +309,10 @@ $(document).ready(function () {
         subtree: true 
     });
 
-    $(window).on('action:ajaxify.end', pageReady);
-    $(window).on('action:posts.loaded', pageReady);
-    $(window).on('action:topic.loaded', pageReady);
+    $(window).on('action:ajaxify.end', function() {
+        clearTimeout(initTimeout);
+        initTimeout = setTimeout(pageReady, 150);
+    });
     
     pageReady();
 });
-
-function initExtendedMarkdownComponents() {
-    initStepsNavigation();
-    initBootstrapTabs();
-}
-
-function initStepsNavigation() {
-    $('.steps-container').each(function() {
-        const container = $(this);
-        const prevBtn = container.find('.step-prev');
-        const nextBtn = container.find('.step-next');
-        const currentStepSpan = container.find('.current-step');
-        const totalStepsSpan = container.find('.total-steps');
-        const tabs = container.find('.nav-link');
-        
-        let currentStep = 0;
-        const totalSteps = tabs.length;
-        
-        function updateNavigation() {
-            currentStepSpan.text(currentStep + 1);
-            totalStepsSpan.text(totalSteps);
-            
-            prevBtn.prop('disabled', currentStep === 0);
-            nextBtn.prop('disabled', currentStep === totalSteps - 1);
-            
-            tabs.removeClass('active');
-            container.find('.tab-pane').removeClass('show active');
-            
-            tabs.eq(currentStep).addClass('active').attr('aria-selected', 'true');
-            container.find('.tab-pane').eq(currentStep).addClass('show active');
-        }
-        
-        prevBtn.off('click.steps').on('click.steps', function() {
-            if (currentStep > 0) {
-                currentStep--;
-                updateNavigation();
-            }
-        });
-        
-        nextBtn.off('click.steps').on('click.steps', function() {
-            if (currentStep < totalSteps - 1) {
-                currentStep++;
-                updateNavigation();
-            }
-        });
-        
-        tabs.off('click.steps').on('click.steps', function() {
-            currentStep = tabs.index(this);
-            updateNavigation();
-        });
-        
-        updateNavigation();
-    });
-}
-
-function initBootstrapTabs() {
-    $('.extended-tabs-container .nav-link, .code-group-container .nav-link').off('click.bootstrap-tabs').on('click.bootstrap-tabs', function(e) {
-        e.preventDefault();
-        
-        const targetId = $(this).data('bs-target');
-        const container = $(this).closest('.extended-tabs-container, .code-group-container');
-        
-        container.find('.nav-link').removeClass('active').attr('aria-selected', 'false');
-        container.find('.tab-pane').removeClass('show active');
-        
-        $(this).addClass('active').attr('aria-selected', 'true');
-        $(targetId).addClass('show active');
-    });
-}
