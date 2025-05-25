@@ -19,9 +19,14 @@ const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
-const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\s*(.*?)\s*<p dir="auto">:{3}<\/p>/gs;
-const stepsRegex = /<p dir="auto">:{3}steps<\/p>\s*(.*?)\s*<p dir="auto">:{3}<\/p>/gs;
-const collapsibleRegex = /<p dir="auto">\+{3}\s+([^<]+)<\/p>\s*(.*?)\s*<p dir="auto">\+{3}<\/p>/gs;
+// 使用更简单的BBCode风格语法
+const tabsRegex = /\[tabs\](.*?)\[\/tabs\]/gs;
+const tabRegex = /\[tab=([^\]]+)\](.*?)(?=\[tab=|\[\/tabs\])/gs;
+
+const stepsRegex = /\[steps\](.*?)\[\/steps\]/gs;
+const stepRegex = /\[step=(\d+)\]([^\[]*?)(?:\[step=|\[\/steps\])/gs;
+
+const collapsibleRegex = /\[spoiler=([^\]]+)\](.*?)\[\/spoiler\]/gs;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -270,12 +275,13 @@ function applyGroupCode(textContent, id) {
 function applyTabs(textContent, id) {
     return textContent.replace(tabsRegex, (match, content) => {
         const tabsId = `tabs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const tabPattern = /<p dir="auto">@tab\s+([^<]+)<\/p>\s*(.*?)(?=<p dir="auto">@tab|$)/gs;
         const tabs = [];
         let tabMatch;
         
-        while ((tabMatch = tabPattern.exec(content)) !== null) {
+        // 重置正则表达式
+        tabRegex.lastIndex = 0;
+        
+        while ((tabMatch = tabRegex.exec(content)) !== null) {
             tabs.push({
                 title: tabMatch[1].trim(),
                 content: tabMatch[2].trim()
@@ -313,16 +319,21 @@ function applyTabs(textContent, id) {
 function applySteps(textContent, id) {
     return textContent.replace(stepsRegex, (match, content) => {
         const stepsId = `steps-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const stepPattern = /<p dir="auto">(\d+)\.\s+([^<]+)<\/p>\s*(.*?)(?=<p dir="auto">\d+\.|$)/gs;
         const steps = [];
         let stepMatch;
         
-        while ((stepMatch = stepPattern.exec(content)) !== null) {
+        // 重置正则表达式
+        stepRegex.lastIndex = 0;
+        
+        while ((stepMatch = stepRegex.exec(content)) !== null) {
+            const lines = stepMatch[2].trim().split('\n');
+            const title = lines[0] || `步骤 ${stepMatch[1]}`;
+            const stepContent = lines.slice(1).join('\n').trim();
+            
             steps.push({
                 number: stepMatch[1],
-                title: stepMatch[2].trim(),
-                content: stepMatch[3].trim()
+                title: title,
+                content: stepContent
             });
         }
         

@@ -1,20 +1,45 @@
 {
-    "id": "nodebb-plugin-extended-markdown-fixed",
-    "url": "https://github.com/MinecraftForgeFrance/nodebb-plugin-extended-markdown",
+    "id": "nodebb-plugin-extended-markdown",
+    "name": "Extended Markdown",
+    "description": "This plugin adds useful new features to nodebb markdown parser.",
+    "url": "https://github.com/MeiShiAdmin/nodebb-plugin-extended-markdown.git",
     "library": "./library.js",
-    "scss": [
+    "staticDirs": {
+        "static": "./static"
+    },
+    "css": [
         "public/scss/style.scss"
     ],
-    "hooks": [
-        { "hook": "filter:parse.post", "method": "parsePost"},
-        { "hook": "filter:parse.signature", "method": "parseSignature" },
-        { "hook": "filter:parse.aboutme", "method": "parseAboutMe"},
-        { "hook": "filter:parse.raw", "method": "parseRaw"},
-        { "hook": "filter:composer.formatting", "method": "registerFormatting"},
-        { "hook": "filter:sanitize.config", "method": "sanitizerConfig"}
-    ],
     "scripts": [
-        "public/js/client.js"
+        "public/js/client.js",
+        "public/js/composer.js"
     ],
-    "languages": "public/languages"
+    "languages": "public/languages",
+    "hooks": [
+        {
+            "hook": "filter:parse.post", 
+            "method": "parsePost"
+        },
+        {
+            "hook": "filter:parse.signature", 
+            "method": "parseSignature"
+        },
+        {
+            "hook": "filter:parse.aboutme", 
+            "method": "parseAboutMe"
+        },
+        {
+            "hook": "filter:parse.raw", 
+            "method": "parseRaw"
+        },
+        {
+            "hook": "filter:composer.formatting", 
+            "method": "registerFormatting"
+        },
+        {
+            "hook": "filter:sanitizer.config", 
+            "method": "sanitizerConfig"
+        }
+    ],
+    "compatibility": "^3.0.0"
 }

@@ -16,9 +16,9 @@
     "composer.formatting.groupedcode": "Grouped Code",
     "composer.formatting.bubbleinfo": "Bubble Info",
     "composer.formatting.color": "Color",
-    "composer.formatting.left": "Left Align",
-    "composer.formatting.center": "Center Align",
-    "composer.formatting.right": "Right Align",
+    "composer.formatting.left": "Align Left",
+    "composer.formatting.center": "Align Center",
+    "composer.formatting.right": "Align Right",
     "composer.formatting.justify": "Justify",
     "composer.formatting.spoiler": "Spoiler",
     "composer.formatting.noteinfo": "Info Note",
@@ -29,5 +29,26 @@
     "composer.formatting.subscript": "Subscript",
     "composer.formatting.annotation": "Annotation",
     "composer.formatting.collapsible": "Collapsible",
-    "composer.formatting.steps": "Steps"
+    "composer.formatting.steps": "Steps",
+    "composer": {
+        "formatting": {
+            "color": "Color",
+            "left": "Align Left",
+            "center": "Align Center",
+            "right": "Align Right",
+            "justify": "Justify",
+            "textheader": "Text Header",
+            "groupedcode": "Grouped Code",
+            "bubbleinfo": "Bubble Info",
+            "spoiler": "Spoiler",
+            "noteinfo": "Info Note",
+            "notewarning": "Warning Note",
+            "noteimportant": "Important Note",
+            "tabs": "Tabs",
+            "steps": "Steps",
+            "superscript": "Superscript",
+            "subscript": "Subscript",
+            "collapsible": "Collapsible"
+        }
+    }
 }
