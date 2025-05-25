@@ -137,42 +137,38 @@
     }
 }
 
-.code-group-container,
-.extended-tabs-container,
-.steps-container {
+.code-group-container {
     background: #ffffff;
     border: 1px solid #e9ecef;
     border-radius: 0.5rem;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    margin: 0.125rem 0;
+    margin: 1rem 0;
     
     .nav-tabs {
         border-bottom: 1px solid #e9ecef;
         background: #f8f9fa;
         margin: 0;
         
-        .nav-item {
-            margin-bottom: 0;
+        .nav-item .nav-link {
+            border: none;
+            padding: 0.125rem 0.25rem;
+            margin: 0;
+            background: none;
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
             
-            .nav-link {
-                border: none;
-                border-radius: 0;
-                padding: 0.75rem 1rem;
-                color: #6c757d;
-                background: transparent;
-                transition: all 0.2s ease;
-                
-                &:hover {
-                    color: #495057;
-                    background: rgba(0, 0, 0, 0.05);
-                }
-                
-                &.active {
-                    color: #0d6efd;
-                    background: #ffffff;
-                    border-bottom: 2px solid #0d6efd;
-                }
+            &.active {
+                background: #ffffff;
+                color: #0d6efd;
+                border-bottom: 2px solid #0d6efd;
+            }
+            
+            &:hover:not(.active) {
+                background: rgba(13, 110, 253, 0.1);
+                color: #0d6efd;
             }
         }
     }
@@ -181,48 +177,111 @@
         background: #ffffff;
         
         .tab-pane {
-            padding: 0.125rem;
+            padding: 0;
         }
     }
     
     &.extended-dark-theme {
-        background: #212529;
+        background: #1a1a1a;
         border-color: #495057;
         
         .nav-tabs {
-            background: #343a40;
+            background: #2d3748;
             border-bottom-color: #495057;
             
-            .nav-link {
+            .nav-item .nav-link {
                 color: #adb5bd;
                 
-                &:hover {
-                    color: #e9ecef;
-                    background: rgba(255, 255, 255, 0.1);
+                &.active {
+                    background: #1a1a1a;
+                    color: #6ea8fe;
+                    border-bottom-color: #6ea8fe;
                 }
                 
-                &.active {
+                &:hover:not(.active) {
+                    background: rgba(110, 168, 254, 0.1);
                     color: #6ea8fe;
-                    background: #212529;
-                    border-bottom-color: #6ea8fe;
                 }
             }
         }
         
         .tab-content {
-            background: #212529;
+            background: #1a1a1a;
         }
     }
 }
 
-.code-group-container {
-    .tab-pane {
-        padding: 0 !important;
+.extended-tabs-container,
+.steps-container {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin: 1rem 0;
+    
+    .nav-tabs {
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+        margin: 0;
         
-        pre {
-            margin: 0;
-            border-radius: 0;
+        .nav-item .nav-link {
             border: none;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            background: none;
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            
+            &.active {
+                background: #ffffff;
+                color: #0d6efd;
+                border-bottom: 2px solid #0d6efd;
+            }
+            
+            &:hover:not(.active) {
+                background: rgba(13, 110, 253, 0.1);
+                color: #0d6efd;
+            }
+        }
+    }
+    
+    .tab-content {
+        background: #ffffff;
+        
+        .tab-pane {
+            padding: 1rem;
+        }
+    }
+    
+    &.extended-dark-theme {
+        background: #1a1a1a;
+        border-color: #495057;
+        
+        .nav-tabs {
+            background: #2d3748;
+            border-bottom-color: #495057;
+            
+            .nav-item .nav-link {
+                color: #adb5bd;
+                
+                &.active {
+                    background: #1a1a1a;
+                    color: #6ea8fe;
+                    border-bottom-color: #6ea8fe;
+                }
+                
+                &:hover:not(.active) {
+                    background: rgba(110, 168, 254, 0.1);
+                    color: #6ea8fe;
+                }
+            }
+        }
+        
+        .tab-content {
+            background: #1a1a1a;
         }
     }
 }
@@ -403,10 +462,31 @@ a.anchor-offset {
 }
 
 @media (max-width: 768px) {
-    .code-group-container,
+    .code-group-container {
+        margin: 1rem 0 !important;
+        
+        .nav-tabs {
+            flex-wrap: wrap;
+            
+            .nav-item {
+                flex: none;
+                min-width: 50%;
+                
+                .nav-link {
+                    padding: 0.125rem 0.25rem;
+                    font-size: 0.7rem;
+                }
+            }
+        }
+        
+        .tab-content .tab-pane {
+            padding: 0 !important;
+        }
+    }
+    
     .extended-tabs-container,
     .steps-container {
-        margin: 0.125rem 0 !important;
+        margin: 1rem 0 !important;
         
         .nav-tabs {
             flex-wrap: wrap;
@@ -423,7 +503,7 @@ a.anchor-offset {
         }
         
         .tab-content .tab-pane {
-            padding: 0.125rem !important;
+            padding: 0.75rem !important;
         }
     }
     
@@ -460,5 +540,5 @@ a.anchor-offset {
 .container .post-content .code-group-container,
 .container .post-content .extended-tabs-container,
 .container .post-content .steps-container {
-    margin: 0.125rem 0 !important;
+    margin: 1rem 0 !important;
 }
