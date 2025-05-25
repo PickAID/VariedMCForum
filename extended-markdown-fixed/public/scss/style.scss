@@ -146,9 +146,9 @@
     margin: 1rem 0;
     
     .nav-tabs {
-        border-bottom: 1px solid #e9ecef;
         background: #f8f9fa;
         margin: 0;
+        border: none;
         
         .nav-item .nav-link {
             border: none;
@@ -159,6 +159,7 @@
             font-weight: 500;
             font-size: 0.75rem;
             transition: all 0.2s ease;
+            border-radius: 0;
             
             &.active {
                 background: #ffffff;
@@ -175,9 +176,11 @@
     
     .tab-content {
         background: #ffffff;
+        margin: 0;
         
         .tab-pane {
             padding: 0;
+            margin: 0;
         }
     }
     
@@ -187,7 +190,6 @@
         
         .nav-tabs {
             background: #2d3748;
-            border-bottom-color: #495057;
             
             .nav-item .nav-link {
                 color: #adb5bd;
@@ -221,9 +223,9 @@
     margin: 1rem 0;
     
     .nav-tabs {
-        border-bottom: 1px solid #e9ecef;
         background: #f8f9fa;
         margin: 0;
+        border: none;
         
         .nav-item .nav-link {
             border: none;
@@ -234,6 +236,7 @@
             font-weight: 500;
             font-size: 0.9rem;
             transition: all 0.2s ease;
+            border-radius: 0;
             
             &.active {
                 background: #ffffff;
@@ -250,6 +253,7 @@
     
     .tab-content {
         background: #ffffff;
+        margin: 0;
         
         .tab-pane {
             padding: 1rem;
@@ -262,7 +266,6 @@
         
         .nav-tabs {
             background: #2d3748;
-            border-bottom-color: #495057;
             
             .nav-item .nav-link {
                 color: #adb5bd;
