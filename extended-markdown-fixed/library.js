@@ -50,6 +50,21 @@ function cleanContent(content) {
         .trim();
 }
 
+function applyTextHeaders(textContent) {
+    return textContent.replace(textHeaderRegex, function (match, id, content) {
+        return `<div class="text-header" id="${id}">${content}</div>`;
+    });
+}
+
+function applyTooltips(textContent) {
+    return textContent.replace(tooltipRegex, function (match, codeBlock, text, tooltip) {
+        if (codeBlock) {
+            return codeBlock;
+        }
+        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltip}">${text}</span>`;
+    });
+}
+
 function createTabComponent(type, items, id) {
     let menuTab = `<ul class='nav nav-tabs' role='tablist' id='${id}-tabs'>`;
     let contentTab = `<div class='tab-content' id='${id}-content'>`;
@@ -162,41 +177,26 @@ function applyTabs(textContent, id) {
 }
 
 function applySpoiler(textContent, id) {
-    if (textContent.match(spoilerRegex)) {
-        let count = 0;
-        textContent = textContent.replace(spoilerRegex, function (match, title, text) {
-            const spoilerButton = `
-                <button class="btn btn-outline-secondary btn-sm extended-markdown-collapsible" 
-                        type="button" 
-                        data-bs-toggle="collapse" 
-                        data-bs-target="#spoiler${count + id}" 
-                        aria-expanded="false" 
-                        aria-controls="spoiler${count + id}">
-                    <i class="fa fa-chevron-right collapse-icon"></i> ${title}
-                </button>`;
-            const spoilerContent = `
-                <div class="collapse" id="spoiler${count + id}">
-                    <div class="card card-body spoiler"><p dir="auto">${text}</p></div>
-                </div>`;
-            count++;
-            return `<p>${spoilerButton}${spoilerContent}</p>`;
-        });
-    }
-    return textContent;
-}
-
-function applyTextHeaders(textContent) {
-    return textContent.replace(textHeaderRegex, function (match, anchorId, text) {
-        return `<div class="text-header" id="${anchorId}">${text}</div>`;
-    });
-}
-
-function applyTooltips(textContent) {
-    return textContent.replace(tooltipRegex, function (match, codeBlock, text, tooltip) {
-        if (codeBlock) {
-            return codeBlock;
-        }
-        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltip}">${text}</span>`;
+    return textContent.replace(spoilerRegex, function (match, title, content) {
+        const cleanedContent = cleanContent(content);
+        const spoilerId = `spoiler-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        return `<div class="collapsible-wrapper">
+            <button class="btn btn-outline-secondary extended-markdown-collapsible" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#${spoilerId}" 
+                    aria-expanded="false" 
+                    aria-controls="${spoilerId}">
+                <i class="fa fa-chevron-right collapse-icon"></i>
+                ${title}
+            </button>
+            <div class="collapse collapsible-content" id="${spoilerId}">
+                <div class="card-body">
+                    ${cleanedContent}
+                </div>
+            </div>
+        </div>`;
     });
 }
 
@@ -210,14 +210,10 @@ function applyColors(textContent) {
 }
 
 function applyRuby(textContent) {
-    const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
     return textContent.replace(rubyRegex, '<ruby>$1<rt>$2</rt></ruby>');
 }
 
 function applySuperscriptAndSubscript(textContent) {
-    const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
-    const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
-    
     textContent = textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
     return textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
 }
