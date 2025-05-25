@@ -77,7 +77,7 @@ $(document).ready(function () {
     function initializeCollapse() {
         $('.collapsible-wrapper').each(function() {
             const $wrapper = $(this);
-            const $button = $wrapper.find('.extended-markdown-collapsible').first();
+            const $button = $wrapper.find('.extended-markdown-collapsible');
             
             if ($button.length && !$button.data('collapse-initialized')) {
                 $button.data('collapse-initialized', true);
@@ -88,28 +88,22 @@ $(document).ready(function () {
                 if ($target.length) {
                     const $icon = $button.find('.collapse-icon');
                     
+                    $target.hide();
+                    
                     $button.on('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        if ($target.hasClass('show')) {
-                            $target.removeClass('show');
+                        if ($target.is(':visible')) {
+                            $target.hide();
                             $button.attr('aria-expanded', 'false');
                             $icon.css('transform', 'rotate(0deg)');
                         } else {
-                            $target.addClass('show');
+                            $target.show();
                             $button.attr('aria-expanded', 'true');
                             $icon.css('transform', 'rotate(90deg)');
                         }
                     });
-                    
-                    if ($button.attr('aria-expanded') === 'true') {
-                        $target.addClass('show');
-                        $icon.css('transform', 'rotate(90deg)');
-                    } else {
-                        $target.removeClass('show');
-                        $icon.css('transform', 'rotate(0deg)');
-                    }
                 }
             }
         });
