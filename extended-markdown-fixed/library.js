@@ -17,12 +17,14 @@ const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
+const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
+
 // 使用更简单的BBCode风格语法
 const tabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
-const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\])/gi;
+const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
 
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
-const stepRegex = /(?:<p dir="auto">)?\[step=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step=|(?:<p dir="auto">)?\[\/steps\])/gi;
+const stepRegex = /(?:<p dir="auto">)?\[step=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step=|(?:<p dir="auto">)?\[\/steps\]|$)/gi;
 
 const collapsibleRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
@@ -94,7 +96,8 @@ const ExtendedMarkdown = {
             { name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]" },
             { name: "tabs", className: "fa fa-folder-open", title: "插入标签页" },
             { name: "steps", className: "fa fa-tasks", title: "插入步骤" },
-            { name: "collapsible", className: "fa fa-compress", title: "插入折叠框" }
+            { name: "collapsible", className: "fa fa-compress", title: "插入折叠框" },
+            { name: "ruby", className: "fa fa-language", title: "插入音注标记" }
         ];
 
         payload.options = payload.options.concat(formatting);
@@ -102,7 +105,7 @@ const ExtendedMarkdown = {
     },
 
     async sanitizerConfig(config) {
-        config.allowedTags.push('div', 'span', 'button', 'ul', 'li', 'nav');
+        config.allowedTags.push('div', 'span', 'button', 'ul', 'li', 'nav', 'ruby', 'rt', 'rp');
         config.allowedAttributes['*'].push('data-bs-toggle', 'data-bs-target', 'data-target', 'data-toggle', 'aria-expanded', 'aria-controls', 'role', 'type');
         config.allowedClasses['*'] = ['*'];
         config.allowedAttributes['a'].push('name');
@@ -118,43 +121,43 @@ function createTabComponent(componentType, items, id, extraContent = '') {
                           componentType === 'steps' ? 'steps-container' : 'extended-tabs-container';
     
     let html = `<div class="${containerClass}">
-        <ul class="nav nav-tabs ${componentType}-nav" role="tablist">`;
+        <ul class="nav nav-tabs" role="tablist" id="${componentId}-tabs">`;
     
     items.forEach((item, index) => {
         const isActive = index === 0;
-        const tabId = `${componentId}-tab-${index}`;
-        const paneId = `${componentId}-pane-${index}`;
+        const tabId = `${componentId}-${index}`;
         
         html += `<li class="nav-item" role="presentation">
             <button class="nav-link ${isActive ? 'active' : ''}" 
-                    id="${tabId}" 
+                    id="${tabId}-tab" 
                     data-bs-toggle="tab" 
-                    data-bs-target="#${paneId}" 
+                    data-bs-target="#${tabId}" 
                     type="button" 
                     role="tab" 
-                    aria-controls="${paneId}" 
-                    aria-selected="${isActive}">
+                    aria-controls="${tabId}" 
+                    aria-selected="${isActive ? 'true' : 'false'}">
                 ${item.label}
             </button>
         </li>`;
     });
     
-    html += `</ul><div class="tab-content ${componentType}-content">`;
+    html += `</ul><div class="tab-content" id="${componentId}-content">`;
     
     items.forEach((item, index) => {
         const isActive = index === 0;
-        const paneId = `${componentId}-pane-${index}`;
-        const tabId = `${componentId}-tab-${index}`;
+        const tabId = `${componentId}-${index}`;
         
         html += `<div class="tab-pane fade ${isActive ? 'show active' : ''}" 
-                     id="${paneId}" 
+                     id="${tabId}" 
                      role="tabpanel" 
-                     aria-labelledby="${tabId}">
+                     aria-labelledby="${tabId}-tab" 
+                     tabindex="0">
             ${item.content}
         </div>`;
     });
     
     html += `</div>${extraContent}</div>`;
+    
     return html;
 }
 
@@ -180,6 +183,12 @@ function applyExtendedMarkdown(textContent) {
             } else {
                 return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
             }
+        });
+    }
+
+    if (textContent.match(rubyRegex)) {
+        textContent = textContent.replace(rubyRegex, function (match, base, annotation) {
+            return `<ruby>${base}<rp>(</rp><rt>${annotation}</rt><rp>)</rp></ruby>`;
         });
     }
 
