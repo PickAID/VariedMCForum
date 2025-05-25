@@ -23,5 +23,11 @@
     "composer.formatting.spoiler": "剧透",
     "composer.formatting.noteinfo": "信息注释",
     "composer.formatting.notewarning": "警告注释",
-    "composer.formatting.noteimportant": "重要注释"
+    "composer.formatting.noteimportant": "重要注释",
+    "composer.formatting.tabs": "选项卡",
+    "composer.formatting.superscript": "上标",
+    "composer.formatting.subscript": "下标",
+    "composer.formatting.annotation": "标注",
+    "composer.formatting.collapsible": "折叠内容",
+    "composer.formatting.steps": "步骤条"
 } 

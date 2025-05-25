@@ -59,21 +59,14 @@ $(document).ready(function () {
     function applyThemeStyles() {
         const theme = detectTheme();
         
-        document.querySelectorAll('.admonition').forEach(element => {
+        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .collapsible-wrapper, .steps-container').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
             }
         });
         
-        document.querySelectorAll('.code-group-container').forEach(element => {
-            if (!element.classList.contains(`theme-${theme}`)) {
-                element.classList.remove('theme-light', 'theme-dark');
-                element.classList.add(`theme-${theme}`);
-            }
-        });
-        
-        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler').forEach(element => {
+        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler, .annotation-mark').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
@@ -129,11 +122,37 @@ $(document).ready(function () {
             formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
                 controls.wrapSelectionInTextareaWith(textarea, '||', '||');
             });
+
+            // 新功能按钮
+            formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
+            });
+
+            formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '^', '^');
+            });
+
+            formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '~', '~');
+            });
+
+            formatting.addButtonDispatch('annotation', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, '[', ']{.annotation}');
+            });
+
+            formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
+            });
+
+            formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
+            });
         }
     };
 
     function pageReady() {
         setTimeout(function() {
+            // 现有功能初始化
             document.querySelectorAll('.spoiler:not([data-spoiler-initialized])').forEach(function(spoiler) {
                 spoiler.setAttribute('data-spoiler-initialized', 'true');
                 spoiler.addEventListener('click', function() {
@@ -156,6 +175,48 @@ $(document).ready(function () {
                     }
                 });
             });
+
+            // 新功能初始化
+            // 标注功能
+            document.querySelectorAll('.annotation-mark:not([data-annotation-initialized])').forEach(function(element) {
+                element.setAttribute('data-annotation-initialized', 'true');
+                const annotation = element.getAttribute('data-annotation');
+                if (annotation) {
+                    element.setAttribute('title', annotation);
+                    element.setAttribute('data-bs-toggle', 'tooltip');
+                    element.setAttribute('data-bs-placement', 'top');
+                }
+            });
+
+            // 收缩功能图标切换
+            document.querySelectorAll('.extended-markdown-collapsible:not([data-collapse-initialized])').forEach(function(button) {
+                button.setAttribute('data-collapse-initialized', 'true');
+                const icon = button.querySelector('.collapse-icon');
+                const targetId = button.getAttribute('data-bs-target');
+                const target = document.querySelector(targetId);
+                
+                if (target && icon) {
+                    target.addEventListener('show.bs.collapse', function() {
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-down');
+                    });
+                    
+                    target.addEventListener('hide.bs.collapse', function() {
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-right');
+                    });
+                }
+            });
+
+            // 初始化工具提示
+            if (window.bootstrap && window.bootstrap.Tooltip) {
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
+                    if (!element._bsTooltipInitialized) {
+                        new window.bootstrap.Tooltip(element);
+                        element._bsTooltipInitialized = true;
+                    }
+                });
+            }
             
             applyThemeStyles();
             setupThemeWatcher();

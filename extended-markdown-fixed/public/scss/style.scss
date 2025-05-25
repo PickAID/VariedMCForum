@@ -274,7 +274,226 @@ a.anchor-offset {
     }
 }
 
-.code-group-container {
+// 新增样式：通用选项卡
+.extended-tabs-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #ffffff;
+    margin: 1rem 0;
+    
+    .extended-tabs {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        margin: 0;
+        
+        .nav-item .nav-link {
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            color: #6c757d;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            
+            &:hover {
+                background: rgba(0, 0, 0, 0.03);
+                color: #495057;
+            }
+            
+            &.active {
+                color: #0d6efd;
+                background: #ffffff;
+                border-bottom-color: #0d6efd;
+            }
+        }
+    }
+    
+    .tab-content-wrapper {
+        padding: 1rem;
+    }
+    
+    &.theme-dark {
+        background: #212529;
+        border-color: #495057;
+        
+        .extended-tabs {
+            background: #343a40;
+            border-bottom-color: #495057;
+            
+            .nav-item .nav-link {
+                color: #adb5bd;
+                
+                &:hover {
+                    background: rgba(255, 255, 255, 0.03);
+                    color: #f8f9fa;
+                }
+                
+                &.active {
+                    background: #212529;
+                    color: #6ea8fe;
+                    border-bottom-color: #6ea8fe;
+                }
+            }
+        }
+    }
+}
+
+// 新增样式：标注
+.annotation-mark {
+    background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+    background-size: 100% 3px;
+    background-repeat: no-repeat;
+    background-position: 0 bottom;
+    cursor: help;
+    position: relative;
+    
+    &.theme-dark {
+        background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
+        background-size: 100% 3px;
+        background-repeat: no-repeat;
+        background-position: 0 bottom;
+    }
+}
+
+// 新增样式：可收缩内容
+.collapsible-wrapper {
+    margin: 1rem 0;
+    
+    .extended-markdown-collapsible {
+        border: 1px solid #0d6efd;
+        transition: all 0.2s ease;
+        
+        .collapse-icon {
+            transition: transform 0.2s ease;
+            margin-right: 0.5rem;
+        }
+        
+        &:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+    }
+    
+    .collapsible-content {
+        border-left: 3px solid #0d6efd;
+        background: rgba(13, 110, 253, 0.05);
+    }
+    
+    &.theme-dark {
+        .extended-markdown-collapsible {
+            border-color: #6ea8fe;
+            color: #6ea8fe;
+            
+            &:hover {
+                background-color: #6ea8fe;
+                color: #212529;
+            }
+        }
+        
+        .collapsible-content {
+            border-left-color: #6ea8fe;
+            background: rgba(110, 168, 254, 0.1);
+            color: #f8f9fa;
+        }
+    }
+}
+
+// 新增样式：步骤条
+.steps-container {
+    margin: 1.5rem 0;
+    
+    .step-item {
+        display: flex;
+        position: relative;
+        margin-bottom: 1rem;
+        
+        &:last-child {
+            margin-bottom: 0;
+        }
+        
+        .step-marker {
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: #0d6efd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            position: relative;
+            z-index: 1;
+            
+            .step-number {
+                color: white;
+                font-weight: bold;
+                font-size: 0.875rem;
+            }
+        }
+        
+        .step-content {
+            flex: 1;
+            padding-top: 0.25rem;
+            
+            .step-text {
+                color: #495057;
+                line-height: 1.5;
+            }
+        }
+        
+        .step-connector {
+            position: absolute;
+            left: 0.9375rem;
+            top: 2rem;
+            bottom: -1rem;
+            width: 2px;
+            background: #dee2e6;
+            z-index: 0;
+        }
+        
+        &.step-last .step-connector {
+            display: none;
+        }
+    }
+    
+    &.theme-dark {
+        .step-item {
+            .step-marker {
+                background: #6ea8fe;
+            }
+            
+            .step-content .step-text {
+                color: #f8f9fa;
+            }
+            
+            .step-connector {
+                background: #495057;
+            }
+        }
+    }
+}
+
+// 上标下标样式
+sup, sub {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+sup {
+    top: -0.5em;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+// 隐藏不需要的导航元素
+.code-group-container,
+.extended-tabs-container {
     .fa-chevron-left,
     .fa-chevron-right,
     .fa-angle-left,

@@ -23,5 +23,11 @@
     "composer.formatting.spoiler": "Spoiler",
     "composer.formatting.noteinfo": "Info Note",
     "composer.formatting.notewarning": "Warning Note",
-    "composer.formatting.noteimportant": "Important Note"
+    "composer.formatting.noteimportant": "Important Note",
+    "composer.formatting.tabs": "Tabs",
+    "composer.formatting.superscript": "Superscript",
+    "composer.formatting.subscript": "Subscript",
+    "composer.formatting.annotation": "Annotation",
+    "composer.formatting.collapsible": "Collapsible",
+    "composer.formatting.steps": "Steps"
 }
