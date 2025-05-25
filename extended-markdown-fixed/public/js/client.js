@@ -75,41 +75,39 @@ $(document).ready(function () {
     }
 
     function initializeCollapse() {
-        $('.extended-markdown-collapsible').each(function() {
+        $('.extended-markdown-collapsible:not([data-collapse-initialized])').each(function() {
             const $button = $(this);
+            $button.attr('data-collapse-initialized', 'true');
             
-            if (!$button.data('collapse-initialized')) {
-                $button.data('collapse-initialized', true);
+            const targetId = $button.attr('data-bs-target');
+            const $target = $(targetId);
+            
+            if ($target.length) {
+                const $icon = $button.find('.collapse-icon');
                 
-                const targetId = $button.attr('data-bs-target');
-                const $target = $(targetId);
-                
-                if ($target.length) {
-                    const $icon = $button.find('.collapse-icon');
+                $button.off('click.extended-collapse').on('click.extended-collapse', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     
-                    $button.off('click.extended-collapse').on('click.extended-collapse', function(e) {
-                        e.preventDefault();
-                        
-                        const isExpanded = $button.attr('aria-expanded') === 'true';
-                        
-                        if (isExpanded) {
-                            $target.removeClass('show');
-                            $button.attr('aria-expanded', 'false');
-                            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
-                        } else {
-                            $target.addClass('show');
-                            $button.attr('aria-expanded', 'true');
-                            $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
-                        }
-                    });
+                    const isExpanded = $button.attr('aria-expanded') === 'true';
                     
-                    if ($button.attr('aria-expanded') === 'true') {
-                        $target.addClass('show');
-                        $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
-                    } else {
+                    if (isExpanded) {
                         $target.removeClass('show');
-                        $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+                        $button.attr('aria-expanded', 'false');
+                        $icon.css('transform', 'rotate(0deg)');
+                    } else {
+                        $target.addClass('show');
+                        $button.attr('aria-expanded', 'true');
+                        $icon.css('transform', 'rotate(90deg)');
                     }
+                });
+                
+                if ($button.attr('aria-expanded') === 'true') {
+                    $target.addClass('show');
+                    $icon.css('transform', 'rotate(90deg)');
+                } else {
+                    $target.removeClass('show');
+                    $icon.css('transform', 'rotate(0deg)');
                 }
             }
         });
@@ -124,6 +122,58 @@ $(document).ready(function () {
                 const tooltipText = $tooltip.data('tooltip');
                 if (tooltipText) {
                     $tooltip.attr('title', tooltipText);
+                }
+            }
+        });
+    }
+
+    function initStepsNavigation() {
+        $('.steps-container').each(function() {
+            const $container = $(this);
+            
+            if (!$container.data('steps-initialized')) {
+                $container.data('steps-initialized', true);
+                
+                const $prevBtn = $container.find('.step-prev');
+                const $nextBtn = $container.find('.step-next');
+                const $tabs = $container.find('.nav-link');
+                const $counter = $container.find('.current-step');
+                const $total = $container.find('.total-steps');
+                
+                if ($prevBtn.length && $nextBtn.length && $tabs.length) {
+                    $total.text($tabs.length);
+                    
+                    $prevBtn.off('click.steps').on('click.steps', function(e) {
+                        e.preventDefault();
+                        const $current = $container.find('.nav-link.active');
+                        const $prev = $current.closest('.nav-item').prev().find('.nav-link');
+                        if ($prev.length) {
+                            $prev.trigger('click');
+                        }
+                    });
+                    
+                    $nextBtn.off('click.steps').on('click.steps', function(e) {
+                        e.preventDefault();
+                        const $current = $container.find('.nav-link.active');
+                        const $next = $current.closest('.nav-item').next().find('.nav-link');
+                        if ($next.length) {
+                            $next.trigger('click');
+                        }
+                    });
+                    
+                    function updateStepNavigation() {
+                        const $current = $container.find('.nav-link.active');
+                        const currentIndex = $current.closest('.nav-item').index();
+                        const totalSteps = $tabs.length;
+                        
+                        $prevBtn.prop('disabled', currentIndex === 0);
+                        $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
+                        
+                        $counter.text(currentIndex + 1);
+                    }
+                    
+                    $tabs.off('click.step-update').on('click.step-update', updateStepNavigation);
+                    updateStepNavigation();
                 }
             }
         });
@@ -151,6 +201,7 @@ $(document).ready(function () {
         initializeTabComponents();
         initializeCollapse();
         initializeTooltips();
+        initStepsNavigation();
     }
 
     let initTimeout;
