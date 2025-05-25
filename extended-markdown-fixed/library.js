@@ -19,7 +19,6 @@ const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
 const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
 
-// 使用更简单的BBCode风格语法
 const tabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
 
@@ -107,8 +106,13 @@ const ExtendedMarkdown = {
     async sanitizerConfig(config) {
         config.allowedTags.push('div', 'span', 'button', 'ul', 'li', 'nav', 'ruby', 'rt', 'rp');
         config.allowedAttributes['*'].push('data-bs-toggle', 'data-bs-target', 'data-target', 'data-toggle', 'aria-expanded', 'aria-controls', 'role', 'type');
-        config.allowedClasses['*'] = ['*'];
-        config.allowedAttributes['a'].push('name');
+        config.allowedAttributes['*'].push('aria-labelledby', 'aria-selected', 'tabindex');
+        config.allowedClasses['*'].push('nav', 'nav-tabs', 'nav-item', 'nav-link', 'tab-content', 'tab-pane', 'fade', 'show', 'active');
+        config.allowedClasses['*'].push('extended-tabs-container', 'steps-container', 'code-group-container');
+        config.allowedClasses['*'].push('tab-content-wrapper', 'steps-navigation', 'step-prev', 'step-next', 'step-indicator');
+        config.allowedClasses['*'].push('current-step', 'total-steps', 'step-number');
+        config.allowedClasses['*'].push('collapsible-wrapper', 'extended-markdown-collapsible', 'collapse-icon', 'collapsible-content');
+        config.allowedClasses['*'].push('btn', 'btn-outline-primary', 'btn-outline-secondary', 'collapse', 'card', 'card-body', 'mt-2');
         return config;
     }
 };
@@ -122,144 +126,50 @@ function createTabComponent(componentType, items, componentId, extraContent = ''
         <ul class="nav nav-tabs" role="tablist" id="${componentId}-tabs">`;
     
     items.forEach((item, index) => {
-        const isActive = index === 0;
-        const tabId = `${componentId}-${index}`;
+        const tabId = `${componentId}-tab-${index}`;
+        const paneId = `${componentId}-pane-${index}`;
+        const isActive = index === 0 ? 'active' : '';
+        const ariaSelected = index === 0 ? 'true' : 'false';
         
         html += `<li class="nav-item" role="presentation">
-            <button class="nav-link ${isActive ? 'active' : ''}" 
-                    id="${tabId}-tab" 
+            <button class="nav-link ${isActive}" 
+                    id="${tabId}" 
                     data-bs-toggle="tab" 
-                    data-bs-target="#${tabId}" 
+                    data-bs-target="#${paneId}" 
                     type="button" 
                     role="tab" 
-                    aria-controls="${tabId}" 
-                    aria-selected="${isActive ? 'true' : 'false'}">
+                    aria-controls="${paneId}" 
+                    aria-selected="${ariaSelected}">
                 ${item.label}
             </button>
         </li>`;
     });
     
-    html += `</ul><div class="tab-content" id="${componentId}-content">`;
+    html += '</ul><div class="tab-content" id="' + componentId + '-content">';
     
     items.forEach((item, index) => {
-        const isActive = index === 0;
-        const tabId = `${componentId}-${index}`;
+        const paneId = `${componentId}-pane-${index}`;
+        const tabId = `${componentId}-tab-${index}`;
+        const isActive = index === 0 ? 'show active' : '';
         
-        html += `<div class="tab-pane fade ${isActive ? 'show active' : ''}" 
-                     id="${tabId}" 
-                     role="tabpanel" 
-                     aria-labelledby="${tabId}-tab" 
-                     tabindex="0">
+        html += `<div class="tab-pane fade ${isActive}" 
+                      id="${paneId}" 
+                      role="tabpanel" 
+                      aria-labelledby="${tabId}" 
+                      tabindex="0">
             <div class="tab-content-wrapper">${item.content}</div>
         </div>`;
     });
     
-    html += `</div>${extraContent}</div>`;
+    html += '</div>';
+    
+    if (extraContent) {
+        html += extraContent;
+    }
+    
+    html += '</div>';
     
     return html;
-}
-
-function applyExtendedMarkdown(textContent) {
-    if (textContent.match(noteRegex)) {
-        textContent = textContent.replace(noteRegex, function (match, type, title, text) {
-            return `<div class="admonition ${type.toLowerCase()}"><p class="admonition-title"><i class="fa ${noteIcons[type.toLowerCase()]}"></i>${title}</p><p>${text}</p></div>`;
-        });
-    }
-
-    if (textContent.match(textHeaderRegex)) {
-        textContent = textContent.replace(textHeaderRegex, function (match, anchorId, text) {
-            return `<h2 class="text-header"><a class="anchor-offset" name="${anchorId}"></a>${text}</h2>`;
-        });
-    }
-
-    if (textContent.match(tooltipRegex)) {
-        textContent = textContent.replace(tooltipRegex, function (match, code, text, tooltipText) {
-            if (typeof (code) !== "undefined") {
-                return code;
-            } else if ("fa-info" === text) {
-                return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
-            } else {
-                return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
-            }
-        });
-    }
-
-    if (textContent.match(rubyRegex)) {
-        textContent = textContent.replace(rubyRegex, function (match, base, annotation) {
-            return `<ruby>${base}<rp>(</rp><rt>${annotation}</rt><rp>)</rp></ruby>`;
-        });
-    }
-
-    if (textContent.match(colorRegex)) {
-        textContent = textContent.replace(colorRegex, function (match, code, color, text) {
-            if (typeof (code) !== "undefined") {
-                return code;
-            }
-            return `<span style="color: ${color};">${text}</span>`;
-        });
-    }
-
-    if (textContent.match(paragraphAndHeadingRegex)) {
-        textContent = textContent.replace(paragraphAndHeadingRegex, function (match, tag, text, closeTag) {
-            let anchor = tag.charAt(0) == "h" ? generateAnchorFromHeading(text) : "";
-            
-            if (text.startsWith("|=") && text.endsWith("=|")) {
-                const cleanText = text.slice(2, -2);
-                return `<${tag} style="text-align:justify;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.startsWith("|-") && text.endsWith("-|")) {
-                const cleanText = text.slice(2, -2);
-                return `<${tag} style="text-align:center;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.endsWith("-|")) {
-                const cleanText = text.slice(0, -2);
-                return `<${tag} style="text-align:right;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.startsWith("|-")) {
-                const cleanText = text.slice(2);
-                return `<${tag} style="text-align:left;">${anchor}${cleanText}</${closeTag}>`;
-            }
-            return `<${tag}>${anchor}${text}</${closeTag}>`;
-        });
-    }
-
-    if (textContent.match(superscriptRegex)) {
-        textContent = textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
-    }
-
-    if (textContent.match(subscriptRegex)) {
-        textContent = textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
-    }
-
-    return textContent;
-}
-
-function applyGroupCode(textContent, id) {
-    if (!textContent.match(codeTabRegex)) return textContent;
-    
-    let count = 0;
-    return textContent.replace(codeTabRegex, (match, codes) => {
-        const items = [];
-        let cleanCodes = codes.trim();
-        let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
-        
-        for (let i = 0; i < codeArray.length; i++) {
-            const langMatch = langCodeRegex.exec(codeArray[i]);
-            if (langMatch) {
-                const lang = langMatch[1];
-                let codeContent = codeArray[i]
-                    .replace(/<\/?pre[^>]*>/g, '')
-                    .replace(/<code[^>]*>/g, '')
-                    .replace(/<\/code>/g, '')
-                    .trim();
-                
-                items.push({
-                    label: capitalizeFirstLetter(lang),
-                    content: `<pre><code class="${lang}">${codeContent}</code></pre>`
-                });
-            }
-        }
-        
-        count++;
-        return createTabComponent('codegroup', items, `cg-${count}-${id}`);
-    });
 }
 
 function applyTabs(textContent, id) {
@@ -342,6 +252,141 @@ function applyCollapsible(textContent, id) {
                 <div class="card card-body mt-2 collapsible-content">${cleanContent}</div>
             </div>
         </div>`;
+    });
+}
+
+async function applyExtendedMarkdown(textContent) {
+    if (textContent.match(rubyRegex)) {
+        textContent = textContent.replace(rubyRegex, '<ruby>$1<rt>$2</rt></ruby>');
+    }
+    
+    if (textContent.match(textHeaderRegex)) {
+        textContent = applyTextHeaders(textContent);
+    }
+    
+    if (textContent.match(tooltipRegex)) {
+        textContent = applyTooltips(textContent);
+    }
+    
+    if (textContent.match(colorRegex)) {
+        textContent = applyColors(textContent);
+    }
+    
+    if (textContent.match(noteRegex)) {
+        textContent = applyNotes(textContent);
+    }
+    
+    if (textContent.match(paragraphAndHeadingRegex)) {
+        textContent = applyAnchors(textContent);
+    }
+    
+    if (textContent.match(superscriptRegex)) {
+        textContent = applySuperscript(textContent);
+    }
+    
+    if (textContent.match(subscriptRegex)) {
+        textContent = applySubscript(textContent);
+    }
+    
+    return textContent;
+}
+
+function applyTextHeaders(textContent) {
+    return textContent.replace(textHeaderRegex, function (match, id, text) {
+        return `<span id="${id}">${text}</span>`;
+    });
+}
+
+function applyTooltips(textContent) {
+    return textContent.replace(tooltipRegex, function (match, code, text, tooltipText) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
+        
+        if (text.trim() === "") {
+            return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
+        } else {
+            return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
+        }
+    });
+}
+
+function applyColors(textContent) {
+    return textContent.replace(colorRegex, function (match, code, color, text) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
+        return `<span style="color: ${color};">${text}</span>`;
+    });
+}
+
+function applySuperscript(textContent) {
+    return textContent.replace(superscriptRegex, '$1<sup>$2</sup>');
+}
+
+function applySubscript(textContent) {
+    return textContent.replace(subscriptRegex, '$1<sub>$2</sub>');
+}
+
+function applyNotes(textContent) {
+    return textContent.replace(noteRegex, function (match, type, title, content) {
+        const icon = noteIcons[type] || 'fa-info-circle';
+        return `<div class="alert alert-${type} extended-markdown-note" role="alert">
+            <h6><i class="fa ${icon}"></i> ${title || capitalizeFirstLetter(type)}</h6>
+            <div>${content}</div>
+        </div>`;
+    });
+}
+
+function applyAnchors(textContent) {
+    return textContent.replace(paragraphAndHeadingRegex, function (match, tag, text, closeTag) {
+        let anchor = tag.charAt(0) == "h" ? generateAnchorFromHeading(text) : "";
+        
+        if (text.startsWith("|=") && text.endsWith("=|")) {
+            const cleanText = text.slice(2, -2);
+            return `<${tag} style="text-align:justify;">${anchor}${cleanText}</${closeTag}>`;
+        } else if (text.startsWith("|-") && text.endsWith("-|")) {
+            const cleanText = text.slice(2, -2);
+            return `<${tag} style="text-align:center;">${anchor}${cleanText}</${closeTag}>`;
+        } else if (text.endsWith("-|")) {
+            const cleanText = text.slice(0, -2);
+            return `<${tag} style="text-align:right;">${anchor}${cleanText}</${closeTag}>`;
+        } else if (text.startsWith("|-")) {
+            const cleanText = text.slice(2);
+            return `<${tag} style="text-align:left;">${anchor}${cleanText}</${closeTag}>`;
+        }
+        return `<${tag}>${anchor}${text}</${closeTag}>`;
+    });
+}
+
+function applyGroupCode(textContent, id) {
+    if (!textContent.match(codeTabRegex)) return textContent;
+    
+    let count = 0;
+    return textContent.replace(codeTabRegex, (match, codes) => {
+        const items = [];
+        let cleanCodes = codes.trim();
+        let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
+        
+        for (let i = 0; i < codeArray.length; i++) {
+            const langMatch = langCodeRegex.exec(codeArray[i]);
+            if (langMatch) {
+                const lang = langMatch[1];
+                let codeContent = codeArray[i]
+                    .replace(/<\/?pre[^>]*>/g, '')
+                    .replace(/<code[^>]*>/g, '')
+                    .replace(/<\/code>/g, '')
+                    .trim();
+                
+                items.push({
+                    label: capitalizeFirstLetter(lang),
+                    content: `<pre><code class="${lang}">${codeContent}</code></pre>`
+                });
+            }
+        }
+        
+        count++;
+        return createTabComponent('code-group', items, `cg-${count}-${id}`);
     });
 }
 

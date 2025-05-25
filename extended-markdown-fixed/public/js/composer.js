@@ -10,26 +10,22 @@ $(document).ready(function() {
             {
                 name: 'tabs',
                 className: 'fa fa-folder-open',
-                title: '插入标签页',
-                text: '[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]'
+                title: '插入标签页'
             },
             {
                 name: 'steps', 
                 className: 'fa fa-tasks',
-                title: '插入步骤',
-                text: '[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]'
+                title: '插入步骤'
             },
             {
                 name: 'collapsible',
                 className: 'fa fa-compress', 
-                title: '插入折叠框',
-                text: '[spoiler=展开查看]\n隐藏内容\n[/spoiler]'
+                title: '插入折叠框'
             },
             {
                 name: 'ruby',
                 className: 'fa fa-language',
-                title: '插入音注标记',
-                text: '@中国(zhōng guó)'
+                title: '插入音注标记'
             }
         ];
         
@@ -56,32 +52,40 @@ $(document).ready(function() {
             textarea.trigger('input');
         }
         
-        $(document).on('click.extended-markdown', '[data-format="tabs"]', function(e) {
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="tabs"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '\n[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]\n';
+            const text = '[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]';
             insertText(textarea, text);
+            return false;
         });
         
-        $(document).on('click.extended-markdown', '[data-format="steps"]', function(e) {
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="steps"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '\n[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]\n';
+            const text = '[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]';
             insertText(textarea, text);
+            return false;
         });
         
-        $(document).on('click.extended-markdown', '[data-format="collapsible"]', function(e) {
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="collapsible"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '\n[spoiler=展开查看]\n隐藏内容\n[/spoiler]\n';
+            const text = '[spoiler=展开查看]\n隐藏内容\n[/spoiler]';
             insertText(textarea, text);
+            return false;
         });
         
-        $(document).on('click.extended-markdown', '[data-format="ruby"]', function(e) {
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="ruby"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const textarea = $('.composer textarea');
             const text = '@中国(zhōng guó)';
             insertText(textarea, text);
+            return false;
         });
     });
     
