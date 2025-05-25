@@ -117,7 +117,8 @@ function applyTabs(textContent, id) {
         let tabMatches = [];
         let tabMatch;
         
-        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?(?:\n|<br \/>|<p dir="auto">)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?[\s\r\n]*<p dir="auto">([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        
         while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
             const tabContent = cleanContent(tabMatch[2]);
                 
@@ -126,6 +127,19 @@ function applyTabs(textContent, id) {
                     title: tabMatch[1].trim(),
                     content: tabContent
                 });
+            }
+        }
+        
+        if (tabMatches.length === 0) {
+            const fallbackRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?[\s\r\n]*([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+            while ((tabMatch = fallbackRegex.exec(cleanTabsContent)) !== null) {
+                const tabContent = cleanContent(tabMatch[2]);
+                if (tabContent) {
+                    tabMatches.push({
+                        title: tabMatch[1].trim(),
+                        content: tabContent
+                    });
+                }
             }
         }
         
@@ -148,11 +162,22 @@ function applySteps(textContent, id) {
         let stepMatches = [];
         let stepMatch;
         
-        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?(?:\n|<br \/>|<p dir="auto">)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?[\s\r\n]*<p dir="auto">([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        
         while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
             const stepContent = cleanContent(stepMatch[1]);
             if (stepContent) {
                 stepMatches.push(stepContent);
+            }
+        }
+        
+        if (stepMatches.length === 0) {
+            const fallbackRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?[\s\r\n]*([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+            while ((stepMatch = fallbackRegex.exec(cleanStepsContent)) !== null) {
+                const stepContent = cleanContent(stepMatch[1]);
+                if (stepContent) {
+                    stepMatches.push(stepContent);
+                }
             }
         }
         
@@ -177,7 +202,7 @@ function applySteps(textContent, id) {
             </div>
         </div>`;
         
-        return `<div class="steps-container">${stepsHeader}${tabsContent}</div>`;
+        return `<div class="steps-container">${tabsContent}${stepsHeader}</div>`;
     });
 }
 
