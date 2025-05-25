@@ -15,25 +15,26 @@ $(document).ready(function () {
         ExtendedMarkdown.prepareFormattingTools();
     });
 
-    function applyThemeStyles(isDark) {
-        const theme = isDark ? 'dark' : 'light';
+    function applyExtendedMarkdownTheme(isDark) {
+        const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
-            element.classList.remove('theme-light', 'theme-dark');
-            element.classList.add(`theme-${theme}`);
+        document.querySelectorAll('.alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+            if (isDark) {
+                element.classList.add(themeClass);
+            } else {
+                element.classList.remove(themeClass);
+            }
         });
     }
 
-    function setupThemeWatcher() {
+    function setupExtendedMarkdownTheme() {
         const skinSwitcher = $(`[component="skinSwitcher"]`);
         if (skinSwitcher.length) {
             let darkSkinList = skinSwitcher.find('.dropdown-header').eq(1).parent();
-            applyThemeStyles(darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length);
+            applyExtendedMarkdownTheme(darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length);
             
-            skinSwitcher.find('li').off('click.extended-markdown').on('click.extended-markdown', function (e) {
-                setTimeout(() => {
-                    applyThemeStyles($(this).parent().find(".dropdown-header").text() == "Dark");
-                }, 100);
+            skinSwitcher.find('li').off('click.extended-markdown-theme').on('click.extended-markdown-theme', function (e) {
+                applyExtendedMarkdownTheme($(this).parent().find(".dropdown-header").text() == "Dark");
             });
         }
     }
@@ -72,26 +73,31 @@ $(document).ready(function () {
     function initializeCollapse() {
         $('.extended-markdown-collapsible').each(function() {
             const $button = $(this);
-            const targetId = $button.attr('data-bs-target');
-            const $target = $(targetId);
+            const targetSelector = $button.attr('data-bs-target');
+            const $target = $(targetSelector);
             const $icon = $button.find('.collapse-icon');
             
+            if ($target.length === 0) return;
+            
             const isExpanded = $target.hasClass('show');
-            $button.attr('aria-expanded', isExpanded ? 'true' : 'false');
+            $button.attr('aria-expanded', isExpanded);
             $icon.css('transform', isExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
         });
 
-        $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function(e) {
+        $('.extended-markdown-collapsible').off('click.extended-collapse').on('click.extended-collapse', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             const $button = $(this);
-            const targetId = $button.attr('data-bs-target');
-            const $target = $(targetId);
+            const targetSelector = $button.attr('data-bs-target');
+            const $target = $(targetSelector);
             const $icon = $button.find('.collapse-icon');
-            const isExpanded = $button.attr('aria-expanded') === 'true';
             
-            if (isExpanded) {
+            if ($target.length === 0) return;
+            
+            const isCurrentlyExpanded = $target.hasClass('show');
+            
+            if (isCurrentlyExpanded) {
                 $target.removeClass('show');
                 $button.attr('aria-expanded', 'false');
                 $icon.css('transform', 'rotate(0deg)');
@@ -119,6 +125,7 @@ $(document).ready(function () {
                     tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
                     tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
                     tooltip.style.zIndex = '1070';
+                    tooltip.style.opacity = '1';
                     
                     this._tooltip = tooltip;
                 }
@@ -133,79 +140,109 @@ $(document).ready(function () {
         });
     }
 
-    ExtendedMarkdown.prepareFormattingTools = function () {
-        require(['composer/formatting', 'composer/controls'], function (formatting, controls) {
-            if (formatting && controls) {
-                formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
+    ExtendedMarkdown.prepareFormattingTools = function() {
+        require(['composer/formatting'], function(formatting) {
+            if (formatting && formatting.addButtonDispatch) {
+                formatting.addButtonDispatch('textheader', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '#my-text-header(Header text)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 16, selectionStart + 27);
+                        formatting.insertIntoTextarea(textarea, '#anchor(Header Text)');
+                        textarea.selectionStart = selectionStart + 8;
+                        textarea.selectionEnd = selectionStart + 19;
                     } else {
-                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        controls.replaceSelectionInTextarea(textarea, '#text-header(' + selectedText + ')');
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        const anchorId = selectedText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        formatting.insertIntoTextarea(textarea, `#${anchorId}(${selectedText})`);
                     }
                 });
 
-                formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '===group\n```java\npublic class Test {\n    \n}\n```\n\n```kotlin\nclass Test {\n    \n}\n```\n===');
+                formatting.addButtonDispatch('groupedcode', function(textarea, selectionStart, selectionEnd) {
+                    const codeTemplate = '===group\n```javascript\n// JavaScript code\nconsole.log("Hello World");\n```\n\n```python\n# Python code\nprint("Hello World")\n```\n===';
+                    formatting.insertIntoTextarea(textarea, codeTemplate);
                 });
 
-                formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]');
-                });
-
-                formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '[steps]\n[step]\n步骤1内容\n[step]\n步骤2内容\n[/steps]');
-                });
-
-                formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                formatting.addButtonDispatch('bubbleinfo', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]\n隐藏内容\n[/spoiler]');
+                        formatting.insertIntoTextarea(textarea, '°text°(tooltip content)');
+                        textarea.selectionStart = selectionStart + 1;
+                        textarea.selectionEnd = selectionStart + 5;
                     } else {
-                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        controls.replaceSelectionInTextarea(textarea, '[spoiler=点击展开]\n' + selectedText + '\n[/spoiler]');
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        formatting.insertIntoTextarea(textarea, `°${selectedText}°(tooltip content)`);
+                        const newPos = selectionEnd + 3;
+                        textarea.selectionStart = newPos;
+                        textarea.selectionEnd = newPos + 15;
                     }
                 });
 
-                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! info [信息]: 这是一条信息提示。');
-                });
-
-                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! warning [警告]: 这是一条警告提示。');
-                });
-
-                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! important [重要]: 这是一条重要提示。');
-                });
-
-                formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
+                formatting.addButtonDispatch('spoiler', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '°文本°(提示信息)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 3);
+                        formatting.insertIntoTextarea(textarea, '[spoiler=Click to reveal]Hidden content[/spoiler]');
+                        textarea.selectionStart = selectionStart + 23;
+                        textarea.selectionEnd = selectionStart + 37;
                     } else {
-                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        controls.replaceSelectionInTextarea(textarea, '°' + selectedText + '°(提示信息)');
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        formatting.insertIntoTextarea(textarea, `[spoiler=Click to reveal]${selectedText}[/spoiler]`);
                     }
                 });
 
-                formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                formatting.addButtonDispatch('noteinfo', function(textarea, selectionStart, selectionEnd) {
+                    formatting.insertIntoTextarea(textarea, '!!! info [Information]: Your info message here');
+                    textarea.selectionStart = selectionStart + 27;
+                    textarea.selectionEnd = selectionStart + 50;
+                });
+
+                formatting.addButtonDispatch('notewarning', function(textarea, selectionStart, selectionEnd) {
+                    formatting.insertIntoTextarea(textarea, '!!! warning [Warning]: Your warning message here');
+                    textarea.selectionStart = selectionStart + 27;
+                    textarea.selectionEnd = selectionStart + 52;
+                });
+
+                formatting.addButtonDispatch('noteimportant', function(textarea, selectionStart, selectionEnd) {
+                    formatting.insertIntoTextarea(textarea, '!!! important [Important]: Your important message here');
+                    textarea.selectionStart = selectionStart + 30;
+                    textarea.selectionEnd = selectionStart + 58;
+                });
+
+                formatting.addButtonDispatch('tabs', function(textarea, selectionStart, selectionEnd) {
+                    const tabsTemplate = '[tabs]\n[tab=Tab 1]\nContent for tab 1\n[tab=Tab 2]\nContent for tab 2\n[/tabs]';
+                    formatting.insertIntoTextarea(textarea, tabsTemplate);
+                });
+
+                formatting.addButtonDispatch('steps', function(textarea, selectionStart, selectionEnd) {
+                    const stepsTemplate = '[steps]\n[step]\nFirst step content\n[step]\nSecond step content\n[/steps]';
+                    formatting.insertIntoTextarea(textarea, stepsTemplate);
+                });
+
+                formatting.addButtonDispatch('superscript', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, 'x^2^');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 3);
+                        formatting.insertIntoTextarea(textarea, 'text^superscript^');
+                        textarea.selectionStart = selectionStart + 5;
+                        textarea.selectionEnd = selectionStart + 16;
                     } else {
-                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        controls.replaceSelectionInTextarea(textarea, '^' + selectedText + '^');
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        formatting.insertIntoTextarea(textarea, `${selectedText}^superscript^`);
                     }
                 });
 
-                formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                formatting.addButtonDispatch('subscript', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, 'H~2~O');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 3);
+                        formatting.insertIntoTextarea(textarea, 'text~subscript~');
+                        textarea.selectionStart = selectionStart + 5;
+                        textarea.selectionEnd = selectionStart + 14;
                     } else {
-                        var selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        controls.replaceSelectionInTextarea(textarea, '~' + selectedText + '~');
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        formatting.insertIntoTextarea(textarea, `${selectedText}~subscript~`);
+                    }
+                });
+
+                formatting.addButtonDispatch('collapsible', function(textarea, selectionStart, selectionEnd) {
+                    if (selectionStart === selectionEnd) {
+                        formatting.insertIntoTextarea(textarea, '[spoiler=Click to expand]\nHidden content here\n[/spoiler]');
+                        textarea.selectionStart = selectionStart + 28;
+                        textarea.selectionEnd = selectionStart + 48;
+                    } else {
+                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                        formatting.insertIntoTextarea(textarea, `[spoiler=Click to expand]\n${selectedText}\n[/spoiler]`);
                     }
                 });
             }
@@ -213,26 +250,16 @@ $(document).ready(function () {
     };
 
     function pageReady() {
-        setupThemeWatcher();
+        setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
         initExtendedMarkdownComponents();
-        
-        $('[data-bs-toggle="tooltip"]').tooltip({
-            boundary: 'window',
-            container: 'body'
-        });
+        initializeTooltips();
     }
 
     const observer = new MutationObserver(function(mutations) {
         let shouldUpdate = false;
         mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' && 
-                (mutation.attributeName === 'data-theme' || 
-                 mutation.attributeName === 'data-bs-theme' ||
-                 mutation.attributeName === 'class')) {
-                shouldUpdate = true;
-            }
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                     if (node.nodeType === 1) {
@@ -253,7 +280,7 @@ $(document).ready(function () {
         
         if (shouldUpdate) {
             setTimeout(() => {
-                setupThemeWatcher();
+                setupExtendedMarkdownTheme();
                 initializeTabComponents();
                 initializeCollapse();
                 initExtendedMarkdownComponents();
@@ -262,7 +289,6 @@ $(document).ready(function () {
     });
     
     observer.observe(document.documentElement, {
-        attributes: true,
         childList: true, 
         subtree: true 
     });
