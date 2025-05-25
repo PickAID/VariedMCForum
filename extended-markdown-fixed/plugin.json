@@ -7,7 +7,7 @@
     "staticDirs": {
         "static": "./static"
     },
-    "css": [
+    "scss": [
         "public/scss/style.scss"
     ],
     "scripts": [
