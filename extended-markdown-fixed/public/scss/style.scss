@@ -169,9 +169,16 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
+        list-style: none !important;
         
         .nav-item {
             margin-bottom: 0 !important;
+            list-style: none !important;
+            
+            &::marker {
+                content: '';
+                display: none;
+            }
             
             .nav-link {
                 border: none !important;
@@ -268,9 +275,16 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
+        list-style: none !important;
         
         .nav-item {
             margin-bottom: 0 !important;
+            list-style: none !important;
+            
+            &::marker {
+                content: '';
+                display: none;
+            }
             
             .nav-link {
                 border: none !important;
@@ -367,9 +381,16 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
+        list-style: none !important;
         
         .nav-item {
             margin-bottom: 0 !important;
+            list-style: none !important;
+            
+            &::marker {
+                content: '';
+                display: none;
+            }
             
             .nav-link {
                 border: none !important;
