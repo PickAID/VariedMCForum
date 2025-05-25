@@ -413,7 +413,7 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1rem;
+        padding: 0.75rem 1rem;
         background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
         
@@ -445,6 +445,7 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         .step-counter {
             font-weight: 600;
             color: #495057;
+            font-size: 0.9rem;
         }
     }
     
