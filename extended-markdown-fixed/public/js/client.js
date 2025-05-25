@@ -105,89 +105,26 @@ $(document).ready(function () {
         });
     }
 
-    function initializeStepComponents() {
-        document.querySelectorAll('.steps-container').forEach(function(container) {
-            const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
-            const prevBtn = container.querySelector('.step-prev');
-            const nextBtn = container.querySelector('.step-next');
-            const currentStepSpan = container.querySelector('.current-step');
-            const totalStepsSpan = container.querySelector('.total-steps');
-            
-            let currentStep = 0;
-            const totalSteps = tabButtons.length;
-            
-            function updateStepDisplay() {
-                if (currentStepSpan) currentStepSpan.textContent = currentStep + 1;
-                if (totalStepsSpan) totalStepsSpan.textContent = totalSteps;
-                
-                if (prevBtn) prevBtn.disabled = currentStep === 0;
-                if (nextBtn) nextBtn.disabled = currentStep === totalSteps - 1;
-                
-                tabButtons.forEach((btn, index) => {
-                    btn.classList.toggle('active', index === currentStep);
-                    btn.setAttribute('aria-selected', index === currentStep ? 'true' : 'false');
-                });
-                
-                const allPanes = container.querySelectorAll('.tab-pane');
-                allPanes.forEach((pane, index) => {
-                    pane.classList.toggle('show', index === currentStep);
-                    pane.classList.toggle('active', index === currentStep);
-                });
-            }
-            
-            tabButtons.forEach(function(button, index) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    currentStep = index;
-                    updateStepDisplay();
-                });
-            });
-            
-            if (prevBtn) {
-                prevBtn.addEventListener('click', function() {
-                    if (currentStep > 0) {
-                        currentStep--;
-                        updateStepDisplay();
-                    }
-                });
-            }
-            
-            if (nextBtn) {
-                nextBtn.addEventListener('click', function() {
-                    if (currentStep < totalSteps - 1) {
-                        currentStep++;
-                        updateStepDisplay();
-                    }
-                });
-            }
-            
-            updateStepDisplay();
-        });
-    }
-
     function initializeCollapse() {
-        document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('data-bs-target');
-                const target = document.querySelector(targetId);
-                const icon = this.querySelector('.collapse-icon');
-                
-                if (target) {
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    
-                    if (isExpanded) {
-                        target.classList.remove('show');
-                        this.setAttribute('aria-expanded', 'false');
-                        if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
-                    } else {
-                        target.classList.add('show');
-                        this.setAttribute('aria-expanded', 'true');
-                        if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down');
-                    }
-                }
-            });
+        $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const $button = $(this);
+            const targetId = $button.attr('data-bs-target');
+            const $target = $(targetId);
+            const $icon = $button.find('.collapse-icon');
+            const isExpanded = $button.attr('aria-expanded') === 'true';
+            
+            if (isExpanded) {
+                $target.removeClass('show');
+                $button.attr('aria-expanded', 'false');
+                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+            } else {
+                $target.addClass('show');
+                $button.attr('aria-expanded', 'true');
+                $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+            }
         });
     }
 
@@ -300,56 +237,59 @@ $(document).ready(function () {
     };
 
     function pageReady() {
-        setTimeout(function() {
-            initializeTabComponents();
-            initializeStepComponents();
-            initializeCollapse();
-            initializeTooltips();
-            applyThemeStyles();
-            setupThemeWatcher();
-        }, 100);
+        if ($('[data-bs-toggle="tooltip"]').length) {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        }
+        
+        applyThemeStyles();
+        setupThemeWatcher();
+        initializeTabComponents();
+        initializeCollapse();
+        initExtendedMarkdownComponents();
     }
 
     const observer = new MutationObserver(function(mutations) {
         let shouldUpdate = false;
-        let shouldReinit = false;
-        
         mutations.forEach(function(mutation) {
             if (mutation.type === 'attributes' && 
-               (mutation.attributeName === 'class' || 
-                mutation.attributeName === 'data-theme' || 
-                mutation.attributeName === 'data-bs-theme')) {
+                (mutation.attributeName === 'data-theme' || 
+                 mutation.attributeName === 'data-bs-theme' ||
+                 mutation.attributeName === 'class')) {
                 shouldUpdate = true;
             }
-            
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                     if (node.nodeType === 1) {
-                        if (node.classList && 
-                            (node.classList.contains('steps-container') || 
-                             node.classList.contains('extended-tabs-container') ||
-                             node.classList.contains('code-group-container') ||
-                             node.classList.contains('collapsible-wrapper'))) {
-                            shouldReinit = true;
+                        const hasExtendedMarkdown = node.querySelector && (
+                            node.querySelector('.extended-tabs-container') ||
+                            node.querySelector('.steps-container') ||
+                            node.querySelector('.code-group-container') ||
+                            node.querySelector('.collapsible-wrapper') ||
+                            node.querySelector('.alert')
+                        );
+                        if (hasExtendedMarkdown) {
+                            shouldUpdate = true;
                         }
                     }
                 });
             }
         });
         
-        if (shouldReinit) {
-            setTimeout(pageReady, 50);
-        } else if (shouldUpdate) {
-            setTimeout(applyThemeStyles, 100);
+        if (shouldUpdate) {
+            setTimeout(() => {
+                applyThemeStyles();
+                initializeTabComponents();
+                initializeCollapse();
+                initExtendedMarkdownComponents();
+            }, 100);
         }
     });
     
-    observer.observe(document.body, { 
-        attributes: true, 
+    observer.observe(document.documentElement, {
+        attributes: true,
         childList: true, 
         subtree: true 
     });
-    observer.observe(document.documentElement, { attributes: true });
 
     $(window).on('action:ajaxify.end', pageReady);
     $(window).on('action:posts.loaded', pageReady);
@@ -360,7 +300,6 @@ $(document).ready(function () {
 
 function initExtendedMarkdownComponents() {
     initStepsNavigation();
-    initCollapsibleButtons();
     initBootstrapTabs();
 }
 
@@ -410,27 +349,6 @@ function initStepsNavigation() {
         });
         
         updateNavigation();
-    });
-}
-
-function initCollapsibleButtons() {
-    $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function(e) {
-        e.preventDefault();
-        
-        const targetId = $(this).data('bs-target');
-        const target = $(targetId);
-        const icon = $(this).find('.collapse-icon');
-        const isExpanded = $(this).attr('aria-expanded') === 'true';
-        
-        if (isExpanded) {
-            target.removeClass('show');
-            $(this).attr('aria-expanded', 'false');
-            icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
-        } else {
-            target.addClass('show');
-            $(this).attr('aria-expanded', 'true');
-            icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
-        }
     });
 }
 
