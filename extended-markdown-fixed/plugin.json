@@ -1,5 +1,5 @@
 {
-    "id": "nodebb-plugin-extended-markdown",
+    "id": "nodebb-plugin-extended-markdown-fixed",
     "url": "https://github.com/MinecraftForgeFrance/nodebb-plugin-extended-markdown",
     "library": "./library.js",
     "scss": [
