@@ -117,3 +117,4 @@ webpack.prod.js
 !extended-markdown-fixed/*
 !tag-color-maker/*
 !markdown/*
+markdown-vitepress/
