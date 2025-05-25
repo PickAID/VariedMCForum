@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const plugins = require.main.require('./src/plugins');
 
 const parent = module.parent.exports;
 const posts = require.main.require('./src/posts');

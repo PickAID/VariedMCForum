@@ -79,7 +79,7 @@ const Markdown = {
 			highlight: true,
 			highlightTheme: 'github-light',
 			highlightDarkTheme: 'github-dark',
-			useShiki: true,
+			useShiki: false,
 			xhtmlOut: true,
 			breaks: true,
 			linkify: true,
@@ -133,8 +133,10 @@ const Markdown = {
 	},
 
 	initHighlightJsParser: function() {
-		this.config.highlight = true;
-		parser = new MarkdownIt(this.config);
+		parser = new MarkdownIt({
+			...this.config,
+			highlight: true
+		});
 		Markdown.updateParserRules(parser);
 		winston.info('[plugin/markdown] Highlight.js syntax highlighting enabled');
 	},
@@ -147,8 +149,8 @@ const Markdown = {
 			
 			const highlighter = await createHighlighter({
 				themes: [
-					this.config.highlightTheme || 'github-light',
-					this.config.highlightDarkTheme || 'github-dark'
+					_self.config.highlightTheme || 'github-light',
+					_self.config.highlightDarkTheme || 'github-dark'
 				],
 				langs: [
 					'javascript', 'typescript', 'html', 'css', 'json', 'bash', 'shell',
@@ -159,7 +161,7 @@ const Markdown = {
 			});
 			
 			parser = new MarkdownIt({
-				...this.config,
+				..._self.config,
 				highlight: function (str, lang, attrs) {
 					const defaultLang = 'txt';
 					lang = lang || defaultLang;
