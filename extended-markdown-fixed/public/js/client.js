@@ -66,14 +66,14 @@ $(document).ready(function () {
             }
         });
         
-        document.querySelectorAll('.code-group-container').forEach(element => {
+        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
             }
         });
         
-        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler').forEach(element => {
+        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
@@ -141,6 +141,26 @@ $(document).ready(function () {
             formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
                 controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
             });
+
+            formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
+            });
+
+            formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, 'E=mc^', '^');
+            });
+
+            formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                controls.wrapSelectionInTextareaWith(textarea, 'H~', '~O');
+            });
+
+            formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
+            });
+
+            formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
+            });
         }
     };
 
@@ -165,6 +185,57 @@ $(document).ready(function () {
                     if (!child.classList.contains('nav-tabs') && 
                         !child.classList.contains('tab-content')) {
                         child.remove();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.extended-tabs-container:not([data-tabs-initialized])').forEach(function(container) {
+                container.setAttribute('data-tabs-initialized', 'true');
+                
+                const tabLinks = container.querySelectorAll('.nav-tabs a[data-toggle="tab"]');
+                tabLinks.forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        tabLinks.forEach(function(l) {
+                            l.parentElement.classList.remove('active');
+                        });
+                        
+                        container.querySelectorAll('.tab-pane').forEach(function(pane) {
+                            pane.classList.remove('active');
+                        });
+                        
+                        this.parentElement.classList.add('active');
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetPane = document.getElementById(targetId);
+                        if (targetPane) {
+                            targetPane.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            document.querySelectorAll('.extended-markdown-collapsible:not([data-collapse-initialized])').forEach(function(button) {
+                button.setAttribute('data-collapse-initialized', 'true');
+                
+                const target = document.querySelector(button.getAttribute('data-bs-target'));
+                const icon = button.querySelector('.collapse-icon');
+                
+                button.addEventListener('click', function() {
+                    if (target) {
+                        if (target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            if (icon) {
+                                icon.classList.remove('fa-chevron-down');
+                                icon.classList.add('fa-chevron-right');
+                            }
+                        } else {
+                            target.classList.add('show');
+                            if (icon) {
+                                icon.classList.remove('fa-chevron-right');
+                                icon.classList.add('fa-chevron-down');
+                            }
+                        }
                     }
                 });
             });

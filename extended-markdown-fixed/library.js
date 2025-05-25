@@ -16,6 +16,17 @@ const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|
 
 const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 
+const superscriptRegex = /([^`<>\s])\^([^`<>\s^]+)\^/g;
+const subscriptRegex = /([^`<>\s])~([^`<>\s~]+)~/g;
+
+const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\n((?:<p dir="auto">@tab [^]*?<\/p>\n(?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)*)<p dir="auto">:{3}<\/p>/g;
+const tabItemRegex = /<p dir="auto">@tab ([^]*?)<\/p>\n?((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)/g;
+
+const stepsRegex = /<p dir="auto">:{3}steps<\/p>\n((?:<p dir="auto">\d+\. [^]*?<\/p>\n?)*)<p dir="auto">:{3}<\/p>/g;
+const stepItemRegex = /<p dir="auto">(\d+)\. ([^]*?)<\/p>/g;
+
+const collapsibleRegex = /<p dir="auto">\+{3} ([^]*?)<\/p>\n((?:(?!<p dir="auto">\+{3}<\/p>).*\n?)*)<p dir="auto">\+{3}<\/p>/g;
+
 const noteIcons = {
     info: 'fa-info-circle',
     warning: 'fa-exclamation-triangle',
@@ -28,6 +39,9 @@ const ExtendedMarkdown = {
             data.postData.content = await applyExtendedMarkdown(data.postData.content);
             data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
             data.postData.content = await applySpoiler(data.postData.content, data.postData.pid);
+            data.postData.content = applyTabs(data.postData.content, data.postData.pid);
+            data.postData.content = applySteps(data.postData.content);
+            data.postData.content = applyCollapsible(data.postData.content, data.postData.pid);
         }
         return data;
     },
@@ -35,6 +49,9 @@ const ExtendedMarkdown = {
     async parseSignature(data) {
         if (data && data.userData && data.userData.signature) {
             data.userData.signature = await applyExtendedMarkdown(data.userData.signature);
+            data.userData.signature = applyTabs(data.userData.signature, "sig");
+            data.userData.signature = applySteps(data.userData.signature);
+            data.userData.signature = applyCollapsible(data.userData.signature, "sig");
         }
         return data;
     },
@@ -42,6 +59,9 @@ const ExtendedMarkdown = {
     async parseAboutMe(data) {
         if (data) {
             data = await applyExtendedMarkdown(data);
+            data = applyTabs(data, "about");
+            data = applySteps(data);
+            data = applyCollapsible(data, "about");
         }
         return data;
     },
@@ -51,6 +71,9 @@ const ExtendedMarkdown = {
             data = await applyExtendedMarkdown(data);
             data = applyGroupCode(data, "");
             data = await applySpoiler(data, "");
+            data = applyTabs(data, "");
+            data = applySteps(data);
+            data = applyCollapsible(data, "");
         }
         return data;
     },
@@ -68,7 +91,12 @@ const ExtendedMarkdown = {
             { name: "spoiler", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
             { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
             { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
-            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" }
+            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" },
+            { name: "tabs", className: "fa fa-folder-open", title: "[[extendedmarkdown:composer.formatting.tabs]]" },
+            { name: "superscript", className: "fa fa-superscript", title: "[[extendedmarkdown:composer.formatting.superscript]]" },
+            { name: "subscript", className: "fa fa-subscript", title: "[[extendedmarkdown:composer.formatting.subscript]]" },
+            { name: "collapsible", className: "fa fa-compress", title: "[[extendedmarkdown:composer.formatting.collapsible]]" },
+            { name: "steps", className: "fa fa-tasks", title: "[[extendedmarkdown:composer.formatting.steps]]" }
         ];
 
         payload.options = payload.options.concat(formatting);
@@ -77,6 +105,28 @@ const ExtendedMarkdown = {
 
     async sanitizerConfig(config) {
         config.allowedAttributes['a'].push('name');
+        config.allowedAttributes['span'] = config.allowedAttributes['span'] || [];
+        config.allowedAttributes['span'].push('class');
+        config.allowedAttributes['div'] = config.allowedAttributes['div'] || [];
+        config.allowedAttributes['div'].push('class', 'id');
+        config.allowedAttributes['button'] = config.allowedAttributes['button'] || [];
+        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-bs-target', 'aria-expanded', 'aria-controls');
+        config.allowedAttributes['ul'] = config.allowedAttributes['ul'] || [];
+        config.allowedAttributes['ul'].push('class', 'role');
+        config.allowedAttributes['li'] = config.allowedAttributes['li'] || [];
+        config.allowedAttributes['li'].push('class', 'role');
+        config.allowedAttributes['a'].push('href', 'aria-controls', 'role', 'data-toggle');
+        
+        if (!config.allowedTags.includes('button')) {
+            config.allowedTags.push('button');
+        }
+        if (!config.allowedTags.includes('sup')) {
+            config.allowedTags.push('sup');
+        }
+        if (!config.allowedTags.includes('sub')) {
+            config.allowedTags.push('sub');
+        }
+        
         return config;
     }
 };
@@ -112,6 +162,18 @@ async function applyExtendedMarkdown(textContent) {
                 return code;
             }
             return `<span style="color: ${color};">${text}</span>`;
+        });
+    }
+
+    if (textContent.match(superscriptRegex)) {
+        textContent = textContent.replace(superscriptRegex, function (match, prefix, text) {
+            return `${prefix}<sup>${text}</sup>`;
+        });
+    }
+
+    if (textContent.match(subscriptRegex)) {
+        textContent = textContent.replace(subscriptRegex, function (match, prefix, text) {
+            return `${prefix}<sub>${text}</sub>`;
         });
     }
 
@@ -159,6 +221,91 @@ function applyGroupCode(textContent, id) {
             contentTab += "</div>";
             count++;
             return `<div class="code-group-container">${menuTab}${contentTab}</div>`;
+        });
+    }
+    return textContent;
+}
+
+function applyTabs(textContent, id) {
+    if (textContent.match(tabsRegex)) {
+        let count = 0;
+        textContent = textContent.replace(tabsRegex, (match, tabsContent) => {
+            const tabs = [];
+            let tabMatch;
+            const regex = /<p dir="auto">@tab ([^]*?)<\/p>\n?((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)/g;
+            
+            while ((tabMatch = regex.exec(tabsContent)) !== null) {
+                tabs.push({
+                    title: tabMatch[1].trim(),
+                    content: tabMatch[2].trim()
+                });
+            }
+            
+            if (tabs.length === 0) return match;
+            
+            let menuTab = "<ul class='nav nav-tabs extended-tabs-nav' role='tablist'>";
+            let contentTab = "<div class='tab-content extended-tabs-content'>";
+            
+            for (let i = 0; i < tabs.length; i++) {
+                const tabId = `tab-${count}-${i}-${id}`;
+                const isActive = i === 0;
+                menuTab += `<li role='presentation' ${isActive ? "class='active'" : ""}><a href='#${tabId}' aria-controls='${tabId}' role='tab' data-toggle='tab'>${tabs[i].title}</a></li>`;
+                contentTab += `<div role="tabpanel" class="tab-pane ${isActive ? "active" : ""}" id="${tabId}">${tabs[i].content}</div>`;
+            }
+            
+            menuTab += "</ul>";
+            contentTab += "</div>";
+            count++;
+            
+            return `<div class="extended-tabs-container">${menuTab}${contentTab}</div>`;
+        });
+    }
+    return textContent;
+}
+
+function applySteps(textContent) {
+    if (textContent.match(stepsRegex)) {
+        textContent = textContent.replace(stepsRegex, (match, stepsContent) => {
+            const steps = [];
+            let stepMatch;
+            const regex = /<p dir="auto">(\d+)\. ([^]*?)<\/p>/g;
+            
+            while ((stepMatch = regex.exec(stepsContent)) !== null) {
+                steps.push({
+                    number: stepMatch[1],
+                    content: stepMatch[2].trim()
+                });
+            }
+            
+            if (steps.length === 0) return match;
+            
+            let stepsHtml = '<div class="steps-container">';
+            for (let i = 0; i < steps.length; i++) {
+                const isLast = i === steps.length - 1;
+                stepsHtml += `<div class="step-item ${isLast ? 'step-last' : ''}">`;
+                stepsHtml += `<div class="step-marker"><span class="step-number">${steps[i].number}</span></div>`;
+                stepsHtml += `<div class="step-content"><div class="step-text">${steps[i].content}</div></div>`;
+                if (!isLast) {
+                    stepsHtml += '<div class="step-connector"></div>';
+                }
+                stepsHtml += '</div>';
+            }
+            stepsHtml += '</div>';
+            return stepsHtml;
+        });
+    }
+    return textContent;
+}
+
+function applyCollapsible(textContent, id) {
+    if (textContent.match(collapsibleRegex)) {
+        let count = 0;
+        textContent = textContent.replace(collapsibleRegex, (match, title, content) => {
+            const collapseId = `collapse-${count}-${id}`;
+            const collapseButton = `<button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}"><i class="fa fa-chevron-right collapse-icon"></i> ${title}</button>`;
+            const collapseContent = `<div class="collapse" id="${collapseId}"><div class="card card-body mt-2 collapsible-content">${content}</div></div>`;
+            count++;
+            return `<div class="collapsible-wrapper">${collapseButton}${collapseContent}</div>`;
         });
     }
     return textContent;
