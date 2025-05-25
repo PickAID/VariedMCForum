@@ -74,151 +74,135 @@ $(document).ready(function () {
         }
     }
 
-    // Bootstrap兼容性检测
     function getBootstrapVersion() {
-        if (window.bootstrap && window.bootstrap.Tooltip) {
+        if (window.bootstrap && window.bootstrap.Tab) {
             return 5;
-        } else if (window.jQuery && window.jQuery.fn.tooltip) {
+        } else if (window.jQuery && window.jQuery.fn.tab) {
             return 4;
         }
         return null;
     }
 
-    function initializeTooltips() {
-        const version = getBootstrapVersion();
-        
-        document.querySelectorAll('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]').forEach(function(element) {
-            if (element.hasAttribute('data-tooltip-initialized')) return;
-            element.setAttribute('data-tooltip-initialized', 'true');
+    function initializeTabComponents() {
+        document.querySelectorAll('.code-group-container, .extended-tabs-container, .steps-container').forEach(function(container) {
+            const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
             
-            if (version === 5 && window.bootstrap && window.bootstrap.Tooltip) {
-                new window.bootstrap.Tooltip(element);
-            } else if (version === 4 && window.jQuery && window.jQuery.fn.tooltip) {
-                $(element).tooltip();
+            tabButtons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('data-bs-target');
+                    const target = document.querySelector(targetId);
+                    
+                    if (target) {
+                        const allPanes = container.querySelectorAll('.tab-pane');
+                        allPanes.forEach(pane => {
+                            pane.classList.remove('show', 'active');
+                        });
+                        
+                        tabButtons.forEach(btn => {
+                            btn.classList.remove('active');
+                            btn.setAttribute('aria-selected', 'false');
+                        });
+                        
+                        target.classList.add('show', 'active');
+                        this.classList.add('active');
+                        this.setAttribute('aria-selected', 'true');
+                        
+                        if (container.classList.contains('steps-container')) {
+                            const index = Array.from(tabButtons).indexOf(this);
+                            updateStepNavigation(container, index);
+                        }
+                    }
+                });
+            });
+            
+            if (container.classList.contains('steps-container')) {
+                initializeStepNavigation(container);
             }
         });
+    }
+
+    function initializeStepNavigation(container) {
+        const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
+        const prevBtn = container.querySelector('.step-prev');
+        const nextBtn = container.querySelector('.step-next');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
+                if (activeIndex > 0) {
+                    tabButtons[activeIndex - 1].click();
+                }
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
+                if (activeIndex < tabButtons.length - 1) {
+                    tabButtons[activeIndex + 1].click();
+                }
+            });
+        }
+        
+        updateStepNavigation(container, 0);
+    }
+
+    function updateStepNavigation(container, currentIndex) {
+        const prevBtn = container.querySelector('.step-prev');
+        const nextBtn = container.querySelector('.step-next');
+        const indicator = container.querySelector('.current-step');
+        const totalSteps = container.querySelectorAll('[data-bs-toggle="tab"]').length;
+        
+        if (prevBtn) prevBtn.disabled = currentIndex === 0;
+        if (nextBtn) nextBtn.disabled = currentIndex === totalSteps - 1;
+        
+        if (indicator) indicator.textContent = currentIndex + 1;
+        
+        if (nextBtn) {
+            if (currentIndex === totalSteps - 1) {
+                nextBtn.innerHTML = '<i class="fa fa-check"></i> 完成';
+            } else {
+                nextBtn.innerHTML = '下一步 <i class="fa fa-chevron-right"></i>';
+            }
+        }
     }
 
     function initializeCollapse() {
         document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
-            if (button.hasAttribute('data-collapse-initialized')) return;
-            button.setAttribute('data-collapse-initialized', 'true');
-            
-            const targetSelector = button.getAttribute('data-bs-target') || button.getAttribute('data-target');
-            const target = document.querySelector(targetSelector);
-            const icon = button.querySelector('.collapse-icon');
-            
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
+            button.addEventListener('click', function() {
+                const icon = this.querySelector('.collapse-icon');
+                const targetId = this.getAttribute('data-bs-target');
+                const target = document.querySelector(targetId);
                 
-                if (target) {
-                    const isCollapsed = !target.classList.contains('show');
+                if (target && icon) {
+                    const isExpanded = !target.classList.contains('show');
                     
-                    if (isCollapsed) {
+                    if (isExpanded) {
                         target.classList.add('show');
-                        if (icon) {
-                            icon.classList.remove('fa-chevron-right');
-                            icon.classList.add('fa-chevron-down');
-                        }
-                        button.setAttribute('aria-expanded', 'true');
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-down');
+                        this.setAttribute('aria-expanded', 'true');
                     } else {
                         target.classList.remove('show');
-                        if (icon) {
-                            icon.classList.remove('fa-chevron-down');
-                            icon.classList.add('fa-chevron-right');
-                        }
-                        button.setAttribute('aria-expanded', 'false');
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-right');
+                        this.setAttribute('aria-expanded', 'false');
                     }
                 }
             });
         });
     }
 
-    function initializeTabs() {
-        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(function(container) {
-            if (container.hasAttribute('data-tabs-initialized')) return;
-            container.setAttribute('data-tabs-initialized', 'true');
-            
-            const tabButtons = container.querySelectorAll('.nav-link');
-            const tabPanes = container.querySelectorAll('.tab-pane');
-            
-            tabButtons.forEach(function(button, index) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
-                    
-                    button.classList.add('active');
-                    if (tabPanes[index]) {
-                        tabPanes[index].classList.add('show', 'active');
-                    }
-                });
+    function initializeTooltips() {
+        if (window.bootstrap && window.bootstrap.Tooltip) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
+                new bootstrap.Tooltip(element);
             });
-        });
-    }
-
-    function initializeSteps() {
-        document.querySelectorAll('.steps-container').forEach(function(container) {
-            if (container.hasAttribute('data-steps-initialized')) return;
-            container.setAttribute('data-steps-initialized', 'true');
-            
-            const tabButtons = container.querySelectorAll('.nav-link');
-            const tabPanes = container.querySelectorAll('.tab-pane');
-            const prevBtn = container.querySelector('.step-prev');
-            const nextBtn = container.querySelector('.step-next');
-            const currentStepSpan = container.querySelector('.current-step');
-            
-            function updateStepNavigation(activeIndex) {
-                if (prevBtn) prevBtn.disabled = activeIndex === 0;
-                if (nextBtn) nextBtn.disabled = activeIndex === tabButtons.length - 1;
-                if (currentStepSpan) currentStepSpan.textContent = activeIndex + 1;
-                
-                if (nextBtn) {
-                    if (activeIndex === tabButtons.length - 1) {
-                        nextBtn.innerHTML = '<i class="fa fa-check"></i> 完成';
-                    } else {
-                        nextBtn.innerHTML = '下一步 <i class="fa fa-chevron-right"></i>';
-                    }
-                }
-            }
-            
-            tabButtons.forEach(function(button, index) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
-                    
-                    button.classList.add('active');
-                    if (tabPanes[index]) {
-                        tabPanes[index].classList.add('show', 'active');
-                    }
-                    
-                    updateStepNavigation(index);
-                });
-            });
-            
-            if (prevBtn) {
-                prevBtn.addEventListener('click', function() {
-                    const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-                    if (activeIndex > 0) {
-                        tabButtons[activeIndex - 1].click();
-                    }
-                });
-            }
-            
-            if (nextBtn) {
-                nextBtn.addEventListener('click', function() {
-                    const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-                    if (activeIndex < tabButtons.length - 1) {
-                        tabButtons[activeIndex + 1].click();
-                    }
-                });
-            }
-            
-            updateStepNavigation(0);
-        });
+        } else if (window.jQuery && $.fn.tooltip) {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        }
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
@@ -301,35 +285,18 @@ $(document).ready(function () {
 
     function pageReady() {
         setTimeout(function() {
-            // 初始化spoiler功能
-            document.querySelectorAll('.spoiler:not([data-spoiler-initialized])').forEach(function(spoiler) {
-                spoiler.setAttribute('data-spoiler-initialized', 'true');
-                spoiler.addEventListener('click', function() {
-                    this.classList.toggle('spoiler-revealed');
-                });
-            });
-
-            // 初始化标签页
-            initializeTabs();
-            
-            // 初始化可折叠内容
+            initializeTabComponents();
             initializeCollapse();
-            
-            // 初始化工具提示
             initializeTooltips();
-            
-            // 应用主题样式
             applyThemeStyles();
             setupThemeWatcher();
-            
-            // 初始化步骤
-            initializeSteps();
         }, 100);
     }
 
-    // 监听DOM变化，自动应用主题
     const observer = new MutationObserver(function(mutations) {
         let shouldUpdate = false;
+        let shouldReinit = false;
+        
         mutations.forEach(function(mutation) {
             if (mutation.type === 'attributes' && 
                (mutation.attributeName === 'class' || 
@@ -338,22 +305,24 @@ $(document).ready(function () {
                 shouldUpdate = true;
             }
             
-            // 检查是否有新添加的元素需要初始化
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Element node
+                    if (node.nodeType === 1) {
                         if (node.classList && 
                             (node.classList.contains('steps-container') || 
                              node.classList.contains('extended-tabs-container') ||
+                             node.classList.contains('code-group-container') ||
                              node.classList.contains('collapsible-wrapper'))) {
-                            setTimeout(pageReady, 50);
+                            shouldReinit = true;
                         }
                     }
                 });
             }
         });
         
-        if (shouldUpdate) {
+        if (shouldReinit) {
+            setTimeout(pageReady, 50);
+        } else if (shouldUpdate) {
             setTimeout(applyThemeStyles, 100);
         }
     });
@@ -365,57 +334,9 @@ $(document).ready(function () {
     });
     observer.observe(document.documentElement, { attributes: true });
 
-    // 步骤导航功能
-    $(document).on('click', '.step-prev, .step-next', function() {
-        const isNext = $(this).hasClass('step-next');
-        const container = $(this).closest('.steps-container');
-        const tabs = container.find('.nav-link');
-        const currentIndex = tabs.filter('.active').index();
-        const newIndex = isNext ? currentIndex + 1 : currentIndex - 1;
-        
-        if (newIndex >= 0 && newIndex < tabs.length) {
-            tabs.eq(newIndex).tab('show');
-            updateStepNavigation(container, newIndex);
-        }
-    });
+    $(window).on('action:ajaxify.end', pageReady);
+    $(window).on('action:posts.loaded', pageReady);
+    $(window).on('action:topic.loaded', pageReady);
     
-    // 当步骤标签页切换时更新导航按钮
-    $(document).on('shown.bs.tab', '.steps-nav .nav-link', function() {
-        const container = $(this).closest('.steps-container');
-        const index = $(this).index();
-        updateStepNavigation(container, index);
-    });
-    
-    // 折叠框图标旋转
-    $(document).on('click', '.extended-markdown-collapsible', function() {
-        const icon = $(this).find('.collapse-icon');
-        const isExpanded = $(this).attr('aria-expanded') === 'true';
-        
-        if (isExpanded) {
-            icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
-        } else {
-            icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
-        }
-    });
-    
-    function updateStepNavigation(container, currentIndex) {
-        const prevBtn = container.find('.step-prev');
-        const nextBtn = container.find('.step-next');
-        const indicator = container.find('.current-step');
-        const totalSteps = container.find('.nav-link').length;
-        
-        // 更新按钮状态
-        prevBtn.prop('disabled', currentIndex === 0);
-        nextBtn.prop('disabled', currentIndex === totalSteps - 1);
-        
-        // 更新指示器
-        indicator.text(currentIndex + 1);
-        
-        // 更新按钮文本
-        if (currentIndex === totalSteps - 1) {
-            nextBtn.html('<i class="fa fa-check"></i> 完成');
-        } else {
-            nextBtn.html('下一步 <i class="fa fa-chevron-right"></i>');
-        }
-    }
+    pageReady();
 });

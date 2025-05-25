@@ -21,7 +21,7 @@ $(document).ready(function() {
                 name: 'spoiler',
                 className: 'fa fa-compress', 
                 title: '插入折叠框',
-                text: '[spoiler=点击展开]\n隐藏内容\n[/spoiler]'
+                text: '[spoiler=展开查看]\n隐藏内容\n[/spoiler]'
             }
         ];
         
