@@ -146,6 +146,15 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
     border: none !important;
 }
 
+body.template-topic .topic .posts [component="post"] [component="post/content"] .code-group-container pre,
+body.template-topic .topic .posts [component="post"] [component="post/content"] .extended-tabs-container pre,
+body.template-topic .topic .posts [component="post"] [component="post/content"] .steps-container pre,
+body.template-topic .topic .posts [component="post"] [component="post/content"] .markdown-highlight,
+body.template-topic .topic .posts [component="post"] [component="post/content"] .collapsible-wrapper pre {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 .code-group-container {
     background: #ffffff;
     border: 1px solid #e9ecef;
@@ -345,6 +354,13 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
 }
 
 .steps-container {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin: 1rem 0;
+    
     .steps-header {
         display: flex;
         align-items: center;
@@ -365,6 +381,7 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
                 border-radius: 0.25rem;
                 cursor: pointer;
                 transition: background-color 0.2s ease;
+                font-size: 0.875rem;
                 
                 &:hover {
                     background: #5a6268;
@@ -397,6 +414,9 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
     }
     
     &.extended-dark-theme {
+        background: #2d3748;
+        border-color: #495057;
+        
         .steps-header {
             background: #2d3748;
             border-bottom-color: #495057;
