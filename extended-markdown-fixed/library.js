@@ -25,7 +25,7 @@ const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<
 const stepsRegex = /(?:<p dir="auto">)?\[steps\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/steps\](?:<\/p>)?/gi;
 const stepRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|(?:<p dir="auto">)?\[\/steps\]|$)/gi;
 
-const spoilerRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
+const spoilerRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?(?:<br\s*\/?>|\s)*\n?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -192,23 +192,28 @@ function applySteps(textContent, id) {
 
 function applySpoiler(textContent, id) {
     return textContent.replace(spoilerRegex, function (match, title, content) {
-        const cleanedContent = cleanContent(content);
+        const cleanTitle = title.trim();
+        const cleanContent = content
+            .replace(/^<br\s*\/?>/, '')
+            .replace(/<br\s*\/?>$/, '')
+            .replace(/^\n+/, '')
+            .replace(/\n+$/, '')
+            .trim();
+        
         const spoilerId = `spoiler-${id}-${Math.random().toString(36).substr(2, 9)}`;
         
         return `<div class="collapsible-wrapper">
-            <button class="btn btn-outline-secondary extended-markdown-collapsible" 
+            <button class="extended-markdown-collapsible" 
                     type="button" 
                     data-bs-toggle="collapse" 
                     data-bs-target="#${spoilerId}" 
                     aria-expanded="false" 
                     aria-controls="${spoilerId}">
-                <i class="fa fa-chevron-right collapse-icon"></i>
-                ${title}
+                <i class="fa fa-chevron-right collapse-icon" aria-hidden="true"></i>
+                ${cleanTitle}
             </button>
             <div class="collapse collapsible-content" id="${spoilerId}">
-                <div class="card-body">
-                    ${cleanedContent}
-                </div>
+                <div class="card-body">${cleanContent}</div>
             </div>
         </div>`;
     });

@@ -34,15 +34,24 @@ $(document).ready(function () {
             applyExtendedMarkdownTheme(darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length);
             
             skinSwitcher.find('li').off('click.extended-markdown-theme').on('click.extended-markdown-theme', function (e) {
-                applyExtendedMarkdownTheme($(this).parent().find(".dropdown-header").text() == "Dark");
+                setTimeout(() => {
+                    const isDark = $(this).parent().find(".dropdown-header").text().includes("Dark") || 
+                                   $(this).parent().find(".dropdown-header").text().includes("暗色");
+                    applyExtendedMarkdownTheme(isDark);
+                }, 100);
             });
+        }
+        
+        if (document.documentElement.classList.contains('dark') || 
+            document.body.classList.contains('dark') ||
+            localStorage.getItem('theme') === 'dark') {
+            applyExtendedMarkdownTheme(true);
         }
     }
 
     function initializeTabComponents() {
-        $('.code-group-container, .extended-tabs-container').each(function() {
+        $('.code-group-container, .extended-tabs-container, .steps-container').each(function() {
             const $container = $(this);
-            const containerId = $container.attr('id') || 'tab-' + Math.random().toString(36).substr(2, 9);
             
             if (!$container.data('tabs-initialized')) {
                 $container.data('tabs-initialized', true);
@@ -68,7 +77,6 @@ $(document).ready(function () {
     function initializeCollapse() {
         $('.extended-markdown-collapsible').each(function() {
             const $button = $(this);
-            const buttonId = $button.attr('data-bs-target') || 'collapse-' + Math.random().toString(36).substr(2, 9);
             
             if (!$button.data('collapse-initialized')) {
                 $button.data('collapse-initialized', true);
@@ -82,14 +90,19 @@ $(document).ready(function () {
                     $icon.css('transform', isInitiallyExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
                     
                     $button.off('click.extended-collapse').on('click.extended-collapse', function(e) {
+                        e.preventDefault();
+                        
                         const isCurrentlyCollapsed = !$target.hasClass('show');
                         
-                        $target.collapse('toggle');
-                        
-                        setTimeout(() => {
-                            const isNowExpanded = $target.hasClass('show');
-                            $icon.css('transform', isNowExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
-                        }, 100);
+                        if (isCurrentlyCollapsed) {
+                            $target.addClass('show');
+                            $button.attr('aria-expanded', 'true');
+                            $icon.css('transform', 'rotate(90deg)');
+                        } else {
+                            $target.removeClass('show');
+                            $button.attr('aria-expanded', 'false');
+                            $icon.css('transform', 'rotate(0deg)');
+                        }
                     });
                 }
             }
@@ -111,161 +124,62 @@ $(document).ready(function () {
     function initStepsNavigation() {
         $('.steps-container').each(function() {
             const $container = $(this);
-            const containerId = $container.attr('id') || 'steps-' + Math.random().toString(36).substr(2, 9);
             
             if (!$container.data('steps-initialized')) {
                 $container.data('steps-initialized', true);
                 
                 const $prevBtn = $container.find('.step-prev');
                 const $nextBtn = $container.find('.step-next');
-                const $currentStepSpan = $container.find('.current-step');
-                const $totalStepsSpan = $container.find('.total-steps');
                 const $tabs = $container.find('.nav-link');
                 
-                let currentStep = 0;
-                const totalSteps = $tabs.length;
-                
-                function updateNavigation() {
-                    $currentStepSpan.text(currentStep + 1);
-                    $totalStepsSpan.text(totalSteps);
+                if ($prevBtn.length && $nextBtn.length && $tabs.length) {
+                    $prevBtn.off('click.steps').on('click.steps', function(e) {
+                        e.preventDefault();
+                        const $current = $container.find('.nav-link.active');
+                        const $prev = $current.closest('.nav-item').prev().find('.nav-link');
+                        if ($prev.length) {
+                            $prev.trigger('click');
+                        }
+                    });
                     
-                    $prevBtn.prop('disabled', currentStep === 0);
-                    $nextBtn.prop('disabled', currentStep === totalSteps - 1);
+                    $nextBtn.off('click.steps').on('click.steps', function(e) {
+                        e.preventDefault();
+                        const $current = $container.find('.nav-link.active');
+                        const $next = $current.closest('.nav-item').next().find('.nav-link');
+                        if ($next.length) {
+                            $next.trigger('click');
+                        }
+                    });
                     
-                    $tabs.removeClass('active').attr('aria-selected', 'false');
-                    $container.find('.tab-pane').removeClass('show active');
+                    function updateStepNavigation() {
+                        const $current = $container.find('.nav-link.active');
+                        const currentIndex = $current.closest('.nav-item').index();
+                        const totalSteps = $tabs.length;
+                        
+                        $prevBtn.prop('disabled', currentIndex === 0);
+                        $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
+                        
+                        $container.find('.step-indicator').text(`第 ${currentIndex + 1} 步，共 ${totalSteps} 步`);
+                    }
                     
-                    $tabs.eq(currentStep).addClass('active').attr('aria-selected', 'true');
-                    $container.find('.tab-pane').eq(currentStep).addClass('show active');
+                    $tabs.off('click.step-update').on('click.step-update', updateStepNavigation);
+                    updateStepNavigation();
                 }
-                
-                $prevBtn.off('click.extended-steps').on('click.extended-steps', function() {
-                    if (currentStep > 0) {
-                        currentStep--;
-                        updateNavigation();
-                    }
-                });
-                
-                $nextBtn.off('click.extended-steps').on('click.extended-steps', function() {
-                    if (currentStep < totalSteps - 1) {
-                        currentStep++;
-                        updateNavigation();
-                    }
-                });
-                
-                $tabs.off('click.extended-steps').on('click.extended-steps', function() {
-                    currentStep = $tabs.index(this);
-                    updateNavigation();
-                });
-                
-                updateNavigation();
             }
         });
     }
 
-    ExtendedMarkdown.prepareFormattingTools = function() {
-        require(['composer/formatting'], function(formatting) {
+    ExtendedMarkdown.prepareFormattingTools = function () {
+        require(['composer/formatting'], function (formatting) {
             if (formatting && formatting.addButtonDispatch) {
-                formatting.addButtonDispatch('textheader', function(textarea, selectionStart, selectionEnd) {
+                formatting.addButtonDispatch('spoiler', function(textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, '#anchor(Header Text)');
-                        textarea.selectionStart = selectionStart + 8;
+                        formatting.insertIntoTextarea(textarea, '[spoiler=点击展开]隐藏内容[/spoiler]');
+                        textarea.selectionStart = selectionStart + 15;
                         textarea.selectionEnd = selectionStart + 19;
                     } else {
                         const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        const anchorId = selectedText.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        formatting.insertIntoTextarea(textarea, `#${anchorId}(${selectedText})`);
-                    }
-                });
-
-                formatting.addButtonDispatch('groupedcode', function(textarea, selectionStart, selectionEnd) {
-                    const codeTemplate = '===group\n```javascript\n// JavaScript code\nconsole.log("Hello World");\n```\n\n```python\n# Python code\nprint("Hello World")\n```\n===';
-                    formatting.insertIntoTextarea(textarea, codeTemplate);
-                });
-
-                formatting.addButtonDispatch('bubbleinfo', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, '°text°(tooltip content)');
-                        textarea.selectionStart = selectionStart + 1;
-                        textarea.selectionEnd = selectionStart + 5;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `°${selectedText}°(tooltip content)`);
-                        const newPos = selectionEnd + 3;
-                        textarea.selectionStart = newPos;
-                        textarea.selectionEnd = newPos + 15;
-                    }
-                });
-
-                formatting.addButtonDispatch('spoiler', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, '[spoiler=Click to reveal]Hidden content[/spoiler]');
-                        textarea.selectionStart = selectionStart + 23;
-                        textarea.selectionEnd = selectionStart + 37;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `[spoiler=Click to reveal]${selectedText}[/spoiler]`);
-                    }
-                });
-
-                formatting.addButtonDispatch('noteinfo', function(textarea, selectionStart, selectionEnd) {
-                    formatting.insertIntoTextarea(textarea, '!!! info [Information]: Your info message here');
-                    textarea.selectionStart = selectionStart + 27;
-                    textarea.selectionEnd = selectionStart + 50;
-                });
-
-                formatting.addButtonDispatch('notewarning', function(textarea, selectionStart, selectionEnd) {
-                    formatting.insertIntoTextarea(textarea, '!!! warning [Warning]: Your warning message here');
-                    textarea.selectionStart = selectionStart + 27;
-                    textarea.selectionEnd = selectionStart + 52;
-                });
-
-                formatting.addButtonDispatch('noteimportant', function(textarea, selectionStart, selectionEnd) {
-                    formatting.insertIntoTextarea(textarea, '!!! important [Important]: Your important message here');
-                    textarea.selectionStart = selectionStart + 30;
-                    textarea.selectionEnd = selectionStart + 58;
-                });
-
-                formatting.addButtonDispatch('tabs', function(textarea, selectionStart, selectionEnd) {
-                    const tabsTemplate = '[tabs]\n[tab=Tab 1]\nContent for tab 1\n[tab=Tab 2]\nContent for tab 2\n[/tabs]';
-                    formatting.insertIntoTextarea(textarea, tabsTemplate);
-                });
-
-                formatting.addButtonDispatch('steps', function(textarea, selectionStart, selectionEnd) {
-                    const stepsTemplate = '[steps]\n[step]\nFirst step content\n[step]\nSecond step content\n[/steps]';
-                    formatting.insertIntoTextarea(textarea, stepsTemplate);
-                });
-
-                formatting.addButtonDispatch('superscript', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, 'text^superscript^');
-                        textarea.selectionStart = selectionStart + 5;
-                        textarea.selectionEnd = selectionStart + 16;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `${selectedText}^superscript^`);
-                    }
-                });
-
-                formatting.addButtonDispatch('subscript', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, 'text~subscript~');
-                        textarea.selectionStart = selectionStart + 5;
-                        textarea.selectionEnd = selectionStart + 14;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `${selectedText}~subscript~`);
-                    }
-                });
-
-                formatting.addButtonDispatch('collapsible', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, '[spoiler=Click to expand]\nHidden content here\n[/spoiler]');
-                        textarea.selectionStart = selectionStart + 28;
-                        textarea.selectionEnd = selectionStart + 48;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `[spoiler=Click to expand]\n${selectedText}\n[/spoiler]`);
+                        formatting.insertIntoTextarea(textarea, `[spoiler=点击展开]${selectedText}[/spoiler]`);
                     }
                 });
             }
@@ -300,7 +214,10 @@ $(document).ready(function () {
         
         if (shouldInit) {
             clearTimeout(initTimeout);
-            initTimeout = setTimeout(pageReady, 100);
+            initTimeout = setTimeout(() => {
+                pageReady();
+                setupExtendedMarkdownTheme();
+            }, 100);
         }
     });
     
@@ -311,7 +228,10 @@ $(document).ready(function () {
 
     $(window).on('action:ajaxify.end', function() {
         clearTimeout(initTimeout);
-        initTimeout = setTimeout(pageReady, 150);
+        initTimeout = setTimeout(() => {
+            pageReady();
+            setupExtendedMarkdownTheme();
+        }, 150);
     });
     
     pageReady();
