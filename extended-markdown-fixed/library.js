@@ -45,6 +45,8 @@ function cleanContent(content) {
         .replace(/\s+$/gm, '')
         .replace(/^\n+/, '')
         .replace(/\n+$/, '')
+        .replace(/^[\r\n\s]*/, '')
+        .replace(/[\r\n\s]*$/, '')
         .trim();
 }
 
@@ -73,9 +75,7 @@ function createTabComponent(type, items, id) {
                            id="${tabId}" 
                            role="tabpanel" 
                            aria-labelledby="${tabId}-tab" 
-                           tabindex="0">
-            ${items[i].content}
-        </div>`;
+                           tabindex="0">${items[i].content}</div>`;
     }
     
     menuTab += "</ul>";
@@ -92,15 +92,21 @@ function applySteps(textContent, id) {
         
         const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
         while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
-            stepMatches.push(cleanContent(stepMatch[1]));
+            const stepContent = stepMatch[1]
+                .replace(/^[\s\n\r]*/, '')
+                .replace(/[\s\n\r]*$/, '')
+                .trim();
+            
+            if (stepContent) {
+                stepMatches.push(cleanContent(stepContent));
+            }
         }
         
         if (stepMatches.length === 0) return match;
         
         const stepsId = `steps-${id}-${Math.random().toString(36).substr(2, 9)}`;
         
-        let stepsHeader = `
-        <div class="steps-header">
+        let stepsHeader = `<div class="steps-header">
             <div class="steps-counter">
                 <span class="current-step">1</span> / <span class="total-steps">${stepMatches.length}</span>
             </div>
@@ -121,78 +127,6 @@ function applySteps(textContent, id) {
     });
 }
 
-const ExtendedMarkdown = {
-    async parsePost(data) {
-        if (data && data.postData && data.postData.content) {
-            data.postData.content = applyTabs(data.postData.content, data.postData.pid);
-            data.postData.content = applySteps(data.postData.content, data.postData.pid);
-            data.postData.content = applyCollapsible(data.postData.content, data.postData.pid);
-            data.postData.content = await applyExtendedMarkdown(data.postData.content);
-            data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
-        }
-        return data;
-    },
-
-    async parseSignature(data) {
-        if (data && data.userData && data.userData.signature) {
-            data.userData.signature = applyTabs(data.userData.signature, "sig");
-            data.userData.signature = applySteps(data.userData.signature, "sig");
-            data.userData.signature = applyCollapsible(data.userData.signature, "sig");
-            data.userData.signature = await applyExtendedMarkdown(data.userData.signature);
-            data.userData.signature = applyGroupCode(data.userData.signature, "sig");
-        }
-        return data;
-    },
-
-    async parseAboutMe(data) {
-        if (data) {
-            data = applyTabs(data, "about");
-            data = applySteps(data, "about");
-            data = applyCollapsible(data, "about");
-            data = await applyExtendedMarkdown(data);
-            data = applyGroupCode(data, "about");
-        }
-        return data;
-    },
-
-    async parseRaw(data) {
-        if (data) {
-            data = applyTabs(data, "");
-            data = applySteps(data, "");
-            data = applyCollapsible(data, "");
-            data = await applyExtendedMarkdown(data);
-            data = applyGroupCode(data, "");
-        }
-        return data;
-    },
-    
-    async registerFormatting(payload) {
-        const formatting = [
-            { name: "color", className: "fa fa-eyedropper", title: "[[extendedmarkdown:composer.formatting.color]]" },
-            { name: "left", className: "fa fa-align-left", title: "[[extendedmarkdown:composer.formatting.left]]" },
-            { name: "center", className: "fa fa-align-center", title: "[[extendedmarkdown:composer.formatting.center]]" },
-            { name: "right", className: "fa fa-align-right", title: "[[extendedmarkdown:composer.formatting.right]]" },
-            { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
-            { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
-            { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
-            { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
-            { name: "collapsible", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
-            { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
-            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
-            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" }
-        ];
-
-        payload.options = payload.options.concat(formatting);
-
-        return payload;
-    },
-    
-    async sanitizerConfig(config) {
-        config.allowedAttributes['a'].push('name');
-        return config;
-    }
-};
-
 function applyTabs(textContent, id) {
     return textContent.replace(tabsRegex, function (match, tabsContent) {
         const cleanTabsContent = cleanContent(tabsContent);
@@ -201,10 +135,17 @@ function applyTabs(textContent, id) {
         
         const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
         while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
-            tabMatches.push({
-                title: tabMatch[1].trim(),
-                content: cleanContent(tabMatch[2])
-            });
+            const tabContent = tabMatch[2]
+                .replace(/^[\s\n\r]*/, '')
+                .replace(/[\s\n\r]*$/, '')
+                .trim();
+                
+            if (tabContent) {
+                tabMatches.push({
+                    title: tabMatch[1].trim(),
+                    content: cleanContent(tabContent)
+                });
+            }
         }
         
         if (tabMatches.length === 0) return match;
@@ -220,59 +161,49 @@ function applyTabs(textContent, id) {
     });
 }
 
-function applyCollapsible(textContent, id) {
-    return textContent.replace(spoilerRegex, function (match, title, content) {
-        const collapsibleId = `collapsible-${id}-${Math.random().toString(36).substr(2, 9)}`;
-        const cleanContent = content.trim();
-        
-        return `<div class="collapsible-wrapper">
-            <button class="extended-markdown-collapsible" type="button" data-bs-target="#${collapsibleId}" aria-expanded="false" aria-controls="${collapsibleId}">
-                <i class="fa fa-chevron-right collapse-icon"></i>
-                ${title}
-            </button>
-            <div class="collapse" id="${collapsibleId}">
-                <div class="collapsible-content">
-                    ${cleanContent}
-                </div>
-            </div>
-        </div>`;
-    });
-}
-
-function applyExtendedMarkdown(textContent) {
-    textContent = applyNotes(textContent);
-    textContent = applyTextHeaders(textContent);
-    textContent = applyTooltips(textContent);
-    textContent = applyColors(textContent);
-    textContent = applyRuby(textContent);
-    textContent = applySuperscriptAndSubscript(textContent);
-    textContent = applyAnchors(textContent);
-    
+function applySpoiler(textContent, id) {
+    if (textContent.match(spoilerRegex)) {
+        let count = 0;
+        textContent = textContent.replace(spoilerRegex, function (match, title, text) {
+            const spoilerButton = `
+                <button class="btn btn-outline-secondary btn-sm extended-markdown-collapsible" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#spoiler${count + id}" 
+                        aria-expanded="false" 
+                        aria-controls="spoiler${count + id}">
+                    <i class="fa fa-chevron-right collapse-icon"></i> ${title}
+                </button>`;
+            const spoilerContent = `
+                <div class="collapse" id="spoiler${count + id}">
+                    <div class="card card-body spoiler"><p dir="auto">${text}</p></div>
+                </div>`;
+            count++;
+            return `<p>${spoilerButton}${spoilerContent}</p>`;
+        });
+    }
     return textContent;
 }
 
 function applyTextHeaders(textContent) {
     return textContent.replace(textHeaderRegex, function (match, anchorId, text) {
-        return `<h2 class="text-header"><a class="anchor-offset" name="${anchorId}"></a>${text}</h2>`;
+        return `<div class="text-header" id="${anchorId}">${text}</div>`;
     });
 }
 
 function applyTooltips(textContent) {
-    return textContent.replace(tooltipRegex, function (match, code, text, tooltipText) {
-        if (typeof (code) !== "undefined") {
-            return code;
-        } else if ("fa-info" === text) {
-            return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
-        } else {
-            return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
+    return textContent.replace(tooltipRegex, function (match, codeBlock, text, tooltip) {
+        if (codeBlock) {
+            return codeBlock;
         }
+        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltip}">${text}</span>`;
     });
 }
 
 function applyColors(textContent) {
-    return textContent.replace(colorRegex, function (match, code, color, text) {
-        if (typeof (code) !== "undefined") {
-            return code;
+    return textContent.replace(colorRegex, function (match, codeBlock, color, text) {
+        if (codeBlock) {
+            return codeBlock;
         }
         return `<span style="color: ${color};">${text}</span>`;
     });
@@ -361,6 +292,49 @@ function capitalizeFirstLetter(name) {
 function generateAnchorFromHeading(heading) {
     return `<a class="anchor-offset" name="${slugify(heading)}"></a>`;
 }
+
+const ExtendedMarkdown = {
+    parseRaw: function (textContent, callback) {
+        const postId = Math.floor(Math.random() * 100000);
+        
+        textContent = applyTextHeaders(textContent);
+        textContent = applyTooltips(textContent);
+        textContent = applyColors(textContent);
+        textContent = applyNotes(textContent);
+        textContent = applyTabs(textContent, postId);
+        textContent = applySteps(textContent, postId);
+        textContent = applySpoiler(textContent, postId);
+        textContent = applyGroupCode(textContent, postId);
+        textContent = applyRuby(textContent);
+        textContent = applySuperscriptAndSubscript(textContent);
+        textContent = applyAnchors(textContent);
+
+        callback(null, textContent);
+    },
+
+    registerFormatting: function (payload, callback) {
+        var formatting = payload.options;
+
+        if (formatting) {
+            formatting.push(
+                { name: 'text-header', className: 'fa fa-header', title: 'Text Header', shortcut: 'Ctrl+Shift+H' },
+                { name: 'groupedcode', className: 'fa fa-code', title: 'Grouped Code Blocks', shortcut: 'Ctrl+Shift+G' },
+                { name: 'bubbleinfo', className: 'fa fa-info-circle', title: 'Tooltip', shortcut: 'Ctrl+Shift+I' },
+                { name: 'spoiler', className: 'fa fa-eye-slash', title: 'Spoiler', shortcut: 'Ctrl+Shift+S' },
+                { name: 'noteinfo', className: 'fa fa-info', title: 'Info Note', shortcut: 'Ctrl+Shift+1' },
+                { name: 'notewarning', className: 'fa fa-exclamation-triangle', title: 'Warning Note', shortcut: 'Ctrl+Shift+2' },
+                { name: 'noteimportant', className: 'fa fa-exclamation-circle', title: 'Important Note', shortcut: 'Ctrl+Shift+3' },
+                { name: 'tabs', className: 'fa fa-folder', title: 'Tabs', shortcut: 'Ctrl+Shift+T' },
+                { name: 'steps', className: 'fa fa-list-ol', title: 'Steps', shortcut: 'Ctrl+Shift+O' },
+                { name: 'superscript', className: 'fa fa-superscript', title: 'Superscript', shortcut: 'Ctrl+Shift+=' },
+                { name: 'subscript', className: 'fa fa-subscript', title: 'Subscript', shortcut: 'Ctrl+Shift+-' },
+                { name: 'collapsible', className: 'fa fa-compress', title: 'Collapsible Section', shortcut: 'Ctrl+Shift+C' }
+            );
+        }
+
+        callback(null, payload);
+    }
+};
 
 module.exports = ExtendedMarkdown;
 
