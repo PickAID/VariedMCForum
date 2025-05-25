@@ -105,36 +105,59 @@ const ExtendedMarkdown = {
     },
 
     async sanitizerConfig(config) {
+        config.allowedAttributes = config.allowedAttributes || {};
+        config.allowedTags = config.allowedTags || [];
+        
         config.allowedAttributes['a'] = config.allowedAttributes['a'] || [];
-        config.allowedAttributes['a'].push('name');
+        if (!config.allowedAttributes['a'].includes('name')) {
+            config.allowedAttributes['a'].push('name');
+        }
         
         config.allowedAttributes['span'] = config.allowedAttributes['span'] || [];
-        config.allowedAttributes['span'].push('class', 'style');
+        ['class', 'style'].forEach(attr => {
+            if (!config.allowedAttributes['span'].includes(attr)) {
+                config.allowedAttributes['span'].push(attr);
+            }
+        });
         
         config.allowedAttributes['div'] = config.allowedAttributes['div'] || [];
-        config.allowedAttributes['div'].push('class', 'id', 'role');
+        ['class', 'id', 'role'].forEach(attr => {
+            if (!config.allowedAttributes['div'].includes(attr)) {
+                config.allowedAttributes['div'].push(attr);
+            }
+        });
         
         config.allowedAttributes['button'] = config.allowedAttributes['button'] || [];
-        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-toggle', 'data-bs-target', 'data-target', 'aria-expanded', 'aria-controls', 'role', 'aria-selected', 'tabindex');
+        ['class', 'type', 'data-bs-toggle', 'data-toggle', 'data-bs-target', 'data-target', 'aria-expanded', 'aria-controls', 'role', 'aria-selected', 'tabindex'].forEach(attr => {
+            if (!config.allowedAttributes['button'].includes(attr)) {
+                config.allowedAttributes['button'].push(attr);
+            }
+        });
         
         config.allowedAttributes['ul'] = config.allowedAttributes['ul'] || [];
-        config.allowedAttributes['ul'].push('class', 'role', 'id');
+        ['class', 'role', 'id'].forEach(attr => {
+            if (!config.allowedAttributes['ul'].includes(attr)) {
+                config.allowedAttributes['ul'].push(attr);
+            }
+        });
         
         config.allowedAttributes['li'] = config.allowedAttributes['li'] || [];
-        config.allowedAttributes['li'].push('class', 'role');
+        ['class', 'role'].forEach(attr => {
+            if (!config.allowedAttributes['li'].includes(attr)) {
+                config.allowedAttributes['li'].push(attr);
+            }
+        });
         
         config.allowedAttributes['h4'] = config.allowedAttributes['h4'] || [];
-        config.allowedAttributes['h4'].push('class');
+        if (!config.allowedAttributes['h4'].includes('class')) {
+            config.allowedAttributes['h4'].push('class');
+        }
         
-        if (!config.allowedTags.includes('button')) {
-            config.allowedTags.push('button');
-        }
-        if (!config.allowedTags.includes('sup')) {
-            config.allowedTags.push('sup');
-        }
-        if (!config.allowedTags.includes('sub')) {
-            config.allowedTags.push('sub');
-        }
+        ['button', 'sup', 'sub'].forEach(tag => {
+            if (!config.allowedTags.includes(tag)) {
+                config.allowedTags.push(tag);
+            }
+        });
         
         return config;
     }
@@ -181,29 +204,25 @@ async function applyExtendedMarkdown(textContent) {
         textContent = textContent.replace(colorRegex, function (match, code, color, text) {
             if (typeof (code) !== "undefined") {
                 return code;
+            } else {
+                return `<span style="color: ${color};">${text}</span>`;
             }
-            return `<span style="color: ${color};">${text}</span>`;
         });
     }
 
     if (textContent.match(paragraphAndHeadingRegex)) {
-        textContent = textContent.replace(paragraphAndHeadingRegex, function (match, tag, text, closeTag) {
-            let anchor = tag.charAt(0) == "h" ? generateAnchorFromHeading(text) : "";
-            
-            if (text.startsWith("|=") && text.endsWith("=|")) {
-                const cleanText = text.slice(2, -2);
-                return `<${tag} style="text-align:justify;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.startsWith("|-") && text.endsWith("-|")) {
-                const cleanText = text.slice(2, -2);
-                return `<${tag} style="text-align:center;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.endsWith("-|")) {
-                const cleanText = text.slice(0, -2);
-                return `<${tag} style="text-align:right;">${anchor}${cleanText}</${closeTag}>`;
-            } else if (text.startsWith("|-")) {
-                const cleanText = text.slice(2);
-                return `<${tag} style="text-align:left;">${anchor}${cleanText}</${closeTag}>`;
+        textContent = textContent.replace(paragraphAndHeadingRegex, function (match, startTag, text, endTag) {
+            if (text.startsWith('|-') && text.endsWith('-|')) {
+                return `<${startTag} style="text-align: center;">${text.slice(2, -2)}</${endTag}>`;
+            } else if (text.startsWith('|-')) {
+                return `<${startTag} style="text-align: left;">${text.slice(2)}</${endTag}>`;
+            } else if (text.endsWith('-|')) {
+                return `<${startTag} style="text-align: right;">${text.slice(0, -2)}</${endTag}>`;
+            } else if (text.startsWith('|=') && text.endsWith('=|')) {
+                return `<${startTag} style="text-align: justify;">${text.slice(2, -2)}</${endTag}>`;
+            } else {
+                return match;
             }
-            return `<${tag}>${anchor}${text}</${closeTag}>`;
         });
     }
 
@@ -213,9 +232,8 @@ async function applyExtendedMarkdown(textContent) {
 function applyGroupCode(textContent, id) {
     if (textContent.match(codeTabRegex)) {
         let count = 0;
-        textContent = textContent.replace(codeTabRegex, (match, codes) => {
-            let cleanCodes = codes.trim();
-            let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
+        textContent = textContent.replace(codeTabRegex, function (match, cleanCodes) {
+            const codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
             let lang = [];
             let processedCodeArray = [];
             
@@ -278,7 +296,6 @@ function applyTabs(textContent, id) {
         const tabs = [];
         let tabMatch;
         
-        // 重置正则表达式
         tabRegex.lastIndex = 0;
         
         while ((tabMatch = tabRegex.exec(content)) !== null) {
@@ -322,7 +339,6 @@ function applySteps(textContent, id) {
         const steps = [];
         let stepMatch;
         
-        // 重置正则表达式
         stepRegex.lastIndex = 0;
         
         while ((stepMatch = stepRegex.exec(content)) !== null) {

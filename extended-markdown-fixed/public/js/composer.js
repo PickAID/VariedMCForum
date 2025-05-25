@@ -1,3 +1,5 @@
+'use strict';
+
 $(document).ready(function() {
     $(window).on('action:composer.loaded', function(ev, data) {
         if (!data.formatting) return;

@@ -100,13 +100,12 @@ $(document).ready(function () {
     }
 
     function initializeCollapse() {
-        const version = getBootstrapVersion();
-        
         document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
             if (button.hasAttribute('data-collapse-initialized')) return;
             button.setAttribute('data-collapse-initialized', 'true');
             
-            const target = document.querySelector(button.getAttribute('data-bs-target') || button.getAttribute('data-target'));
+            const targetSelector = button.getAttribute('data-bs-target') || button.getAttribute('data-target');
+            const target = document.querySelector(targetSelector);
             const icon = button.querySelector('.collapse-icon');
             
             button.addEventListener('click', function(e) {
@@ -140,34 +139,19 @@ $(document).ready(function () {
             if (container.hasAttribute('data-tabs-initialized')) return;
             container.setAttribute('data-tabs-initialized', 'true');
             
-            // 清理不需要的元素
-            const unwantedElements = container.querySelectorAll('.fa-chevron-left, .fa-chevron-right, .fa-angle-left, .fa-angle-right, .fa-arrow-left, .fa-arrow-right, .fa-caret-left, .fa-caret-right, .carousel-control, .carousel-control-prev, .carousel-control-next, .slick-prev, .slick-next, .swiper-button-prev, .swiper-button-next, .owl-prev, .owl-next, .prev, .next, [data-slide], [data-bs-slide]');
-            unwantedElements.forEach(function(el) {
-                el.remove();
-            });
+            const tabButtons = container.querySelectorAll('.nav-link');
+            const tabPanes = container.querySelectorAll('.tab-pane');
             
-            // 初始化标签页功能
-            const tabLinks = container.querySelectorAll('.nav-tabs button[data-bs-toggle="tab"], .nav-tabs button[data-toggle="tab"]');
-            tabLinks.forEach(function(link) {
-                link.addEventListener('click', function(e) {
+            tabButtons.forEach(function(button, index) {
+                button.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const targetId = this.getAttribute('data-bs-target') || this.getAttribute('data-target');
-                    if (!targetId) return;
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
                     
-                    container.querySelectorAll('.nav-link').forEach(function(l) {
-                        l.classList.remove('active');
-                        l.setAttribute('aria-selected', 'false');
-                    });
-                    container.querySelectorAll('.tab-pane').forEach(function(pane) {
-                        pane.classList.remove('active', 'show');
-                    });
-                    
-                    this.classList.add('active');
-                    this.setAttribute('aria-selected', 'true');
-                    const targetPane = document.querySelector(targetId);
-                    if (targetPane) {
-                        targetPane.classList.add('active', 'show');
+                    button.classList.add('active');
+                    if (tabPanes[index]) {
+                        tabPanes[index].classList.add('show', 'active');
                     }
                 });
             });
@@ -179,76 +163,61 @@ $(document).ready(function () {
             if (container.hasAttribute('data-steps-initialized')) return;
             container.setAttribute('data-steps-initialized', 'true');
             
-            const tabLinks = container.querySelectorAll('.nav-tabs button[data-bs-toggle="tab"], .nav-tabs button[data-toggle="tab"]');
+            const tabButtons = container.querySelectorAll('.nav-link');
+            const tabPanes = container.querySelectorAll('.tab-pane');
             const prevBtn = container.querySelector('.step-prev');
             const nextBtn = container.querySelector('.step-next');
             const currentStepSpan = container.querySelector('.current-step');
-            const totalStepsSpan = container.querySelector('.total-steps');
-            let currentStep = 0;
             
-            // 设置总步数
-            if (totalStepsSpan) {
-                totalStepsSpan.textContent = tabLinks.length;
-            }
-            
-            function updateNavigation() {
-                if (prevBtn) {
-                    prevBtn.disabled = currentStep === 0;
-                }
+            function updateStepNavigation(activeIndex) {
+                if (prevBtn) prevBtn.disabled = activeIndex === 0;
+                if (nextBtn) nextBtn.disabled = activeIndex === tabButtons.length - 1;
+                if (currentStepSpan) currentStepSpan.textContent = activeIndex + 1;
+                
                 if (nextBtn) {
-                    nextBtn.disabled = currentStep === tabLinks.length - 1;
-                }
-                if (currentStepSpan) {
-                    currentStepSpan.textContent = currentStep + 1;
+                    if (activeIndex === tabButtons.length - 1) {
+                        nextBtn.innerHTML = '<i class="fa fa-check"></i> 完成';
+                    } else {
+                        nextBtn.innerHTML = '下一步 <i class="fa fa-chevron-right"></i>';
+                    }
                 }
             }
             
-            function showStep(stepIndex) {
-                if (stepIndex < 0 || stepIndex >= tabLinks.length) return;
-                
-                container.querySelectorAll('.nav-link').forEach(function(l) {
-                    l.classList.remove('active');
-                    l.setAttribute('aria-selected', 'false');
-                });
-                container.querySelectorAll('.tab-pane').forEach(function(pane) {
-                    pane.classList.remove('active', 'show');
-                });
-                
-                const targetLink = tabLinks[stepIndex];
-                const targetId = targetLink.getAttribute('data-bs-target') || targetLink.getAttribute('data-target');
-                
-                targetLink.classList.add('active');
-                targetLink.setAttribute('aria-selected', 'true');
-                
-                const targetPane = document.querySelector(targetId);
-                if (targetPane) {
-                    targetPane.classList.add('active', 'show');
-                }
-                
-                currentStep = stepIndex;
-                updateNavigation();
-            }
-            
-            tabLinks.forEach(function(link, index) {
-                link.addEventListener('click', function(e) {
+            tabButtons.forEach(function(button, index) {
+                button.addEventListener('click', function(e) {
                     e.preventDefault();
-                    showStep(index);
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
+                    
+                    button.classList.add('active');
+                    if (tabPanes[index]) {
+                        tabPanes[index].classList.add('show', 'active');
+                    }
+                    
+                    updateStepNavigation(index);
                 });
             });
             
             if (prevBtn) {
                 prevBtn.addEventListener('click', function() {
-                    showStep(currentStep - 1);
+                    const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
+                    if (activeIndex > 0) {
+                        tabButtons[activeIndex - 1].click();
+                    }
                 });
             }
             
             if (nextBtn) {
                 nextBtn.addEventListener('click', function() {
-                    showStep(currentStep + 1);
+                    const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
+                    if (activeIndex < tabButtons.length - 1) {
+                        tabButtons[activeIndex + 1].click();
+                    }
                 });
             }
             
-            updateNavigation();
+            updateStepNavigation(0);
         });
     }
 
