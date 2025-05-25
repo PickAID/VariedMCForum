@@ -35,14 +35,14 @@ const noteIcons = {
 
 function cleanContent(content) {
     return content
-        .replace(/^<p dir="auto">\s*/, '')
+        .replace(/^<p dir="auto">\s*/g, '')
         .replace(/\s*<\/p>$/g, '')
-        .replace(/^<p>\s*/, '')
+        .replace(/^<p>\s*/g, '')
         .replace(/\s*<\/p>$/g, '')
         .replace(/^<br \/>\s*/g, '')
         .replace(/\s*<br \/>$/g, '')
-        .replace(/^\s+/g, '')
-        .replace(/\s+$/g, '')
+        .replace(/^\s+/gm, '')
+        .replace(/\s+$/gm, '')
         .trim();
 }
 

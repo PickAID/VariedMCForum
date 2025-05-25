@@ -18,7 +18,7 @@ $(document).ready(function () {
     function applyThemeStyles(isDark) {
         const theme = isDark ? 'dark' : 'light';
         
-        document.querySelectorAll('.admonition, .alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             element.classList.remove('theme-light', 'theme-dark');
             element.classList.add(`theme-${theme}`);
         });
@@ -31,7 +31,9 @@ $(document).ready(function () {
             applyThemeStyles(darkSkinList.find(".fa-check").length > darkSkinList.find(".invisible").length);
             
             skinSwitcher.find('li').off('click.extended-markdown').on('click.extended-markdown', function (e) {
-                applyThemeStyles($(this).parent().find(".dropdown-header").text() == "Dark");
+                setTimeout(() => {
+                    applyThemeStyles($(this).parent().find(".dropdown-header").text() == "Dark");
+                }, 100);
             });
         }
     }
@@ -68,6 +70,17 @@ $(document).ready(function () {
     }
 
     function initializeCollapse() {
+        $('.extended-markdown-collapsible').each(function() {
+            const $button = $(this);
+            const targetId = $button.attr('data-bs-target');
+            const $target = $(targetId);
+            const $icon = $button.find('.collapse-icon');
+            
+            const isExpanded = $target.hasClass('show');
+            $button.attr('aria-expanded', isExpanded ? 'true' : 'false');
+            $icon.css('transform', isExpanded ? 'rotate(90deg)' : 'rotate(0deg)');
+        });
+
         $('.extended-markdown-collapsible').off('click.collapsible').on('click.collapsible', function(e) {
             e.preventDefault();
             e.stopPropagation();
