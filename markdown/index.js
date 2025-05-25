@@ -94,12 +94,12 @@ const Markdown = {
 
 		meta.settings.get('markdown', (err, options) => {
 			if (err) {
-				winston.warn(`[plugin/markdown] Unable to retrieve settings, assuming defaults: ${err.message}`);
+				winston.warn(`[plugin/markdown] Unable to retrieve settings, using defaults: ${err.message}`);
 				options = {};
 			}
 
 			Object.keys(defaults).forEach((field) => {
-				if (!options.hasOwnProperty(field)) {
+				if (!options || !options.hasOwnProperty(field)) {
 					_self.config[field] = defaults[field];
 				} else if (!notCheckboxes.includes(field)) {
 					_self.config[field] = options[field] === 'on';
@@ -113,32 +113,69 @@ const Markdown = {
 			delete _self.config.highlight;
 			delete _self.config.useShiki;
 
-			if (_self.useShiki && _self.highlight) {
-				_self.initShikiParser()
-					.then(() => {
-						winston.info('[plugin/markdown] Shiki initialization completed');
-					})
-					.catch((error) => {
-						winston.error(`[plugin/markdown] Shiki failed, using highlight.js: ${error.message}`);
-						_self.initHighlightJsParser();
-					});
-			} else if (_self.highlight) {
-				_self.initHighlightJsParser();
-			} else {
-				_self.config.highlight = false;
-				parser = new MarkdownIt(_self.config);
-				Markdown.updateParserRules(parser);
+			try {
+				if (_self.useShiki && _self.highlight) {
+					_self.initShikiParser()
+						.then(() => {
+							winston.info('[plugin/markdown] Shiki initialization completed');
+						})
+						.catch((error) => {
+							winston.error(`[plugin/markdown] Shiki failed, fallback to basic: ${error.message}`);
+							_self.initBasicParser();
+						});
+				} else if (_self.highlight) {
+					_self.initHighlightJsParser();
+				} else {
+					_self.initBasicParser();
+				}
+			} catch (error) {
+				winston.error(`[plugin/markdown] Init failed, using basic parser: ${error.message}`);
+				_self.initBasicParser();
 			}
 		});
 	},
 
-	initHighlightJsParser: function() {
+	initBasicParser: function() {
 		parser = new MarkdownIt({
-			...this.config,
-			highlight: true
+			html: this.config.html || false,
+			xhtmlOut: this.config.xhtmlOut || true,
+			breaks: this.config.breaks || true,
+			linkify: this.config.linkify || true,
+			typographer: this.config.typographer || false,
+			langPrefix: this.config.langPrefix || 'language-'
 		});
 		Markdown.updateParserRules(parser);
-		winston.info('[plugin/markdown] Highlight.js syntax highlighting enabled');
+		winston.info('[plugin/markdown] Basic markdown parser enabled');
+	},
+
+	initHighlightJsParser: function() {
+		try {
+			const hljs = require('highlight.js');
+			
+			parser = new MarkdownIt({
+				html: this.config.html || false,
+				xhtmlOut: this.config.xhtmlOut || true,
+				breaks: this.config.breaks || true,
+				linkify: this.config.linkify || true,
+				typographer: this.config.typographer || false,
+				langPrefix: this.config.langPrefix || 'language-',
+				highlight: function (str, lang) {
+					if (lang && hljs.getLanguage(lang)) {
+						try {
+							return hljs.highlight(str, { language: lang }).value;
+						} catch (err) {
+							winston.error(`[plugin/markdown] Highlight.js error: ${err.message}`);
+						}
+					}
+					return '';
+				}
+			});
+			Markdown.updateParserRules(parser);
+			winston.info('[plugin/markdown] Highlight.js syntax highlighting enabled');
+		} catch (error) {
+			winston.error(`[plugin/markdown] Highlight.js failed, using basic parser: ${error.message}`);
+			this.initBasicParser();
+		}
 	},
 
 	initShikiParser: async function() {
@@ -155,15 +192,19 @@ const Markdown = {
 				langs: [
 					'javascript', 'typescript', 'html', 'css', 'json', 'bash', 'shell',
 					'python', 'java', 'cpp', 'c', 'csharp', 'php', 'go', 'rust', 
-					'sql', 'xml', 'yaml', 'markdown', 'vue', 'jsx', 'tsx', 'scss',
-					'less', 'stylus', 'diff', 'dockerfile', 'nginx', 'apache'
+					'sql', 'xml', 'yaml', 'markdown'
 				]
 			});
 			
 			parser = new MarkdownIt({
-				..._self.config,
-				highlight: function (str, lang, attrs) {
-					const defaultLang = 'txt';
+				html: _self.config.html || false,
+				xhtmlOut: _self.config.xhtmlOut || true,
+				breaks: _self.config.breaks || true,
+				linkify: _self.config.linkify || true,
+				typographer: _self.config.typographer || false,
+				langPrefix: _self.config.langPrefix || 'language-',
+				highlight: function (str, lang) {
+					const defaultLang = 'text';
 					lang = lang || defaultLang;
 					
 					try {

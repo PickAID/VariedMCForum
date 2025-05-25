@@ -1,34 +1,29 @@
 'use strict';
 
 const path = require('path');
-const plugins = require.main.require('./src/plugins');
 
-const parent = module.parent.exports;
 const posts = require.main.require('./src/posts');
-const file = require.main.require('./src/file');
 const Controllers = {};
 
-Controllers.renderAdmin = async function renderAdmin(req, res) {
-	const data = await plugins.hooks.fire('filter:admin.header.build', {});
-	const { themes } = require('../index');
-	
-	res.render('admin/plugins/markdown', {
-		title: 'Markdown',
-		themes,
-		shikiThemes: [
-			'github-light',
-			'github-dark',
-			'vs-code-light',
-			'vs-code-dark',
-			'material-theme',
-			'material-theme-darker',
-			'dracula',
-			'nord',
-			'one-dark-pro',
-			'solarized-light',
-			'solarized-dark'
-		]
-	});
+Controllers.renderAdmin = function renderAdmin(req, res) {
+	try {
+		res.render('admin/plugins/markdown', {
+			title: 'Markdown',
+			themes: [],
+			shikiThemes: [
+				'github-light',
+				'github-dark',
+				'vs-code-light',
+				'vs-code-dark',
+				'material-theme',
+				'dracula',
+				'nord'
+			]
+		});
+	} catch (error) {
+		console.error('Admin render error:', error);
+		res.status(500).send('Error loading admin page');
+	}
 };
 
 Controllers.retrieveRaw = function retrieveRaw(req, res, next) {
