@@ -361,6 +361,54 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     margin: 1rem 0;
     
+    .nav-tabs {
+        background: #f8f9fa;
+        margin: 0 !important;
+        border: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        
+        .nav-item {
+            margin-bottom: 0 !important;
+            
+            .nav-link {
+                border: none !important;
+                border-bottom: none !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                padding: 0.75rem 1rem;
+                margin: 0;
+                background: none;
+                color: #6c757d;
+                font-weight: 500;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                
+                &.active {
+                    background: #ffffff;
+                    color: #495057;
+                    border-color: transparent !important;
+                    border-bottom-color: transparent !important;
+                    box-shadow: none !important;
+                }
+                
+                &:hover:not(.active) {
+                    background: rgba(0, 123, 255, 0.1);
+                    color: #0d6efd;
+                    border: none !important;
+                }
+                
+                &:focus {
+                    box-shadow: none !important;
+                    border: none !important;
+                }
+            }
+        }
+    }
+    
     .steps-header {
         display: flex;
         align-items: center;
@@ -401,10 +449,16 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
     }
     
     .steps-content {
-        padding: 1rem;
         background: #ffffff;
+        margin: 0 !important;
+        border: none !important;
+        border-top: none !important;
+        box-shadow: none !important;
         
         .step-item {
+            padding: 1rem;
+            margin: 0;
+            border: none !important;
             display: none;
             
             &.active {
@@ -413,9 +467,42 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         }
     }
     
+    .tab-content {
+        background: #ffffff;
+        margin: 0 !important;
+        border: none !important;
+        border-top: none !important;
+        box-shadow: none !important;
+        
+        .tab-pane {
+            padding: 1rem;
+            margin: 0;
+            border: none !important;
+        }
+    }
+    
     &.extended-dark-theme {
         background: #2d3748;
         border-color: #495057;
+        
+        .nav-tabs {
+            background: #2d3748;
+            
+            .nav-item .nav-link {
+                color: #e2e8f0;
+                
+                &.active {
+                    background: #1a1a1a;
+                    color: #6ea8fe;
+                    border-bottom-color: transparent !important;
+                }
+                
+                &:hover:not(.active) {
+                    background: rgba(110, 168, 254, 0.1);
+                    color: #6ea8fe;
+                }
+            }
+        }
         
         .steps-header {
             background: #2d3748;
@@ -427,6 +514,10 @@ body.template-topic .topic .posts [component="post"] [component="post/content"] 
         }
         
         .steps-content {
+            background: #1a1a1a;
+        }
+        
+        .tab-content {
             background: #1a1a1a;
         }
     }
