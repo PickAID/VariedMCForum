@@ -19,11 +19,9 @@ const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
-const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\s*((?:<p dir="auto">@tab [^]*?<\/p>\s*(?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)*)<p dir="auto">:{3}<\/p>/g;
-
-const stepsRegex = /<p dir="auto">:{3}steps<\/p>\s*((?:<p dir="auto">\d+\.\s[^]*?<\/p>\s*(?:(?!<p dir="auto">\d+\.|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)*)<p dir="auto">:{3}<\/p>/g;
-
-const collapsibleRegex = /<p dir="auto">\+{3}\s([^]*?)<\/p>\s*((?:(?!<p dir="auto">\+{3}<\/p>)[^]*?\s*)*)<p dir="auto">\+{3}<\/p>/g;
+const tabsRegex = /<p dir="auto">:{3}tabs<\/p>(.*?)<p dir="auto">:{3}<\/p>/gs;
+const stepsRegex = /<p dir="auto">:{3}steps<\/p>(.*?)<p dir="auto">:{3}<\/p>/gs;
+const collapsibleRegex = /<p dir="auto">\+{3}\s+([^<]+)<\/p>(.*?)<p dir="auto">\+{3}<\/p>/gs;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -38,7 +36,7 @@ const ExtendedMarkdown = {
             data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
             data.postData.content = await applySpoiler(data.postData.content, data.postData.pid);
             data.postData.content = applyTabs(data.postData.content, data.postData.pid);
-            data.postData.content = applySteps(data.postData.content);
+            data.postData.content = applySteps(data.postData.content, data.postData.pid);
             data.postData.content = applyCollapsible(data.postData.content, data.postData.pid);
         }
         return data;
@@ -48,7 +46,7 @@ const ExtendedMarkdown = {
         if (data && data.userData && data.userData.signature) {
             data.userData.signature = await applyExtendedMarkdown(data.userData.signature);
             data.userData.signature = applyTabs(data.userData.signature, "sig");
-            data.userData.signature = applySteps(data.userData.signature);
+            data.userData.signature = applySteps(data.userData.signature, "sig");
             data.userData.signature = applyCollapsible(data.userData.signature, "sig");
         }
         return data;
@@ -58,7 +56,7 @@ const ExtendedMarkdown = {
         if (data) {
             data = await applyExtendedMarkdown(data);
             data = applyTabs(data, "about");
-            data = applySteps(data);
+            data = applySteps(data, "about");
             data = applyCollapsible(data, "about");
         }
         return data;
@@ -70,7 +68,7 @@ const ExtendedMarkdown = {
             data = applyGroupCode(data, "preview");
             data = await applySpoiler(data, "preview");
             data = applyTabs(data, "preview");
-            data = applySteps(data);
+            data = applySteps(data, "preview");
             data = applyCollapsible(data, "preview");
         }
         return data;
@@ -270,166 +268,101 @@ function applyGroupCode(textContent, id) {
 }
 
 function applyTabs(textContent, id) {
-    if (textContent.match(tabsRegex)) {
-        let count = 0;
-        textContent = textContent.replace(tabsRegex, (match, tabsContent) => {
-            const tabs = [];
-            
-            // 解析标签页内容
-            const tabBlocks = tabsContent.split(/<p dir="auto">@tab\s/);
-            
-            for (let i = 1; i < tabBlocks.length; i++) { // 跳过第一个空元素
-                const block = tabBlocks[i];
-                const endOfTitle = block.indexOf('</p>');
-                
-                if (endOfTitle !== -1) {
-                    const title = block.substring(0, endOfTitle).trim();
-                    const content = block.substring(endOfTitle + 4).trim();
-                    
-                    tabs.push({
-                        title: title,
-                        content: content || `<p dir="auto">${title}</p>`
-                    });
-                }
+    return textContent.replace(tabsRegex, (match, content) => {
+        const tabsId = `tabs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 简化解析：直接分割@tab标记
+        const parts = content.split(/<p dir="auto">@tab\s+/);
+        const tabs = [];
+        
+        for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+            const endIndex = part.indexOf('</p>');
+            if (endIndex > -1) {
+                const title = part.substring(0, endIndex);
+                const content = part.substring(endIndex + 4);
+                tabs.push({ title, content });
             }
-            
-            if (tabs.length === 0) return match;
-            
-            const tabsId = `tabs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            
-            let tabsHtml = `<div class="extended-tabs-container" id="${tabsId}">`;
-            tabsHtml += `<ul class="nav nav-tabs" role="tablist">`;
-            
-            for (let i = 0; i < tabs.length; i++) {
-                const tabId = `${tabsId}-tab-${i}`;
-                const isActive = i === 0;
-                
-                tabsHtml += `<li class="nav-item" role="presentation">
-                    <button class="nav-link ${isActive ? "active" : ""}" 
-                            id="${tabId}-tab" 
-                            data-bs-toggle="tab" 
-                            data-toggle="tab"
-                            data-bs-target="#${tabId}" 
-                            data-target="#${tabId}"
-                            type="button" 
-                            role="tab" 
-                            aria-controls="${tabId}" 
-                            aria-selected="${isActive ? "true" : "false"}">
-                        ${tabs[i].title}
-                    </button>
-                </li>`;
-            }
-            
-            tabsHtml += `</ul>`;
-            tabsHtml += `<div class="tab-content">`;
-            
-            for (let i = 0; i < tabs.length; i++) {
-                const tabId = `${tabsId}-tab-${i}`;
-                const isActive = i === 0;
-                
-                tabsHtml += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
-                                  id="${tabId}" 
-                                  role="tabpanel" 
-                                  aria-labelledby="${tabId}-tab" 
-                                  tabindex="0">
-                    <div class="tab-content-wrapper">
-                        ${tabs[i].content}
-                    </div>
-                </div>`;
-            }
-            
-            tabsHtml += `</div>`;
-            tabsHtml += `</div>`;
-            
-            count++;
-            return tabsHtml;
+        }
+        
+        if (tabs.length === 0) return match;
+        
+        let html = `<div class="extended-tabs-container">
+            <ul class="nav nav-tabs" role="tablist">`;
+        
+        tabs.forEach((tab, i) => {
+            const active = i === 0 ? 'active' : '';
+            html += `<li class="nav-item" role="presentation">
+                <button class="nav-link ${active}" id="${tabsId}-tab-${i}" data-bs-toggle="tab" data-bs-target="#${tabsId}-pane-${i}" type="button" role="tab">
+                    ${tab.title}
+                </button>
+            </li>`;
         });
-    }
-    return textContent;
+        
+        html += `</ul><div class="tab-content">`;
+        
+        tabs.forEach((tab, i) => {
+            const active = i === 0 ? 'show active' : '';
+            html += `<div class="tab-pane fade ${active}" id="${tabsId}-pane-${i}" role="tabpanel">
+                <div class="tab-content-wrapper">${tab.content}</div>
+            </div>`;
+        });
+        
+        html += `</div></div>`;
+        return html;
+    });
 }
 
-function applySteps(textContent) {
-    if (textContent.match(stepsRegex)) {
-        let count = 0;
-        textContent = textContent.replace(stepsRegex, (match, stepsContent) => {
-            const steps = [];
-            
-            // 解析步骤内容
-            const stepBlocks = stepsContent.split(/<p dir="auto">(?=\d+\.)/);
-            
-            for (let i = 0; i < stepBlocks.length; i++) {
-                if (!stepBlocks[i].trim()) continue;
-                
-                const stepBlock = stepBlocks[i].trim();
-                const stepMatch = stepBlock.match(/^(\d+)\.\s([^]*?)<\/p>(.*)/s);
-                
-                if (stepMatch) {
-                    const stepNumber = stepMatch[1];
-                    const stepTitle = stepMatch[2].trim();
-                    const stepContent = stepMatch[3] ? stepMatch[3].trim() : '';
-                    
-                    steps.push({
-                        number: stepNumber,
-                        title: stepTitle,
-                        content: stepContent || `<p dir="auto">${stepTitle}</p>`
-                    });
-                }
+function applySteps(textContent, id) {
+    return textContent.replace(stepsRegex, (match, content) => {
+        const stepsId = `steps-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 简化解析：查找数字开头的段落
+        const stepMatches = content.match(/<p dir="auto">(\d+)\.\s+([^<]+)<\/p>(.*?)(?=<p dir="auto">\d+\.|$)/gs) || [];
+        const steps = [];
+        
+        stepMatches.forEach(stepMatch => {
+            const match = stepMatch.match(/<p dir="auto">(\d+)\.\s+([^<]+)<\/p>(.*)/s);
+            if (match) {
+                steps.push({
+                    number: match[1],
+                    title: match[2],
+                    content: match[3] || ''
+                });
             }
-            
-            if (steps.length === 0) return match;
-            
-            const stepsId = `steps-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            
-            let stepsHtml = `<div class="steps-container" id="${stepsId}">`;
-            stepsHtml += `<ul class="nav nav-tabs steps-nav" role="tablist">`;
-            
-            for (let i = 0; i < steps.length; i++) {
-                const stepId = `${stepsId}-step-${i}`;
-                const isActive = i === 0;
-                
-                stepsHtml += `<li class="nav-item" role="presentation">
-                    <button class="nav-link ${isActive ? "active" : ""}" 
-                            id="${stepId}-tab" 
-                            data-bs-toggle="tab" 
-                            data-toggle="tab"
-                            data-bs-target="#${stepId}" 
-                            data-target="#${stepId}"
-                            type="button" 
-                            role="tab" 
-                            aria-controls="${stepId}" 
-                            aria-selected="${isActive ? "true" : "false"}">
-                        <span class="step-number">${steps[i].number}</span>
-                        ${steps[i].title}
-                    </button>
-                </li>`;
-            }
-            
-            stepsHtml += `</ul>`;
-            stepsHtml += `<div class="tab-content steps-content">`;
-            
-            for (let i = 0; i < steps.length; i++) {
-                const stepId = `${stepsId}-step-${i}`;
-                const isActive = i === 0;
-                
-                stepsHtml += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
-                                  id="${stepId}" 
-                                  role="tabpanel" 
-                                  aria-labelledby="${stepId}-tab" 
-                                  tabindex="0">
-                    <div class="step-content-wrapper">
-                        <div class="step-header">
-                            <h4><span class="step-badge">${steps[i].number}</span> ${steps[i].title}</h4>
-                        </div>
-                        <div class="step-body">
-                            ${steps[i].content}
-                        </div>
+        });
+        
+        if (steps.length === 0) return match;
+        
+        let html = `<div class="steps-container">
+            <ul class="nav nav-tabs steps-nav" role="tablist">`;
+        
+        steps.forEach((step, i) => {
+            const active = i === 0 ? 'active' : '';
+            html += `<li class="nav-item" role="presentation">
+                <button class="nav-link ${active}" id="${stepsId}-tab-${i}" data-bs-toggle="tab" data-bs-target="#${stepsId}-pane-${i}" type="button" role="tab">
+                    <span class="step-number">${step.number}</span>
+                    ${step.title}
+                </button>
+            </li>`;
+        });
+        
+        html += `</ul><div class="tab-content steps-content">`;
+        
+        steps.forEach((step, i) => {
+            const active = i === 0 ? 'show active' : '';
+            html += `<div class="tab-pane fade ${active}" id="${stepsId}-pane-${i}" role="tabpanel">
+                <div class="step-content-wrapper">
+                    <div class="step-header">
+                        <h4><span class="step-badge">${step.number}</span> ${step.title}</h4>
                     </div>
-                </div>`;
-            }
-            
-            stepsHtml += `</div>`;
-            
-            stepsHtml += `<div class="steps-navigation">
+                    <div class="step-body">${step.content}</div>
+                </div>
+            </div>`;
+        });
+        
+        html += `</div>
+            <div class="steps-navigation">
                 <button class="btn btn-outline-secondary step-prev" type="button" disabled>
                     <i class="fa fa-chevron-left"></i> 上一步
                 </button>
@@ -439,28 +372,26 @@ function applySteps(textContent) {
                 <button class="btn btn-outline-secondary step-next" type="button">
                     下一步 <i class="fa fa-chevron-right"></i>
                 </button>
-            </div>`;
-            
-            stepsHtml += `</div>`;
-            
-            return stepsHtml;
-        });
-    }
-    return textContent;
+            </div>
+        </div>`;
+        
+        return html;
+    });
 }
 
 function applyCollapsible(textContent, id) {
-    if (textContent.match(collapsibleRegex)) {
-        let count = 0;
-        textContent = textContent.replace(collapsibleRegex, (match, title, content) => {
-            const collapseId = `collapse-${count}-${id}`;
-            const collapseButton = `<button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-toggle="collapse" data-bs-target="#${collapseId}" data-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}"><i class="fa fa-chevron-right collapse-icon"></i> ${title}</button>`;
-            const collapseContent = `<div class="collapse" id="${collapseId}"><div class="card card-body mt-2 collapsible-content">${content}</div></div>`;
-            count++;
-            return `<div class="collapsible-wrapper">${collapseButton}${collapseContent}</div>`;
-        });
-    }
-    return textContent;
+    return textContent.replace(collapsibleRegex, (match, title, content) => {
+        const collapseId = `collapse-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        return `<div class="collapsible-wrapper">
+            <button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false">
+                <i class="fa fa-chevron-right collapse-icon"></i> ${title}
+            </button>
+            <div class="collapse" id="${collapseId}">
+                <div class="card card-body mt-2 collapsible-content">${content}</div>
+            </div>
+        </div>`;
+    });
 }
 
 function capitalizeFirstLetter(name) {
