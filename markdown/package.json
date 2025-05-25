@@ -1,5 +1,5 @@
 {
-  "name": "nodebb-plugin-markdown",
+  "name": "nodebb-plugin-markdown-variedmc-version",
   "version": "13.2.1",
   "description": "A Markdown parser for NodeBB",
   "main": "index.js",
