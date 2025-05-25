@@ -33,6 +33,17 @@ const noteIcons = {
     important: 'fa-exclamation-circle'
 };
 
+function cleanContent(content) {
+    return content
+        .replace(/^<p dir="auto">\s*/, '')
+        .replace(/\s*<\/p>$/, '')
+        .replace(/^<p>\s*/, '')
+        .replace(/\s*<\/p>$/, '')
+        .replace(/^\s+/, '')
+        .replace(/\s+$/, '')
+        .trim();
+}
+
 const ExtendedMarkdown = {
     async parsePost(data) {
         if (data && data.postData && data.postData.content) {
@@ -143,13 +154,13 @@ function createTabComponent(type, items, uniqueId) {
             </button>
         </li>`;
         
-        const cleanContent = item.content.replace(/^<p dir="auto">|<\/p>$/g, '').trim();
+        const cleanedContent = cleanContent(item.content);
         
         tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
                            id="${tabId}" 
                            role="tabpanel" 
                            aria-labelledby="${tabId}-tab">
-            ${cleanContent}
+            ${cleanedContent}
         </div>`;
     });
     
@@ -182,13 +193,13 @@ function createStepComponent(items, uniqueId) {
             </button>
         </li>`;
         
-        const cleanContent = item.content.replace(/^<p dir="auto">|<\/p>$/g, '').trim();
+        const cleanedContent = cleanContent(item.content);
         
         tabContent += `<div class="tab-pane${isActive ? ' show active' : ''}" 
                            id="${tabId}" 
                            role="tabpanel" 
                            aria-labelledby="${tabId}-tab">
-            ${cleanContent}
+            ${cleanedContent}
         </div>`;
     });
     
@@ -258,21 +269,28 @@ function applySteps(textContent, id) {
         if (items.length === 0) return match;
         
         count++;
-        return createStepComponent(items, `st-${count}-${id}`);
+        return createStepComponent(items, `steps-${count}-${id}`);
     });
 }
 
 function applyCollapsible(textContent, id) {
+    if (!textContent.match(spoilerRegex)) return textContent;
+    
+    let count = 0;
     return textContent.replace(spoilerRegex, (match, title, content) => {
-        const spoilerId = `spoiler-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const cleanContent = content.trim().replace(/^<p dir="auto">|<\/p>$/g, '');
+        count++;
+        const spoilerId = `spoiler-${count}-${id}`;
+        const cleanedContent = cleanContent(content);
         
         return `<div class="collapsible-wrapper">
-            <button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${spoilerId}" aria-expanded="false">
-                <i class="fa fa-chevron-right collapse-icon"></i> ${title.trim()}
+            <button class="extended-markdown-collapsible" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#${spoilerId}" 
+                    aria-expanded="false" aria-controls="${spoilerId}">
+                <i class="fa fa-chevron-right collapse-icon"></i>
+                ${title}
             </button>
             <div class="collapse" id="${spoilerId}">
-                <div class="collapsible-content">${cleanContent}</div>
+                <div class="collapsible-content">${cleanedContent}</div>
             </div>
         </div>`;
     });
