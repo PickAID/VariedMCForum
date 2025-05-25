@@ -117,17 +117,14 @@ function applyTabs(textContent, id) {
         let tabMatches = [];
         let tabMatch;
         
-        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
+        const tabRegexForMatch = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?\s*([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|$)/gi;
         while ((tabMatch = tabRegexForMatch.exec(cleanTabsContent)) !== null) {
-            const tabContent = tabMatch[2]
-                .replace(/^[\s\n\r]*/, '')
-                .replace(/[\s\n\r]*$/, '')
-                .trim();
+            const tabContent = cleanContent(tabMatch[2]);
                 
             if (tabContent) {
                 tabMatches.push({
                     title: tabMatch[1].trim(),
-                    content: cleanContent(tabContent)
+                    content: tabContent
                 });
             }
         }
@@ -151,21 +148,24 @@ function applySteps(textContent, id) {
         let stepMatches = [];
         let stepMatch;
         
-        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
+        const stepRegexForMatch = /(?:<p dir="auto">)?\[step\](?:<\/p>)?\s*([\s\S]*?)(?=(?:<p dir="auto">)?\[step\]|$)/gi;
         while ((stepMatch = stepRegexForMatch.exec(cleanStepsContent)) !== null) {
-            const stepContent = stepMatch[1]
-                .replace(/^[\s\n\r]*/, '')
-                .replace(/[\s\n\r]*$/, '')
-                .trim();
-            
+            const stepContent = cleanContent(stepMatch[1]);
             if (stepContent) {
-                stepMatches.push(cleanContent(stepContent));
+                stepMatches.push(stepContent);
             }
         }
         
         if (stepMatches.length === 0) return match;
         
         const stepsId = `steps-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        let items = stepMatches.map((content, index) => ({
+            label: `步骤 ${index + 1}`,
+            content: content
+        }));
+        
+        const tabsContent = createTabComponent('', items, stepsId);
         
         let stepsHeader = `<div class="steps-header">
             <div class="steps-counter">
@@ -176,13 +176,6 @@ function applySteps(textContent, id) {
                 <button class="btn step-next">下一步</button>
             </div>
         </div>`;
-        
-        let items = stepMatches.map((content, index) => ({
-            label: `步骤 ${index + 1}`,
-            content: content
-        }));
-        
-        const tabsContent = createTabComponent('', items, stepsId);
         
         return `<div class="steps-container">${stepsHeader}${tabsContent}</div>`;
     });

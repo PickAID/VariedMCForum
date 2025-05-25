@@ -64,30 +64,30 @@
     }
     
     &.alert-warning {
-        background-color: #ffebee;
-        border-color: #d32f2f;
-        color: #721c24;
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        color: #664d03;
         
         h6 {
-            color: #d32f2f;
+            color: #ffc107;
         }
     }
     
     &.alert-important {
-        background-color: #fff3e0;
-        border-color: #ff9800;
-        color: #663c00;
+        background-color: #f8d7da;
+        border-color: #dc3545;
+        color: #842029;
         
         h6 {
-            color: #ff9800;
+            color: #dc3545;
         }
     }
     
     &.extended-dark-theme {
         &.alert-info {
-            background-color: rgba(13, 202, 240, 0.1);
-            border-color: #0dcaf0;
+            background: rgba(13, 202, 240, 0.15);
             color: #9ec5fe;
+            border-color: rgba(13, 202, 240, 0.3);
             
             h6 {
                 color: #0dcaf0;
@@ -95,22 +95,22 @@
         }
         
         &.alert-warning {
-            background-color: rgba(211, 47, 47, 0.1);
-            border-color: #d32f2f;
-            color: #f5c6cb;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffda6a;
+            border-color: rgba(255, 193, 7, 0.3);
             
             h6 {
-                color: #d32f2f;
+                color: #ffc107;
             }
         }
         
         &.alert-important {
-            background-color: rgba(255, 152, 0, 0.1);
-            border-color: #ff9800;
-            color: #fed7aa;
+            background: rgba(220, 53, 69, 0.15);
+            color: #ea868f;
+            border-color: rgba(220, 53, 69, 0.3);
             
             h6 {
-                color: #ff9800;
+                color: #dc3545;
             }
         }
     }
