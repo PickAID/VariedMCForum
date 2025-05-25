@@ -59,25 +59,9 @@ $(document).ready(function () {
     function applyThemeStyles() {
         const theme = detectTheme();
         
-        document.querySelectorAll('.admonition').forEach(element => {
-            if (!element.classList.contains(`theme-${theme}`)) {
-                element.classList.remove('theme-light', 'theme-dark');
-                element.classList.add(`theme-${theme}`);
-            }
-        });
-        
-        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(element => {
-            if (!element.classList.contains(`theme-${theme}`)) {
-                element.classList.remove('theme-light', 'theme-dark');
-                element.classList.add(`theme-${theme}`);
-            }
-        });
-        
-        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
-            if (!element.classList.contains(`theme-${theme}`)) {
-                element.classList.remove('theme-light', 'theme-dark');
-                element.classList.add(`theme-${theme}`);
-            }
+        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+            element.classList.remove('theme-light', 'theme-dark');
+            element.classList.add(`theme-${theme}`);
         });
     }
 
@@ -90,82 +74,265 @@ $(document).ready(function () {
         }
     }
 
-    ExtendedMarkdown.prepareFormattingTools = async function () {
-        const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
+    // Bootstrap兼容性检测
+    function getBootstrapVersion() {
+        if (window.bootstrap && window.bootstrap.Tooltip) {
+            return 5;
+        } else if (window.jQuery && window.jQuery.fn.tooltip) {
+            return 4;
+        }
+        return null;
+    }
+
+    function initializeTooltips() {
+        const version = getBootstrapVersion();
         
-        if (formatting && controls) {
-            formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '#anchor(', ')');
-            });
+        document.querySelectorAll('[data-bs-toggle="tooltip"], [data-toggle="tooltip"]').forEach(function(element) {
+            if (element.hasAttribute('data-tooltip-initialized')) return;
+            element.setAttribute('data-tooltip-initialized', 'true');
             
-            formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n===group\n```java\nSystem.out.println("Hello");\n```\n```kotlin\nprintln("Hello")\n```\n===\n');
-            });
-            
-            formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '°', '°(tooltip text)');
-            });
-            
-            formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
-            });
-            
-            formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '|-', '');
-            });
-            
-            formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
-            });
-            
-            formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '', '-|');
-            });
-            
-            formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
-            });
-            
-            formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '||', '||');
-            });
-            
-            formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
-            });
-            
-            formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: Content\n');
-            });
-            
-            formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
-            });
+            if (version === 5 && window.bootstrap && window.bootstrap.Tooltip) {
+                new window.bootstrap.Tooltip(element);
+            } else if (version === 4 && window.jQuery && window.jQuery.fn.tooltip) {
+                $(element).tooltip();
+            }
+        });
+    }
 
-            formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
+    function initializeCollapse() {
+        const version = getBootstrapVersion();
+        
+        document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
+            if (button.hasAttribute('data-collapse-initialized')) return;
+            button.setAttribute('data-collapse-initialized', 'true');
+            
+            const target = document.querySelector(button.getAttribute('data-bs-target') || button.getAttribute('data-target'));
+            const icon = button.querySelector('.collapse-icon');
+            
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (target) {
+                    const isCollapsed = !target.classList.contains('show');
+                    
+                    if (isCollapsed) {
+                        target.classList.add('show');
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-right');
+                            icon.classList.add('fa-chevron-down');
+                        }
+                        button.setAttribute('aria-expanded', 'true');
+                    } else {
+                        target.classList.remove('show');
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-right');
+                        }
+                        button.setAttribute('aria-expanded', 'false');
+                    }
+                }
             });
+        });
+    }
 
-            formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, 'E=mc^', '^');
+    function initializeTabs() {
+        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(function(container) {
+            if (container.hasAttribute('data-tabs-initialized')) return;
+            container.setAttribute('data-tabs-initialized', 'true');
+            
+            // 清理不需要的元素
+            const unwantedElements = container.querySelectorAll('.fa-chevron-left, .fa-chevron-right, .fa-angle-left, .fa-angle-right, .fa-arrow-left, .fa-arrow-right, .fa-caret-left, .fa-caret-right, .carousel-control, .carousel-control-prev, .carousel-control-next, .slick-prev, .slick-next, .swiper-button-prev, .swiper-button-next, .owl-prev, .owl-next, .prev, .next, [data-slide], [data-bs-slide]');
+            unwantedElements.forEach(function(el) {
+                el.remove();
             });
+            
+            // 初始化标签页功能
+            const tabLinks = container.querySelectorAll('.nav-tabs button[data-bs-toggle="tab"], .nav-tabs button[data-toggle="tab"]');
+            tabLinks.forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('data-bs-target') || this.getAttribute('data-target');
+                    if (!targetId) return;
+                    
+                    container.querySelectorAll('.nav-link').forEach(function(l) {
+                        l.classList.remove('active');
+                        l.setAttribute('aria-selected', 'false');
+                    });
+                    container.querySelectorAll('.tab-pane').forEach(function(pane) {
+                        pane.classList.remove('active', 'show');
+                    });
+                    
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('active', 'show');
+                    }
+                });
+            });
+        });
+    }
 
-            formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, 'H~', '~O');
+    function initializeSteps() {
+        document.querySelectorAll('.steps-container').forEach(function(container) {
+            if (container.hasAttribute('data-steps-initialized')) return;
+            container.setAttribute('data-steps-initialized', 'true');
+            
+            const tabLinks = container.querySelectorAll('.nav-tabs button[data-bs-toggle="tab"], .nav-tabs button[data-toggle="tab"]');
+            const prevBtn = container.querySelector('.step-prev');
+            const nextBtn = container.querySelector('.step-next');
+            const currentStepSpan = container.querySelector('.current-step');
+            const totalStepsSpan = container.querySelector('.total-steps');
+            let currentStep = 0;
+            
+            // 设置总步数
+            if (totalStepsSpan) {
+                totalStepsSpan.textContent = tabLinks.length;
+            }
+            
+            function updateNavigation() {
+                if (prevBtn) {
+                    prevBtn.disabled = currentStep === 0;
+                }
+                if (nextBtn) {
+                    nextBtn.disabled = currentStep === tabLinks.length - 1;
+                }
+                if (currentStepSpan) {
+                    currentStepSpan.textContent = currentStep + 1;
+                }
+            }
+            
+            function showStep(stepIndex) {
+                if (stepIndex < 0 || stepIndex >= tabLinks.length) return;
+                
+                container.querySelectorAll('.nav-link').forEach(function(l) {
+                    l.classList.remove('active');
+                    l.setAttribute('aria-selected', 'false');
+                });
+                container.querySelectorAll('.tab-pane').forEach(function(pane) {
+                    pane.classList.remove('active', 'show');
+                });
+                
+                const targetLink = tabLinks[stepIndex];
+                const targetId = targetLink.getAttribute('data-bs-target') || targetLink.getAttribute('data-target');
+                
+                targetLink.classList.add('active');
+                targetLink.setAttribute('aria-selected', 'true');
+                
+                const targetPane = document.querySelector(targetId);
+                if (targetPane) {
+                    targetPane.classList.add('active', 'show');
+                }
+                
+                currentStep = stepIndex;
+                updateNavigation();
+            }
+            
+            tabLinks.forEach(function(link, index) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showStep(index);
+                });
             });
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    showStep(currentStep - 1);
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    showStep(currentStep + 1);
+                });
+            }
+            
+            updateNavigation();
+        });
+    }
 
-            formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
-            });
+    ExtendedMarkdown.prepareFormattingTools = async function () {
+        try {
+            const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
+            
+            if (formatting && controls) {
+                formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '#anchor(', ')');
+                });
+                
+                formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n===group\n```java\nSystem.out.println("Hello");\n```\n```kotlin\nprintln("Hello")\n```\n===\n');
+                });
+                
+                formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '°', '°(tooltip text)');
+                });
+                
+                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
+                });
+                
+                formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|-', '');
+                });
+                
+                formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
+                });
+                
+                formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '', '-|');
+                });
+                
+                formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
+                });
+                
+                formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '||', '||');
+                });
+                
+                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
+                });
+                
+                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: Content\n');
+                });
+                
+                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
+                });
 
-            formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
-            });
+                formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
+                });
+
+                formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, 'E=mc^', '^');
+                });
+
+                formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, 'H~', '~O');
+                });
+
+                formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
+                });
+
+                formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
+                });
+            }
+        } catch (error) {
+            console.warn('Extended Markdown: Could not load formatting tools', error);
         }
     };
 
     function pageReady() {
         setTimeout(function() {
+            // 初始化spoiler功能
             document.querySelectorAll('.spoiler:not([data-spoiler-initialized])').forEach(function(spoiler) {
                 spoiler.setAttribute('data-spoiler-initialized', 'true');
                 spoiler.addEventListener('click', function() {
@@ -173,85 +340,25 @@ $(document).ready(function () {
                 });
             });
 
-            document.querySelectorAll('.code-group-container:not([data-processed])').forEach(function(container) {
-                container.setAttribute('data-processed', 'true');
-                
-                const unwantedElements = container.querySelectorAll('.fa-chevron-left, .fa-chevron-right, .fa-angle-left, .fa-angle-right, .fa-arrow-left, .fa-arrow-right, .fa-caret-left, .fa-caret-right, .carousel-control, .carousel-control-prev, .carousel-control-next, .slick-prev, .slick-next, .swiper-button-prev, .swiper-button-next, .owl-prev, .owl-next, .prev, .next, [data-slide], [data-bs-slide]');
-                unwantedElements.forEach(function(el) {
-                    el.remove();
-                });
-                
-                Array.from(container.children).forEach(function(child) {
-                    if (!child.classList.contains('nav-tabs') && 
-                        !child.classList.contains('tab-content')) {
-                        child.remove();
-                    }
-                });
-            });
-
-            document.querySelectorAll('.extended-tabs-container:not([data-tabs-initialized])').forEach(function(container) {
-                container.setAttribute('data-tabs-initialized', 'true');
-                
-                const tabLinks = container.querySelectorAll('.nav-tabs a[data-toggle="tab"]');
-                tabLinks.forEach(function(link) {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        
-                        tabLinks.forEach(function(l) {
-                            l.parentElement.classList.remove('active');
-                        });
-                        
-                        container.querySelectorAll('.tab-pane').forEach(function(pane) {
-                            pane.classList.remove('active');
-                        });
-                        
-                        this.parentElement.classList.add('active');
-                        const targetId = this.getAttribute('href').substring(1);
-                        const targetPane = document.getElementById(targetId);
-                        if (targetPane) {
-                            targetPane.classList.add('active');
-                        }
-                    });
-                });
-            });
-
-            document.querySelectorAll('.extended-markdown-collapsible:not([data-collapse-initialized])').forEach(function(button) {
-                button.setAttribute('data-collapse-initialized', 'true');
-                
-                const target = document.querySelector(button.getAttribute('data-bs-target'));
-                const icon = button.querySelector('.collapse-icon');
-                
-                button.addEventListener('click', function() {
-                    if (target) {
-                        if (target.classList.contains('show')) {
-                            target.classList.remove('show');
-                            if (icon) {
-                                icon.classList.remove('fa-chevron-down');
-                                icon.classList.add('fa-chevron-right');
-                            }
-                        } else {
-                            target.classList.add('show');
-                            if (icon) {
-                                icon.classList.remove('fa-chevron-right');
-                                icon.classList.add('fa-chevron-down');
-                            }
-                        }
-                    }
-                });
-            });
-
-            if (window.bootstrap && window.bootstrap.Tooltip) {
-                document.querySelectorAll('[data-bs-toggle="tooltip"]:not([data-tooltip-initialized])').forEach(function(element) {
-                    element.setAttribute('data-tooltip-initialized', 'true');
-                    new window.bootstrap.Tooltip(element);
-                });
-            }
+            // 初始化标签页
+            initializeTabs();
             
+            // 初始化可折叠内容
+            initializeCollapse();
+            
+            // 初始化工具提示
+            initializeTooltips();
+            
+            // 应用主题样式
             applyThemeStyles();
             setupThemeWatcher();
+            
+            // 初始化步骤
+            initializeSteps();
         }, 100);
     }
 
+    // 监听DOM变化，自动应用主题
     const observer = new MutationObserver(function(mutations) {
         let shouldUpdate = false;
         mutations.forEach(function(mutation) {
@@ -261,12 +368,31 @@ $(document).ready(function () {
                 mutation.attributeName === 'data-bs-theme')) {
                 shouldUpdate = true;
             }
+            
+            // 检查是否有新添加的元素需要初始化
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                        if (node.classList && 
+                            (node.classList.contains('steps-container') || 
+                             node.classList.contains('extended-tabs-container') ||
+                             node.classList.contains('collapsible-wrapper'))) {
+                            setTimeout(pageReady, 50);
+                        }
+                    }
+                });
+            }
         });
+        
         if (shouldUpdate) {
             setTimeout(applyThemeStyles, 100);
         }
     });
     
-    observer.observe(document.body, { attributes: true });
+    observer.observe(document.body, { 
+        attributes: true, 
+        childList: true, 
+        subtree: true 
+    });
     observer.observe(document.documentElement, { attributes: true });
 });

@@ -62,11 +62,13 @@ a.anchor-offset {
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
     transition: all 0.3s ease;
+    user-select: none;
     
     &.spoiler-revealed,
     &:hover {
         color: inherit;
         background: rgba(0, 0, 0, 0.1);
+        user-select: text;
     }
     
     &.theme-dark {
@@ -201,31 +203,35 @@ a.anchor-offset {
         margin: 0;
         display: flex;
         
-        .nav-item {
-            flex: 1;
-            margin: 0;
-            
-            .nav-link {
-                border: none;
-                border-radius: 0;
-                background: transparent;
-                color: #6c757d;
-                text-align: center;
-                padding: 0.75rem 1rem;
-                font-weight: 500;
-                font-size: 0.9rem;
-                transition: all 0.2s ease;
-                border-bottom: 2px solid transparent;
+        &.code-group-tabs {
+            .nav-item {
+                flex: 1;
+                margin: 0;
                 
-                &:hover {
-                    background: rgba(0, 0, 0, 0.03);
-                    color: #495057;
-                }
-                
-                &.active {
-                    color: #0d6efd;
-                    background: #ffffff;
-                    border-bottom-color: #0d6efd;
+                .nav-link {
+                    border: none;
+                    border-radius: 0;
+                    background: transparent;
+                    color: #6c757d;
+                    text-align: center;
+                    padding: 0.75rem 1rem;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                    transition: all 0.2s ease;
+                    border-bottom: 2px solid transparent;
+                    text-decoration: none;
+                    
+                    &:hover {
+                        background: rgba(0, 0, 0, 0.03);
+                        color: #495057;
+                        text-decoration: none;
+                    }
+                    
+                    &.active {
+                        color: #0d6efd;
+                        background: #ffffff;
+                        border-bottom-color: #0d6efd;
+                    }
                 }
             }
         }
@@ -237,12 +243,14 @@ a.anchor-offset {
                 margin: 0;
                 border: none;
                 border-radius: 0;
+                background: #f8f9fa;
                 
                 code {
                     padding: 1.5rem;
                     font-size: 0.875rem;
                     line-height: 1.5;
                     display: block;
+                    background: transparent;
                 }
             }
         }
@@ -256,7 +264,7 @@ a.anchor-offset {
             background: #343a40;
             border-bottom-color: #495057;
             
-            .nav-item .nav-link {
+            &.code-group-tabs .nav-item .nav-link {
                 color: #adb5bd;
                 
                 &:hover {
@@ -271,10 +279,18 @@ a.anchor-offset {
                 }
             }
         }
+        
+        .tab-content .tab-pane pre {
+            background: #2d3748;
+            
+            code {
+                background: transparent;
+                color: #e2e8f0;
+            }
+        }
     }
 }
 
-// 新增样式：通用选项卡
 .extended-tabs-container {
     border: 1px solid #dee2e6;
     border-radius: 0.5rem;
@@ -282,7 +298,7 @@ a.anchor-offset {
     background: #ffffff;
     margin: 1rem 0;
     
-    .extended-tabs {
+    .extended-tabs-nav {
         background: #f8f9fa;
         border-bottom: 1px solid #dee2e6;
         margin: 0;
@@ -296,10 +312,12 @@ a.anchor-offset {
             font-weight: 500;
             transition: all 0.2s ease;
             border-bottom: 2px solid transparent;
+            text-decoration: none;
             
             &:hover {
                 background: rgba(0, 0, 0, 0.03);
                 color: #495057;
+                text-decoration: none;
             }
             
             &.active {
@@ -310,7 +328,7 @@ a.anchor-offset {
         }
     }
     
-    .tab-content-wrapper {
+    .extended-tabs-content {
         padding: 1rem;
     }
     
@@ -318,7 +336,7 @@ a.anchor-offset {
         background: #212529;
         border-color: #495057;
         
-        .extended-tabs {
+        .extended-tabs-nav {
             background: #343a40;
             border-bottom-color: #495057;
             
@@ -337,33 +355,21 @@ a.anchor-offset {
                 }
             }
         }
+        
+        .extended-tabs-content {
+            background: #212529;
+            color: #f8f9fa;
+        }
     }
 }
 
-// 新增样式：标注
-.annotation-mark {
-    background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-    background-size: 100% 3px;
-    background-repeat: no-repeat;
-    background-position: 0 bottom;
-    cursor: help;
-    position: relative;
-    
-    &.theme-dark {
-        background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
-        background-size: 100% 3px;
-        background-repeat: no-repeat;
-        background-position: 0 bottom;
-    }
-}
-
-// 新增样式：可收缩内容
 .collapsible-wrapper {
     margin: 1rem 0;
     
     .extended-markdown-collapsible {
         border: 1px solid #0d6efd;
         transition: all 0.2s ease;
+        text-decoration: none;
         
         .collapse-icon {
             transition: transform 0.2s ease;
@@ -373,6 +379,11 @@ a.anchor-offset {
         &:hover {
             background-color: #0d6efd;
             color: white;
+            text-decoration: none;
+        }
+        
+        &:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
         }
     }
     
@@ -390,6 +401,10 @@ a.anchor-offset {
                 background-color: #6ea8fe;
                 color: #212529;
             }
+            
+            &:focus {
+                box-shadow: 0 0 0 0.2rem rgba(110, 168, 254, 0.25);
+            }
         }
         
         .collapsible-content {
@@ -400,82 +415,273 @@ a.anchor-offset {
     }
 }
 
-// 新增样式：步骤条
 .steps-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #ffffff;
     margin: 1.5rem 0;
     
-    .step-item {
-        display: flex;
-        position: relative;
-        margin-bottom: 1rem;
+    .steps-nav {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.375rem 0.375rem 0 0;
+        margin-bottom: 0;
         
-        &:last-child {
-            margin-bottom: 0;
+        .nav-item {
+            .nav-link {
+                color: #6c757d;
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                padding: 0.75rem 1rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                border-bottom: 2px solid transparent;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                
+                .step-number {
+                    background: #6c757d;
+                    color: white;
+                    border-radius: 50%;
+                    width: 1.5rem;
+                    height: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.75rem;
+                    font-weight: bold;
+                    flex-shrink: 0;
+                }
+                
+                &:hover {
+                    background: rgba(0, 0, 0, 0.03);
+                    color: #495057;
+                    text-decoration: none;
+                    
+                    .step-number {
+                        background: #495057;
+                    }
+                }
+                
+                &.active {
+                    color: #0d6efd;
+                    background: #ffffff;
+                    border-bottom-color: #0d6efd;
+                    
+                    .step-number {
+                        background: #0d6efd;
+                    }
+                }
+            }
         }
+    }
+    
+    .steps-content {
+        padding: 0;
         
-        .step-marker {
-            flex-shrink: 0;
-            width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            background: #0d6efd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            position: relative;
-            z-index: 1;
+        .step-content-wrapper {
+            padding: 1.5rem;
             
-            .step-number {
+            .step-header {
+                margin-bottom: 1rem;
+                
+                h4 {
+                    margin: 0;
+                    color: #495057;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    
+                    .step-badge {
+                        background: #0d6efd;
+                        color: white;
+                        border-radius: 50%;
+                        width: 2rem;
+                        height: 2rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.875rem;
+                        font-weight: bold;
+                        flex-shrink: 0;
+                    }
+                }
+            }
+            
+            .step-body {
+                color: #495057;
+                line-height: 1.6;
+                
+                p {
+                    margin-bottom: 1rem;
+                    
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+                }
+                
+                ul, ol {
+                    padding-left: 1.5rem;
+                    margin-bottom: 1rem;
+                }
+                
+                code {
+                    background: #f8f9fa;
+                    padding: 0.125rem 0.25rem;
+                    border-radius: 0.25rem;
+                    font-size: 0.875em;
+                }
+                
+                pre {
+                    background: #f8f9fa;
+                    padding: 1rem;
+                    border-radius: 0.375rem;
+                    border: 1px solid #dee2e6;
+                    overflow-x: auto;
+                }
+            }
+        }
+    }
+    
+    .steps-navigation {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #dee2e6;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 0 0 0.375rem 0.375rem;
+        
+        .step-prev,
+        .step-next {
+            border: 1px solid #6c757d;
+            color: #6c757d;
+            background: transparent;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-weight: 500;
+            
+            &:hover:not(:disabled) {
+                background: #6c757d;
                 color: white;
-                font-weight: bold;
+                text-decoration: none;
+            }
+            
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            i {
                 font-size: 0.875rem;
             }
         }
         
-        .step-content {
-            flex: 1;
-            padding-top: 0.25rem;
+        .step-indicator {
+            color: #6c757d;
+            font-weight: 500;
             
-            .step-text {
-                color: #495057;
-                line-height: 1.5;
+            .current-step {
+                color: #0d6efd;
+                font-weight: bold;
             }
-        }
-        
-        .step-connector {
-            position: absolute;
-            left: 0.9375rem;
-            top: 2rem;
-            bottom: -1rem;
-            width: 2px;
-            background: #dee2e6;
-            z-index: 0;
-        }
-        
-        &.step-last .step-connector {
-            display: none;
         }
     }
     
     &.theme-dark {
-        .step-item {
-            .step-marker {
-                background: #6ea8fe;
+        background: #212529;
+        border-color: #495057;
+        
+        .steps-nav {
+            background: #343a40;
+            border-bottom-color: #495057;
+            
+            .nav-item .nav-link {
+                color: #adb5bd;
+                
+                .step-number {
+                    background: #6c757d;
+                }
+                
+                &:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: #f8f9fa;
+                    
+                    .step-number {
+                        background: #adb5bd;
+                    }
+                }
+                
+                &.active {
+                    color: #6ea8fe;
+                    background: #212529;
+                    border-bottom-color: #6ea8fe;
+                    
+                    .step-number {
+                        background: #6ea8fe;
+                    }
+                }
+            }
+        }
+        
+        .steps-content {
+            .step-content-wrapper {
+                .step-header h4 {
+                    color: #f8f9fa;
+                    
+                    .step-badge {
+                        background: #6ea8fe;
+                    }
+                }
+                
+                .step-body {
+                    color: #f8f9fa;
+                    
+                    code {
+                        background: #343a40;
+                        color: #f8f9fa;
+                    }
+                    
+                    pre {
+                        background: #343a40;
+                        border-color: #495057;
+                        color: #f8f9fa;
+                    }
+                }
+            }
+        }
+        
+        .steps-navigation {
+            background: #343a40;
+            border-top-color: #495057;
+            
+            .step-prev,
+            .step-next {
+                border-color: #6ea8fe;
+                color: #6ea8fe;
+                
+                &:hover:not(:disabled) {
+                    background: #6ea8fe;
+                    color: #212529;
+                }
             }
             
-            .step-content .step-text {
-                color: #f8f9fa;
-            }
-            
-            .step-connector {
-                background: #495057;
+            .step-indicator {
+                color: #adb5bd;
+                
+                .current-step {
+                    color: #6ea8fe;
+                }
             }
         }
     }
 }
 
-// 上标下标样式
 sup, sub {
     font-size: 0.75em;
     line-height: 0;
@@ -491,7 +697,6 @@ sub {
     bottom: -0.25em;
 }
 
-// 隐藏不需要的导航元素
 .code-group-container,
 .extended-tabs-container {
     .fa-chevron-left,
@@ -518,5 +723,33 @@ sub {
         pointer-events: none !important;
         position: absolute !important;
         left: -9999px !important;
+    }
+}
+
+.collapse {
+    transition: height 0.35s ease;
+    
+    &:not(.show) {
+        display: none;
+    }
+    
+    &.show {
+        display: block;
+    }
+}
+
+.nav-tabs {
+    .nav-link {
+        margin-bottom: -1px;
+    }
+}
+
+.tab-pane {
+    &:not(.active) {
+        display: none;
+    }
+    
+    &.active {
+        display: block;
     }
 }

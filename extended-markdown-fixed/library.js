@@ -16,16 +16,14 @@ const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|
 
 const spoilerRegex = /(?:<p dir="auto">)(?:\|\|)([^]*?)(?:\|\|)(?:<\/p>)/g;
 
-const superscriptRegex = /([^`<>\s])\^([^`<>\s^]+)\^/g;
-const subscriptRegex = /([^`<>\s])~([^`<>\s~]+)~/g;
+const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
+const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
-const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\n((?:<p dir="auto">@tab [^]*?<\/p>\n(?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)*)<p dir="auto">:{3}<\/p>/g;
-const tabItemRegex = /<p dir="auto">@tab ([^]*?)<\/p>\n?((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)/g;
+const tabsRegex = /<p dir="auto">:{3}tabs<\/p>\s*((?:<p dir="auto">@tab [^]*?<\/p>\s*(?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)*)<p dir="auto">:{3}<\/p>/g;
 
-const stepsRegex = /<p dir="auto">:{3}steps<\/p>\n((?:<p dir="auto">\d+\. [^]*?<\/p>\n?)*)<p dir="auto">:{3}<\/p>/g;
-const stepItemRegex = /<p dir="auto">(\d+)\. ([^]*?)<\/p>/g;
+const stepsRegex = /<p dir="auto">:{3}steps<\/p>\s*((?:<p dir="auto">\d+\.\s[^]*?<\/p>\s*(?:(?!<p dir="auto">\d+\.|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)*)<p dir="auto">:{3}<\/p>/g;
 
-const collapsibleRegex = /<p dir="auto">\+{3} ([^]*?)<\/p>\n((?:(?!<p dir="auto">\+{3}<\/p>).*\n?)*)<p dir="auto">\+{3}<\/p>/g;
+const collapsibleRegex = /<p dir="auto">\+{3}\s([^]*?)<\/p>\s*((?:(?!<p dir="auto">\+{3}<\/p>)[^]*?\s*)*)<p dir="auto">\+{3}<\/p>/g;
 
 const noteIcons = {
     info: 'fa-info-circle',
@@ -104,18 +102,23 @@ const ExtendedMarkdown = {
     },
 
     async sanitizerConfig(config) {
+        config.allowedAttributes['a'] = config.allowedAttributes['a'] || [];
         config.allowedAttributes['a'].push('name');
+        
         config.allowedAttributes['span'] = config.allowedAttributes['span'] || [];
         config.allowedAttributes['span'].push('class');
+        
         config.allowedAttributes['div'] = config.allowedAttributes['div'] || [];
         config.allowedAttributes['div'].push('class', 'id');
+        
         config.allowedAttributes['button'] = config.allowedAttributes['button'] || [];
-        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-bs-target', 'aria-expanded', 'aria-controls');
+        config.allowedAttributes['button'].push('class', 'type', 'data-bs-toggle', 'data-toggle', 'data-bs-target', 'data-target', 'aria-expanded', 'aria-controls');
+        
         config.allowedAttributes['ul'] = config.allowedAttributes['ul'] || [];
         config.allowedAttributes['ul'].push('class', 'role');
+        
         config.allowedAttributes['li'] = config.allowedAttributes['li'] || [];
         config.allowedAttributes['li'].push('class', 'role');
-        config.allowedAttributes['a'].push('href', 'aria-controls', 'role', 'data-toggle');
         
         if (!config.allowedTags.includes('button')) {
             config.allowedTags.push('button');
@@ -149,9 +152,9 @@ async function applyExtendedMarkdown(textContent) {
             if (typeof (code) !== "undefined") {
                 return code;
             } else if ("fa-info" === text) {
-                return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}"></i>`;
+                return `<i class="fa fa-info-circle extended-markdown-tooltip" data-bs-toggle="tooltip" data-toggle="tooltip" data-bs-placement="top" data-placement="top" title="${tooltipText}"></i>`;
             } else {
-                return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">${text}</span>`;
+                return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-toggle="tooltip" data-bs-placement="top" data-placement="top" title="${tooltipText}">${text}</span>`;
             }
         });
     }
@@ -205,21 +208,60 @@ function applyGroupCode(textContent, id) {
     if (textContent.match(codeTabRegex)) {
         let count = 0;
         textContent = textContent.replace(codeTabRegex, (match, codes) => {
-            let codeArray = codes.substring(5, codes.length - 6).split(/<\/pre>\n<pre>/g);
+            let cleanCodes = codes.trim();
+            let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
             let lang = [];
+            let processedCodeArray = [];
+            
             for (let i in codeArray) {
-                lang[i] = langCodeRegex.exec(codeArray[i])[1];
-                codeArray[i] = "<pre>" + codeArray[i] + "</pre>\n";
+                const langMatch = langCodeRegex.exec(codeArray[i]);
+                if (langMatch) {
+                    lang[i] = langMatch[1];
+                    let codeContent = codeArray[i]
+                        .replace(/<\/?pre[^>]*>/g, '')
+                        .replace(/<code[^>]*>/g, '')
+                        .replace(/<\/code>/g, '')
+                        .trim();
+                    processedCodeArray[i] = codeContent;
+                }
             }
-            let menuTab = "<ul class='nav nav-tabs' role='tablist'>";
-            let contentTab = "<div class='tab-content'>";
+            
+            const groupId = `codegroup-${count}-${id}`;
+            let menuTab = `<ul class='nav nav-tabs code-group-tabs' role='tablist' id='${groupId}-tabs'>`;
+            let contentTab = `<div class='tab-content' id='${groupId}-content'>`;
+            
             for (let i = 0; i < lang.length; i++) {
-                menuTab += `<li role='presentation' ${i === 0 ? "class='active'" : ""}><a href='#${lang[i] + count + id}' aria-controls='${lang[i]}' role='tab' data-toggle='tab'>${capitalizeFirstLetter(lang[i])}</a></li>`;
-                contentTab += `<div role="tabpanel" class="tab-pane ${i === 0 ? "active" : ""}" id="${lang[i] + count + id}">${codeArray[i]}</div>`;
+                const tabId = `${groupId}-${lang[i]}-${i}`;
+                const isActive = i === 0;
+                
+                menuTab += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${isActive ? "active" : ""}" 
+                            id="${tabId}-tab" 
+                            data-bs-toggle="tab" 
+                            data-toggle="tab"
+                            data-bs-target="#${tabId}" 
+                            data-target="#${tabId}"
+                            type="button" 
+                            role="tab" 
+                            aria-controls="${tabId}" 
+                            aria-selected="${isActive ? "true" : "false"}">
+                        ${capitalizeFirstLetter(lang[i])}
+                    </button>
+                </li>`;
+                
+                contentTab += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                                   id="${tabId}" 
+                                   role="tabpanel" 
+                                   aria-labelledby="${tabId}-tab" 
+                                   tabindex="0">
+                    <pre><code class="${lang[i]}">${processedCodeArray[i]}</code></pre>
+                </div>`;
             }
+            
             menuTab += "</ul>";
             contentTab += "</div>";
             count++;
+            
             return `<div class="code-group-container">${menuTab}${contentTab}</div>`;
         });
     }
@@ -231,8 +273,8 @@ function applyTabs(textContent, id) {
         let count = 0;
         textContent = textContent.replace(tabsRegex, (match, tabsContent) => {
             const tabs = [];
+            const regex = /<p dir="auto">@tab ([^]*?)<\/p>\s*((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>)[^]*?\s*)*)/g;
             let tabMatch;
-            const regex = /<p dir="auto">@tab ([^]*?)<\/p>\n?((?:(?!<p dir="auto">@tab|<p dir="auto">:{3}<\/p>).*\n?)*)/g;
             
             while ((tabMatch = regex.exec(tabsContent)) !== null) {
                 tabs.push({
@@ -243,14 +285,36 @@ function applyTabs(textContent, id) {
             
             if (tabs.length === 0) return match;
             
-            let menuTab = "<ul class='nav nav-tabs extended-tabs-nav' role='tablist'>";
-            let contentTab = "<div class='tab-content extended-tabs-content'>";
+            const tabsId = `tabs-${count}-${id}`;
+            let menuTab = `<ul class='nav nav-tabs extended-tabs-nav' role='tablist' id='${tabsId}-nav'>`;
+            let contentTab = `<div class='tab-content extended-tabs-content' id='${tabsId}-content'>`;
             
             for (let i = 0; i < tabs.length; i++) {
-                const tabId = `tab-${count}-${i}-${id}`;
+                const tabId = `${tabsId}-tab-${i}`;
                 const isActive = i === 0;
-                menuTab += `<li role='presentation' ${isActive ? "class='active'" : ""}><a href='#${tabId}' aria-controls='${tabId}' role='tab' data-toggle='tab'>${tabs[i].title}</a></li>`;
-                contentTab += `<div role="tabpanel" class="tab-pane ${isActive ? "active" : ""}" id="${tabId}">${tabs[i].content}</div>`;
+                
+                menuTab += `<li class="nav-item" role='presentation'>
+                    <button class='nav-link ${isActive ? "active" : ""}' 
+                            id='${tabId}-btn'
+                            data-bs-toggle='tab' 
+                            data-toggle='tab'
+                            data-bs-target='#${tabId}' 
+                            data-target='#${tabId}'
+                            type='button' 
+                            role='tab' 
+                            aria-controls='${tabId}' 
+                            aria-selected='${isActive ? "true" : "false"}'>
+                        ${tabs[i].title}
+                    </button>
+                </li>`;
+                
+                contentTab += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                                   id="${tabId}" 
+                                   role="tabpanel" 
+                                   aria-labelledby="${tabId}-btn" 
+                                   tabindex="0">
+                    ${tabs[i].content}
+                </div>`;
             }
             
             menuTab += "</ul>";
@@ -265,32 +329,98 @@ function applyTabs(textContent, id) {
 
 function applySteps(textContent) {
     if (textContent.match(stepsRegex)) {
+        let count = 0;
         textContent = textContent.replace(stepsRegex, (match, stepsContent) => {
             const steps = [];
-            let stepMatch;
-            const regex = /<p dir="auto">(\d+)\. ([^]*?)<\/p>/g;
             
-            while ((stepMatch = regex.exec(stepsContent)) !== null) {
-                steps.push({
-                    number: stepMatch[1],
-                    content: stepMatch[2].trim()
-                });
+            const stepBlocks = stepsContent.split(/<p dir="auto">(?=\d+\.)/);
+            
+            for (let i = 0; i < stepBlocks.length; i++) {
+                if (!stepBlocks[i].trim()) continue;
+                
+                const stepBlock = stepBlocks[i].trim();
+                const stepMatch = stepBlock.match(/^(\d+)\.\s([^]*?)<\/p>(.*)/s);
+                
+                if (stepMatch) {
+                    const stepNumber = stepMatch[1];
+                    const stepTitle = stepMatch[2].trim();
+                    const stepContent = stepMatch[3] ? stepMatch[3].trim() : '';
+                    
+                    steps.push({
+                        number: stepNumber,
+                        title: stepTitle,
+                        content: stepContent || `<p dir="auto">${stepTitle}</p>`
+                    });
+                }
             }
             
             if (steps.length === 0) return match;
             
-            let stepsHtml = '<div class="steps-container">';
+            const stepsId = `steps-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            let stepsHtml = `<div class="steps-container" id="${stepsId}">`;
+            stepsHtml += `<ul class="nav nav-tabs steps-nav" role="tablist">`;
+            
             for (let i = 0; i < steps.length; i++) {
-                const isLast = i === steps.length - 1;
-                stepsHtml += `<div class="step-item ${isLast ? 'step-last' : ''}">`;
-                stepsHtml += `<div class="step-marker"><span class="step-number">${steps[i].number}</span></div>`;
-                stepsHtml += `<div class="step-content"><div class="step-text">${steps[i].content}</div></div>`;
-                if (!isLast) {
-                    stepsHtml += '<div class="step-connector"></div>';
-                }
-                stepsHtml += '</div>';
+                const stepId = `${stepsId}-step-${i}`;
+                const isActive = i === 0;
+                
+                stepsHtml += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${isActive ? "active" : ""}" 
+                            id="${stepId}-tab" 
+                            data-bs-toggle="tab" 
+                            data-toggle="tab"
+                            data-bs-target="#${stepId}" 
+                            data-target="#${stepId}"
+                            type="button" 
+                            role="tab" 
+                            aria-controls="${stepId}" 
+                            aria-selected="${isActive ? "true" : "false"}">
+                        <span class="step-number">${steps[i].number}</span>
+                        ${steps[i].title}
+                    </button>
+                </li>`;
             }
-            stepsHtml += '</div>';
+            
+            stepsHtml += `</ul>`;
+            stepsHtml += `<div class="tab-content steps-content">`;
+            
+            for (let i = 0; i < steps.length; i++) {
+                const stepId = `${stepsId}-step-${i}`;
+                const isActive = i === 0;
+                
+                stepsHtml += `<div class="tab-pane fade ${isActive ? "show active" : ""}" 
+                                  id="${stepId}" 
+                                  role="tabpanel" 
+                                  aria-labelledby="${stepId}-tab" 
+                                  tabindex="0">
+                    <div class="step-content-wrapper">
+                        <div class="step-header">
+                            <h4><span class="step-badge">${steps[i].number}</span> ${steps[i].title}</h4>
+                        </div>
+                        <div class="step-body">
+                            ${steps[i].content}
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            stepsHtml += `</div>`;
+            
+            stepsHtml += `<div class="steps-navigation">
+                <button class="btn btn-outline-secondary step-prev" type="button" disabled>
+                    <i class="fa fa-chevron-left"></i> 上一步
+                </button>
+                <span class="step-indicator">
+                    <span class="current-step">1</span> / <span class="total-steps">${steps.length}</span>
+                </span>
+                <button class="btn btn-outline-secondary step-next" type="button">
+                    下一步 <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>`;
+            
+            stepsHtml += `</div>`;
+            
             return stepsHtml;
         });
     }
@@ -302,7 +432,7 @@ function applyCollapsible(textContent, id) {
         let count = 0;
         textContent = textContent.replace(collapsibleRegex, (match, title, content) => {
             const collapseId = `collapse-${count}-${id}`;
-            const collapseButton = `<button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}"><i class="fa fa-chevron-right collapse-icon"></i> ${title}</button>`;
+            const collapseButton = `<button class="btn btn-outline-primary extended-markdown-collapsible" type="button" data-bs-toggle="collapse" data-toggle="collapse" data-bs-target="#${collapseId}" data-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}"><i class="fa fa-chevron-right collapse-icon"></i> ${title}</button>`;
             const collapseContent = `<div class="collapse" id="${collapseId}"><div class="card card-body mt-2 collapsible-content">${content}</div></div>`;
             count++;
             return `<div class="collapsible-wrapper">${collapseButton}${collapseContent}</div>`;
@@ -327,7 +457,7 @@ async function applySpoiler(textContent, id) {
         let count = 0;
         textContent = textContent.replace(spoilerRegex, (match, text) => {
             const spoilerButton = `
-                <button class="btn btn-primary extended-markdown-spoiler" type="button" name="spoiler" data-bs-toggle="collapse" data-bs-target="#spoiler${count + id}" aria-expanded="false" aria-controls="spoiler${count + id}">
+                <button class="btn btn-primary extended-markdown-spoiler" type="button" name="spoiler" data-bs-toggle="collapse" data-toggle="collapse" data-bs-target="#spoiler${count + id}" data-target="#spoiler${count + id}" aria-expanded="false" aria-controls="spoiler${count + id}">
                     ${spoilerText} <i class="fa fa-eye-slash"></i>
                 </button>`;
 
