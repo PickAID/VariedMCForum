@@ -242,10 +242,6 @@ $(document).ready(function () {
                     controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
                 });
                 
-                formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '||', '||');
-                });
-                
                 formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
                     controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
                 });
@@ -259,7 +255,7 @@ $(document).ready(function () {
                 });
 
                 formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
+                    controls.insertIntoTextarea(textarea, '\n[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]\n');
                 });
 
                 formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
@@ -271,11 +267,15 @@ $(document).ready(function () {
                 });
 
                 formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
+                    controls.insertIntoTextarea(textarea, '\n[spoiler=点击展开]\n隐藏内容\n[/spoiler]\n');
                 });
 
                 formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
+                    controls.insertIntoTextarea(textarea, '\n[steps]\n[step]\n第一步内容\n[step]\n第二步内容\n[/steps]\n');
+                });
+
+                formatting.addButtonDispatch('ruby', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '@中国(', ')');
                 });
             }
         } catch (error) {

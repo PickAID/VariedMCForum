@@ -56,7 +56,7 @@ $(document).ready(function() {
             e.preventDefault();
             e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]';
+            const text = '\n[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]\n';
             insertText(textarea, text);
             return false;
         });
@@ -65,7 +65,7 @@ $(document).ready(function() {
             e.preventDefault();
             e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]';
+            const text = '\n[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]\n';
             insertText(textarea, text);
             return false;
         });
@@ -74,7 +74,7 @@ $(document).ready(function() {
             e.preventDefault();
             e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '[spoiler=展开查看]\n隐藏内容\n[/spoiler]';
+            const text = '\n[spoiler=点击展开]\n隐藏内容\n[/spoiler]\n';
             insertText(textarea, text);
             return false;
         });
