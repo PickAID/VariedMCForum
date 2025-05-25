@@ -1,9 +1,9 @@
 @import './variables';
 
 .text-header {
-    background-color: $extended-markdown-text-header-bg;
+    background-color: #01243c;
     text-align: center;
-    color: $extended-markdown-text-header-color;
+    color: #ffffff;
     padding: 7px;
     font-weight: bold;
     border-radius: 0.375rem;
@@ -23,12 +23,12 @@
 }
 
 .extended-markdown-tooltip {
-    color: $extended-markdown-tooltip-color;
+    color: #337ab7;
     cursor: pointer;
     transition: all 0.2s ease;
     
     &:hover {
-        color: $extended-markdown-tooltip-hover-color;
+        color: #23527c;
     }
     
     &.theme-light {
@@ -51,8 +51,9 @@
 .admonition {
     border-radius: 3px;
     margin-bottom: 0.625rem;
-    background: $extended-markdown-admonition-bg;
+    background: #c8e7fa;
     border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px #dbdbdb;
     
     p {
         padding: 0 1rem;
@@ -72,11 +73,11 @@
         font-weight: 700;
         padding: 0.2rem 1rem;
         font-size: 1.2rem;
-        color: $extended-markdown-admonition-title-color;
+        color: #333;
         margin: 0;
         border-radius: 3px 3px 0 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        background: $extended-markdown-admonition-title-bg;
+        background: #fbf9f9;
         
         i.fa {
             margin-right: 5px;
@@ -92,26 +93,26 @@
     }
     
     &.important {
-        background: $extended-markdown-admonition-important-bg;
+        background: #c0f2e8;
         
         .admonition-title {
-            background: $extended-markdown-admonition-important-title-bg;
+            background: #7de8d2;
         }
     }
     
     &.info {
-        background: $extended-markdown-admonition-info-bg;
+        background: #c0dcf2;
         
         .admonition-title {
-            background: $extended-markdown-admonition-info-title-bg;
+            background: #7dbae8;
         }
     }
     
     &.warning {
-        background: $extended-markdown-admonition-warning-bg;
+        background: #f2d9c0;
         
         .admonition-title {
-            background: $extended-markdown-admonition-warning-title-bg;
+            background: #e8b37d;
         }
     }
     
@@ -274,16 +275,17 @@
 }
 
 .extended-tabs-container, .steps-container {
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    background: #ffffff;
     margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #fff;
+    overflow: hidden;
     
     .nav-tabs {
-        background: #f8f9fa;
         border-bottom: 1px solid #dee2e6;
         margin: 0;
+        border-radius: 0;
+        background: #f8f9fa;
         display: flex;
         
         .nav-item {
@@ -293,40 +295,36 @@
             .nav-link {
                 border: none;
                 border-radius: 0;
+                color: #495057;
                 background: transparent;
-                color: #6c757d;
-                text-align: center;
                 padding: 0.75rem 1rem;
-                font-weight: 500;
-                font-size: 0.9rem;
                 transition: all 0.2s ease;
+                text-align: center;
+                width: 100%;
                 border-bottom: 2px solid transparent;
                 
                 &:hover {
-                    background: rgba(0, 0, 0, 0.03);
-                    color: #495057;
+                    background: #e9ecef;
+                    color: #212529;
                 }
                 
                 &.active {
-                    color: #0d6efd;
-                    background: #ffffff;
-                    border-bottom-color: #0d6efd;
+                    background: #007bff;
+                    color: #fff;
+                    border-bottom-color: transparent;
                 }
             }
         }
     }
     
     .tab-content {
+        padding: 1.5rem;
+        background: #fff;
+        min-height: 100px;
+        
         .tab-pane {
-            padding: 1.5rem;
-            
-            &:not(.active) {
-                display: none;
-            }
-            
-            &.active {
-                display: block;
-            }
+            margin: 0;
+            padding: 0;
         }
     }
     
@@ -342,50 +340,55 @@
                 color: #adb5bd;
                 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.03);
+                    background: #495057;
                     color: #f8f9fa;
                 }
                 
                 &.active {
-                    background: #212529;
-                    color: #6ea8fe;
-                    border-bottom-color: #6ea8fe;
+                    background: #0d6efd;
+                    color: #fff;
                 }
             }
         }
         
-        .tab-content .tab-pane {
-            color: #e9ecef;
+        .tab-content {
+            background: #212529;
+            color: #adb5bd;
         }
     }
 }
 
 .steps-container {
+    counter-reset: step-counter;
+    
     .nav-tabs .nav-item .nav-link {
         position: relative;
+        padding-left: 2.5rem;
         
         &::before {
             content: counter(step-counter);
             counter-increment: step-counter;
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
             display: inline-block;
-            width: 1.5rem;
-            height: 1.5rem;
+            width: 1.25rem;
+            height: 1.25rem;
             background: #6c757d;
             color: #fff;
             border-radius: 50%;
             text-align: center;
-            line-height: 1.5rem;
+            line-height: 1.25rem;
             font-size: 0.75rem;
-            margin-right: 0.5rem;
             font-weight: 500;
         }
         
         &.active::before {
-            background: #0d6efd;
+            background: #fff;
+            color: #007bff;
         }
     }
-    
-    counter-reset: step-counter;
     
     .steps-navigation {
         padding: 1rem 1.5rem;
@@ -411,10 +414,12 @@
         .nav-tabs .nav-item .nav-link {
             &::before {
                 background: #adb5bd;
+                color: #212529;
             }
             
             &.active::before {
-                background: #6ea8fe;
+                background: #fff;
+                color: #0d6efd;
             }
         }
         
@@ -441,6 +446,7 @@
         padding: 0.75rem 1rem;
         transition: all 0.2s ease;
         border-radius: 0.375rem;
+        cursor: pointer;
         
         &:hover {
             background: #e9ecef;
@@ -524,10 +530,6 @@ ruby {
         flex-direction: column;
         gap: 0.75rem;
     }
-    
-    .tab-content .tab-pane {
-        padding: 1rem;
-    }
 }
 
 a.anchor-offset {
@@ -538,7 +540,7 @@ a.anchor-offset {
 }
 
 .spoiler {
-    background-color: $extended-markdown-spoiler-bg;
+    background-color: rgba(1, 1, 1, 0.13);
     color: transparent;
     cursor: pointer;
     padding: 0.125rem 0.25rem;

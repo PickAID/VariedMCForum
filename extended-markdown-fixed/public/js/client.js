@@ -74,17 +74,8 @@ $(document).ready(function () {
         }
     }
 
-    function getBootstrapVersion() {
-        if (window.bootstrap && window.bootstrap.Tab) {
-            return 5;
-        } else if (window.jQuery && window.jQuery.fn.tab) {
-            return 4;
-        }
-        return null;
-    }
-
     function initializeTabComponents() {
-        document.querySelectorAll('.code-group-container, .extended-tabs-container, .steps-container').forEach(function(container) {
+        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(function(container) {
             const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
             
             tabButtons.forEach(function(button) {
@@ -108,87 +99,90 @@ $(document).ready(function () {
                         target.classList.add('show', 'active');
                         this.classList.add('active');
                         this.setAttribute('aria-selected', 'true');
-                        
-                        if (container.classList.contains('steps-container')) {
-                            const index = Array.from(tabButtons).indexOf(this);
-                            updateStepNavigation(container, index);
-                        }
                     }
                 });
             });
-            
-            if (container.classList.contains('steps-container')) {
-                initializeStepNavigation(container);
-            }
         });
     }
 
-    function initializeStepNavigation(container) {
-        const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
-        const prevBtn = container.querySelector('.step-prev');
-        const nextBtn = container.querySelector('.step-next');
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', function() {
-                const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-                if (activeIndex > 0) {
-                    tabButtons[activeIndex - 1].click();
-                }
-            });
-        }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', function() {
-                const activeIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-                if (activeIndex < tabButtons.length - 1) {
-                    tabButtons[activeIndex + 1].click();
-                }
-            });
-        }
-        
-        updateStepNavigation(container, 0);
-    }
-
-    function updateStepNavigation(container, currentIndex) {
-        const prevBtn = container.querySelector('.step-prev');
-        const nextBtn = container.querySelector('.step-next');
-        const indicator = container.querySelector('.current-step');
-        const totalSteps = container.querySelectorAll('[data-bs-toggle="tab"]').length;
-        
-        if (prevBtn) prevBtn.disabled = currentIndex === 0;
-        if (nextBtn) nextBtn.disabled = currentIndex === totalSteps - 1;
-        
-        if (indicator) indicator.textContent = currentIndex + 1;
-        
-        if (nextBtn) {
-            if (currentIndex === totalSteps - 1) {
-                nextBtn.innerHTML = '<i class="fa fa-check"></i> 完成';
-            } else {
-                nextBtn.innerHTML = '下一步 <i class="fa fa-chevron-right"></i>';
+    function initializeStepComponents() {
+        document.querySelectorAll('.steps-container').forEach(function(container) {
+            const tabButtons = container.querySelectorAll('[data-bs-toggle="tab"]');
+            const prevBtn = container.querySelector('.step-prev');
+            const nextBtn = container.querySelector('.step-next');
+            const currentStepSpan = container.querySelector('.current-step');
+            const totalStepsSpan = container.querySelector('.total-steps');
+            
+            let currentStep = 0;
+            const totalSteps = tabButtons.length;
+            
+            function updateStepDisplay() {
+                if (currentStepSpan) currentStepSpan.textContent = currentStep + 1;
+                if (totalStepsSpan) totalStepsSpan.textContent = totalSteps;
+                
+                if (prevBtn) prevBtn.disabled = currentStep === 0;
+                if (nextBtn) nextBtn.disabled = currentStep === totalSteps - 1;
+                
+                tabButtons.forEach((btn, index) => {
+                    btn.classList.toggle('active', index === currentStep);
+                    btn.setAttribute('aria-selected', index === currentStep ? 'true' : 'false');
+                });
+                
+                const allPanes = container.querySelectorAll('.tab-pane');
+                allPanes.forEach((pane, index) => {
+                    pane.classList.toggle('show', index === currentStep);
+                    pane.classList.toggle('active', index === currentStep);
+                });
             }
-        }
+            
+            tabButtons.forEach(function(button, index) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentStep = index;
+                    updateStepDisplay();
+                });
+            });
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    if (currentStep > 0) {
+                        currentStep--;
+                        updateStepDisplay();
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    if (currentStep < totalSteps - 1) {
+                        currentStep++;
+                        updateStepDisplay();
+                    }
+                });
+            }
+            
+            updateStepDisplay();
+        });
     }
 
     function initializeCollapse() {
         document.querySelectorAll('.extended-markdown-collapsible').forEach(function(button) {
             button.addEventListener('click', function() {
-                const icon = this.querySelector('.collapse-icon');
                 const targetId = this.getAttribute('data-bs-target');
                 const target = document.querySelector(targetId);
+                const icon = this.querySelector('.collapse-icon');
                 
-                if (target && icon) {
-                    const isExpanded = !target.classList.contains('show');
+                if (target) {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
                     
                     if (isExpanded) {
-                        target.classList.add('show');
-                        icon.classList.remove('fa-chevron-right');
-                        icon.classList.add('fa-chevron-down');
-                        this.setAttribute('aria-expanded', 'true');
-                    } else {
                         target.classList.remove('show');
-                        icon.classList.remove('fa-chevron-down');
-                        icon.classList.add('fa-chevron-right');
                         this.setAttribute('aria-expanded', 'false');
+                        if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
+                    } else {
+                        target.classList.add('show');
+                        this.setAttribute('aria-expanded', 'true');
+                        if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down');
                     }
                 }
             });
@@ -196,13 +190,33 @@ $(document).ready(function () {
     }
 
     function initializeTooltips() {
-        if (window.bootstrap && window.bootstrap.Tooltip) {
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
-                new bootstrap.Tooltip(element);
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
+            element.addEventListener('mouseenter', function() {
+                const title = this.getAttribute('title') || this.getAttribute('data-bs-title');
+                if (title) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip bs-tooltip-top';
+                    tooltip.innerHTML = `<div class="tooltip-inner">${title}</div>`;
+                    
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = this.getBoundingClientRect();
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                    tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
+                    tooltip.style.zIndex = '1070';
+                    
+                    this._tooltip = tooltip;
+                }
             });
-        } else if (window.jQuery && $.fn.tooltip) {
-            $('[data-bs-toggle="tooltip"]').tooltip();
-        }
+            
+            element.addEventListener('mouseleave', function() {
+                if (this._tooltip) {
+                    this._tooltip.remove();
+                    this._tooltip = null;
+                }
+            });
+        });
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
@@ -215,11 +229,11 @@ $(document).ready(function () {
                 });
                 
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n===group\n```java\nSystem.out.println("Hello");\n```\n```kotlin\nprintln("Hello")\n```\n===\n');
+                    controls.insertIntoTextarea(textarea, '\n===group\n```java\nJava代码\n```\n```kotlin\nKotlin代码\n```\n===\n');
                 });
                 
                 formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.wrapSelectionInTextareaWith(textarea, '°', '°(tooltip text)');
+                    controls.wrapSelectionInTextareaWith(textarea, '°', '°(提示文本)');
                 });
                 
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
@@ -243,15 +257,15 @@ $(document).ready(function () {
                 });
                 
                 formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
+                    controls.insertIntoTextarea(textarea, '\n!!! info [标题]: 内容\n');
                 });
                 
                 formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: Content\n');
+                    controls.insertIntoTextarea(textarea, '\n!!! warning [标题]: 内容\n');
                 });
                 
                 formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
+                    controls.insertIntoTextarea(textarea, '\n!!! important [标题]: 内容\n');
                 });
 
                 formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
@@ -286,6 +300,7 @@ $(document).ready(function () {
     function pageReady() {
         setTimeout(function() {
             initializeTabComponents();
+            initializeStepComponents();
             initializeCollapse();
             initializeTooltips();
             applyThemeStyles();
