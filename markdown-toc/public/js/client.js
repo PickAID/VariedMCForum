@@ -47,6 +47,16 @@ $(document).ready(function () {
 			}
 		}
 		
+		const computedStyle = window.getComputedStyle(body);
+		const bgColor = computedStyle.backgroundColor;
+		if (bgColor) {
+			const rgb = bgColor.match(/\d+/g);
+			if (rgb && rgb.length >= 3) {
+				const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+				return brightness < 128 ? 'dark' : 'light';
+			}
+		}
+		
 		return 'light';
 	}
 
@@ -76,16 +86,17 @@ $(document).ready(function () {
 		}
 	}
 
-	setTimeout(function() {
-		applyThemeStyles();
-		setupThemeWatcher();
-	}, 100);
-
-	$(window).on('action:ajaxify.end', function () {
+	function pageReady() {
 		setTimeout(function() {
 			applyThemeStyles();
 			setupThemeWatcher();
-		}, 200);
+		}, 100);
+	}
+
+	pageReady();
+
+	$(window).on('action:ajaxify.end', function () {
+		setTimeout(pageReady, 200);
 	});
 
 	const observer = new MutationObserver(function(mutations) {
