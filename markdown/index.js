@@ -3,7 +3,6 @@
 const MarkdownIt = require('markdown-it');
 const fs = require('fs');
 const path = require('path');
-const ShikiHighlight = require('./lib/shiki-highlight');
 
 const nconf = require.main.require('nconf');
 const winston = require.main.require('winston');
@@ -30,7 +29,6 @@ const Markdown = {
 
 		routeHelpers.setupAdminPageRoute(router, '/admin/plugins/markdown', controllers.renderAdmin);
 
-		// Return raw markdown via GET
 		router.get('/api/post/:pid/raw', middlewares, controllers.retrieveRaw);
 
 		Markdown.init();
@@ -118,42 +116,187 @@ const Markdown = {
 
 			if (_self.useShiki && _self.highlight) {
 				try {
-					await ShikiHighlight.init({
-						theme: {
-							light: _self.config.highlightTheme || 'github-light',
-							dark: _self.config.highlightDarkTheme || 'github-dark'
-						},
-						languages: ['javascript', 'typescript', 'html', 'css', 'json', 'bash', 'python', 'java', 'cpp', 'c', 'php', 'go', 'rust', 'sql', 'xml', 'yaml', 'markdown', 'vue', 'jsx', 'tsx']
-					});
-
-					_self.config.highlight = async function (str, lang, attrs) {
-						try {
-							return await ShikiHighlight.highlight(str, lang, attrs, {
-								theme: {
-									light: _self.config.highlightTheme || 'github-light',
-									dark: _self.config.highlightDarkTheme || 'github-dark'
-								},
-								defaultHighlightLang: options.defaultHighlightLanguage || 'txt'
-							});
-						} catch (error) {
-							winston.warn(`[plugin/markdown] Shiki highlight error: ${error.message}`);
-							return `<pre><code class="${_self.config.langPrefix}${lang}">${str}</code></pre>`;
-						}
-					};
+					_self.initShikiParser();
 				} catch (error) {
 					winston.error(`[plugin/markdown] Failed to initialize Shiki: ${error.message}`);
 					_self.config.highlight = _self.highlight;
+					parser = new MarkdownIt(_self.config);
+					Markdown.updateParserRules(parser);
 				}
 			} else if (_self.highlight) {
 				_self.config.highlight = true;
+				parser = new MarkdownIt(_self.config);
+				Markdown.updateParserRules(parser);
 			} else {
 				_self.config.highlight = false;
+				parser = new MarkdownIt(_self.config);
+				Markdown.updateParserRules(parser);
 			}
-
-			parser = new MarkdownIt(_self.config);
-
-			Markdown.updateParserRules(parser);
 		});
+	},
+
+	initShikiParser: async function() {
+		try {
+			const Shiki = require('@shikijs/markdown-it');
+			
+			parser = new MarkdownIt(this.config);
+			
+			const shikiPlugin = await Shiki({
+				themes: {
+					light: this.config.highlightTheme || 'github-light',
+					dark: this.config.highlightDarkTheme || 'github-dark'
+				},
+				langs: [
+					'javascript', 'typescript', 'html', 'css', 'json', 'bash', 'shell',
+					'python', 'java', 'cpp', 'c', 'csharp', 'php', 'go', 'rust', 
+					'sql', 'xml', 'yaml', 'markdown', 'vue', 'jsx', 'tsx', 'scss',
+					'less', 'stylus', 'diff', 'dockerfile', 'nginx', 'apache'
+				],
+				transformers: [
+					{
+						name: 'vitepress-style-transformer',
+						preprocess(code, options) {
+							return code;
+						},
+						code(node) {
+							const meta = this.options.meta || {};
+							const lang = this.options.lang || '';
+							
+							if (meta.__raw && typeof meta.__raw === 'string') {
+								const metaStr = meta.__raw;
+								
+								if (metaStr.includes('line-numbers')) {
+									this.addClassToHast(node, 'line-numbers');
+									const startMatch = metaStr.match(/:line-numbers(?:=(\d+))?/);
+									const startNum = startMatch && startMatch[1] ? parseInt(startMatch[1]) : 1;
+									
+									let lineNum = startNum;
+									node.children.forEach(line => {
+										if (line.type === 'element' && line.tagName === 'span') {
+											line.properties = line.properties || {};
+											line.properties.class = line.properties.class || [];
+											if (!line.properties.class.includes('line')) {
+												line.properties.class.push('line');
+											}
+											line.properties['data-line'] = lineNum++;
+										}
+									});
+								}
+								
+								const highlightMatch = metaStr.match(/\{([^}]+)\}/);
+								if (highlightMatch) {
+									const ranges = this.parseHighlightRanges(highlightMatch[1]);
+									ranges.forEach(range => {
+										for (let i = range.start; i <= range.end; i++) {
+											const lineIndex = i - 1;
+											if (node.children[lineIndex] && node.children[lineIndex].type === 'element') {
+												this.addClassToHast(node.children[lineIndex], 'highlighted');
+											}
+										}
+									});
+								}
+							}
+							
+							node.children.forEach(line => {
+								if (line.type === 'element' && line.tagName === 'span') {
+									line.properties = line.properties || {};
+									line.properties.class = line.properties.class || [];
+									if (!line.properties.class.includes('line')) {
+										line.properties.class.push('line');
+									}
+									
+									if (line.children && line.children.length > 0) {
+										const textContent = this.getTextContent(line);
+										
+										if (textContent.includes('// [!code focus]')) {
+											this.addClassToHast(line, 'focused');
+											this.addClassToHast(node, 'has-focused-lines');
+											this.removeCommentFromLine(line, '// [!code focus]');
+										}
+										
+										if (textContent.includes('// [!code ++]')) {
+											this.addClassToHast(line, 'diff-add');
+											this.removeCommentFromLine(line, '// [!code ++]');
+										}
+										
+										if (textContent.includes('// [!code --]')) {
+											this.addClassToHast(line, 'diff-remove');
+											this.removeCommentFromLine(line, '// [!code --]');
+										}
+										
+										if (textContent.includes('// [!code error]')) {
+											this.addClassToHast(line, 'error');
+											this.removeCommentFromLine(line, '// [!code error]');
+										}
+										
+										if (textContent.includes('// [!code warning]')) {
+											this.addClassToHast(line, 'warning');
+											this.removeCommentFromLine(line, '// [!code warning]');
+										}
+									}
+								}
+							});
+						},
+						
+						parseHighlightRanges(str) {
+							const ranges = [];
+							const parts = str.split(',');
+							parts.forEach(part => {
+								part = part.trim();
+								if (part.includes('-')) {
+									const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+									ranges.push({ start, end });
+								} else {
+									const num = parseInt(part);
+									ranges.push({ start: num, end: num });
+								}
+							});
+							return ranges;
+						},
+						
+						getTextContent(node) {
+							if (node.type === 'text') {
+								return node.value;
+							}
+							if (node.children) {
+								return node.children.map(child => this.getTextContent(child)).join('');
+							}
+							return '';
+						},
+						
+						removeCommentFromLine(line, comment) {
+							const walk = (node) => {
+								if (node.type === 'text' && node.value.includes(comment)) {
+									node.value = node.value.replace(comment, '').trim();
+								}
+								if (node.children) {
+									node.children.forEach(walk);
+								}
+							};
+							walk(line);
+						},
+						
+						addClassToHast(node, className) {
+							node.properties = node.properties || {};
+							node.properties.class = node.properties.class || [];
+							if (!node.properties.class.includes(className)) {
+								node.properties.class.push(className);
+							}
+						}
+					}
+				]
+			});
+			
+			parser.use(shikiPlugin);
+			
+			Markdown.updateParserRules(parser);
+			winston.info('[plugin/markdown] Shiki syntax highlighting enabled');
+		} catch (error) {
+			winston.error(`[plugin/markdown] Failed to initialize Shiki: ${error.message}`);
+			this.config.highlight = this.highlight;
+			parser = new MarkdownIt(this.config);
+			Markdown.updateParserRules(parser);
+		}
 	},
 
 	loadThemes: async () => {
@@ -185,7 +328,6 @@ const Markdown = {
 
 	parseAboutMe: async function (aboutme) {
 		aboutme = (aboutme && parser) ? parser.render(aboutme) : aboutme;
-		// process.nextTick(next, null, aboutme);
 		return Markdown.afterParse(aboutme);
 	},
 
@@ -198,20 +340,18 @@ const Markdown = {
 		let env = {
 			parse: true,
 			type: data.type,
-			images: new Map(), // is this still used?
+			images: new Map(),
 		};
 
 		({ env } = await plugins.hooks.fire('filter:markdown.beforeParse', { env, data: Object.freeze({ ...data }) }));
 
 		if (data.type === 'markdown') {
-			// core is expecting markdown to come back, bypass parsing
 			env.parse = false;
 		} else if (activitypub.helpers.isUri(data.postData.pid)) {
 			if (data.postData.sourceContent) {
 				data.content = data.sourceContent;
 				delete data.sourceContent;
 			} else {
-				// content contained is likely already html, bypass parsing
 				env.parse = false;
 			}
 		}
@@ -226,7 +366,6 @@ const Markdown = {
 		const italicMention = /@<em>([^<]+)<\/em>/g;
 		const boldMention = /@<strong>([^<]+)<\/strong>/g;
 		const execute = function (html) {
-			// Replace all italicised mentions back to regular mentions
 			if (italicMention.test(html)) {
 				html = html.replace(italicMention, (match, slug) => `@_${slug}_`);
 			} else if (boldMention.test(html)) {
@@ -293,7 +432,6 @@ const Markdown = {
 
 	updateParserRules: function (parser) {
 		if (Markdown.config.checkboxes) {
-			// Add support for checkboxes
 			parser.use(require('markdown-it-checkbox'), {
 				divWrap: true,
 				divClass: 'plugin-markdown',
@@ -318,7 +456,6 @@ const Markdown = {
 			});
 		});
 
-		// Update renderer to add some classes to all images
 		const renderImage = parser.renderer.rules.image || function (tokens, idx, options, env, self) {
 			return self.renderToken.apply(self, arguments);
 		};
@@ -337,7 +474,6 @@ const Markdown = {
 				return `[image: ${filename}]`;
 			}
 
-			// Validate the url
 			if (!Markdown.isUrlValid(attributes.get('src'))) { return ''; }
 
 			token.attrSet('class', `${token.attrGet('class') || ''} img-fluid img-markdown`);
@@ -366,7 +502,6 @@ const Markdown = {
 				attributes.set('rel', rel.join(' '));
 			}
 
-			// Clearly indicate hidden links
 			if (tokens[idx + 1].type === 'link_close') {
 				attributes.set('class', String(`${attributes.get('class') || ''} plugin-markdown-hidden-link small link-danger`).trim());
 			}
@@ -408,13 +543,6 @@ const Markdown = {
 	},
 
 	isUrlValid: function (src) {
-		/**
-		 * Images linking to a relative path are only allowed from the root prefixes
-		 * defined in allowedRoots. We allow both with and without relative_path
-		 * even though upload_url should handle it, because sometimes installs
-		 * migrate to (non-)subfolder and switch mid-way, but the uploads urls don't
-		 * get updated.
-		 */
 		const allowedRoots = [nconf.get('upload_url'), '/uploads'];
 		const allowed = pathname => allowedRoots.some(root => pathname.toString().startsWith(root) || pathname.toString().startsWith(nconf.get('relative_path') + root));
 
@@ -437,11 +565,11 @@ const Markdown = {
 		}
 
 		if (
-			urlObj.host === null || // Relative paths are always internal links...
+			urlObj.host === null ||
 			(
 				urlObj.host === baseUrlObj.host &&
-				urlObj.protocol === baseUrlObj.protocol && // Otherwise need to check that protocol and host match
-				(nconf.get('relative_path').length > 0 ? urlObj.pathname.indexOf(nconf.get('relative_path')) === 0 : true) // Subfolder installs need this additional check
+				urlObj.protocol === baseUrlObj.protocol &&
+				(nconf.get('relative_path').length > 0 ? urlObj.pathname.indexOf(nconf.get('relative_path')) === 0 : true)
 			)
 		) {
 			return false;
