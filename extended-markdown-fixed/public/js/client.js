@@ -59,14 +59,21 @@ $(document).ready(function () {
     function applyThemeStyles() {
         const theme = detectTheme();
         
-        document.querySelectorAll('.admonition, .code-group-container, .extended-tabs-container, .collapsible-wrapper, .steps-container').forEach(element => {
+        document.querySelectorAll('.admonition').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
             }
         });
         
-        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler, .annotation-mark').forEach(element => {
+        document.querySelectorAll('.code-group-container, .extended-tabs-container').forEach(element => {
+            if (!element.classList.contains(`theme-${theme}`)) {
+                element.classList.remove('theme-light', 'theme-dark');
+                element.classList.add(`theme-${theme}`);
+            }
+        });
+        
+        document.querySelectorAll('.text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             if (!element.classList.contains(`theme-${theme}`)) {
                 element.classList.remove('theme-light', 'theme-dark');
                 element.classList.add(`theme-${theme}`);
@@ -88,11 +95,11 @@ $(document).ready(function () {
         
         if (formatting && controls) {
             formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '[h=anchor]', '[/h]');
+                controls.wrapSelectionInTextareaWith(textarea, '#anchor(', ')');
             });
             
             formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                controls.insertIntoTextarea(textarea, '\n[code=java,kotlin]\njava code\n\n---\n\nkotlin code\n[/code]\n');
+                controls.insertIntoTextarea(textarea, '\n===group\n```java\nSystem.out.println("Hello");\n```\n```kotlin\nprintln("Hello")\n```\n===\n');
             });
             
             formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
@@ -100,7 +107,7 @@ $(document).ready(function () {
             });
             
             formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '%(#hexColorCode)[', ']');
+                controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
             });
             
             formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
@@ -122,28 +129,39 @@ $(document).ready(function () {
             formatting.addButtonDispatch('spoiler', function (textarea, selectionStart, selectionEnd) {
                 controls.wrapSelectionInTextareaWith(textarea, '||', '||');
             });
-
-            // 新功能按钮
+            
+            formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n!!! info [Title]: Content\n');
+            });
+            
+            formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n!!! warning [Title]: Content\n');
+            });
+            
+            formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '\n!!! important [Title]: Content\n');
+            });
+            
             formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
                 controls.insertIntoTextarea(textarea, '\n:::tabs\n@tab Tab 1\nContent for tab 1\n@tab Tab 2\nContent for tab 2\n:::\n');
             });
-
+            
             formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '^', '^');
+                controls.wrapSelectionInTextareaWith(textarea, 'E=mc^', '^');
             });
-
+            
             formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '~', '~');
+                controls.wrapSelectionInTextareaWith(textarea, 'H~', '~O');
             });
-
+            
             formatting.addButtonDispatch('annotation', function (textarea, selectionStart, selectionEnd) {
-                controls.wrapSelectionInTextareaWith(textarea, '[', ']{.annotation}');
+                controls.wrapSelectionInTextareaWith(textarea, '[', ']{.annotation text}');
             });
-
+            
             formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
                 controls.insertIntoTextarea(textarea, '\n+++ Click to expand\nHidden content here\n+++\n');
             });
-
+            
             formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
                 controls.insertIntoTextarea(textarea, '\n:::steps\n1. First step\n2. Second step\n3. Third step\n:::\n');
             });
@@ -152,7 +170,6 @@ $(document).ready(function () {
 
     function pageReady() {
         setTimeout(function() {
-            // 现有功能初始化
             document.querySelectorAll('.spoiler:not([data-spoiler-initialized])').forEach(function(spoiler) {
                 spoiler.setAttribute('data-spoiler-initialized', 'true');
                 spoiler.addEventListener('click', function() {
@@ -176,45 +193,61 @@ $(document).ready(function () {
                 });
             });
 
-            // 新功能初始化
-            // 标注功能
-            document.querySelectorAll('.annotation-mark:not([data-annotation-initialized])').forEach(function(element) {
-                element.setAttribute('data-annotation-initialized', 'true');
-                const annotation = element.getAttribute('data-annotation');
-                if (annotation) {
-                    element.setAttribute('title', annotation);
-                    element.setAttribute('data-bs-toggle', 'tooltip');
-                    element.setAttribute('data-bs-placement', 'top');
-                }
+            document.querySelectorAll('.extended-tabs-container:not([data-tabs-initialized])').forEach(function(container) {
+                container.setAttribute('data-tabs-initialized', 'true');
+                
+                const tabLinks = container.querySelectorAll('.nav-tabs a[data-toggle="tab"]');
+                tabLinks.forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        tabLinks.forEach(function(l) {
+                            l.parentElement.classList.remove('active');
+                        });
+                        
+                        container.querySelectorAll('.tab-pane').forEach(function(pane) {
+                            pane.classList.remove('active');
+                        });
+                        
+                        this.parentElement.classList.add('active');
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetPane = document.getElementById(targetId);
+                        if (targetPane) {
+                            targetPane.classList.add('active');
+                        }
+                    });
+                });
             });
 
-            // 收缩功能图标切换
             document.querySelectorAll('.extended-markdown-collapsible:not([data-collapse-initialized])').forEach(function(button) {
                 button.setAttribute('data-collapse-initialized', 'true');
-                const icon = button.querySelector('.collapse-icon');
-                const targetId = button.getAttribute('data-bs-target');
-                const target = document.querySelector(targetId);
                 
-                if (target && icon) {
-                    target.addEventListener('show.bs.collapse', function() {
-                        icon.classList.remove('fa-chevron-right');
-                        icon.classList.add('fa-chevron-down');
-                    });
-                    
-                    target.addEventListener('hide.bs.collapse', function() {
-                        icon.classList.remove('fa-chevron-down');
-                        icon.classList.add('fa-chevron-right');
-                    });
-                }
+                const target = document.querySelector(button.getAttribute('data-bs-target'));
+                const icon = button.querySelector('.collapse-icon');
+                
+                button.addEventListener('click', function() {
+                    if (target) {
+                        if (target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            if (icon) {
+                                icon.classList.remove('fa-chevron-down');
+                                icon.classList.add('fa-chevron-right');
+                            }
+                        } else {
+                            target.classList.add('show');
+                            if (icon) {
+                                icon.classList.remove('fa-chevron-right');
+                                icon.classList.add('fa-chevron-down');
+                            }
+                        }
+                    }
+                });
             });
 
-            // 初始化工具提示
             if (window.bootstrap && window.bootstrap.Tooltip) {
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
-                    if (!element._bsTooltipInitialized) {
-                        new window.bootstrap.Tooltip(element);
-                        element._bsTooltipInitialized = true;
-                    }
+                document.querySelectorAll('[data-bs-toggle="tooltip"]:not([data-tooltip-initialized])').forEach(function(element) {
+                    element.setAttribute('data-tooltip-initialized', 'true');
+                    new window.bootstrap.Tooltip(element);
                 });
             }
             
