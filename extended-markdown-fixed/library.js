@@ -583,6 +583,8 @@ const ExtendedMarkdown = {
             { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
             { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
             { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" },
+            { name: 'tabs', className: 'fa fa-folder-open', title: '插入标签页' },
+            { name: 'steps', className: 'fa fa-tasks', title: '插入步骤' },
             { name: 'ruby', className: 'fa fa-language', title: '插入音注标记' },
             { name: 'superscript', className: 'fa fa-superscript', title: '上标' },
             { name: 'subscript', className: 'fa fa-subscript', title: '下标' }
