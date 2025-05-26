@@ -177,37 +177,36 @@ $(document).ready(function () {
     function initializeAnimatedCodeGroups() {
         $('.animated-code-group-container').each(function() {
             const $container = $(this);
-            const $display = $container.find('.animated-code-display code');
+            const animatedId = $container.data('animated-id');
+            const $display = $container.find(`#${animatedId}-display`);
             const $tabs = $container.find('.nav-link');
             
-            if (!$container.data('animated-initialized') && $tabs.length > 0) {
+            if (!$container.data('animated-initialized')) {
                 $container.data('animated-initialized', true);
                 
-                const codeBlocks = [];
-                $tabs.each(function() {
-                    const codeContent = $(this).data('code-content');
-                    if (codeContent) {
-                        codeBlocks.push(codeContent);
-                    }
-                });
-                
-                if (codeBlocks.length > 0) {
-                    $display.text(codeBlocks[0]);
-                }
-                
-                $tabs.on('click', function(e) {
-                    e.preventDefault();
+                if ($tabs.length > 0 && $display.length > 0) {
+                    $tabs.first().addClass('active');
                     
-                    const clickedIndex = $tabs.index(this);
-                    if (clickedIndex >= 0 && clickedIndex < codeBlocks.length) {
-                        $tabs.removeClass('active');
-                        $(this).addClass('active');
-                        
-                        $display.fadeOut(150, function() {
-                            $(this).text(codeBlocks[clickedIndex]).fadeIn(150);
-                        });
+                    const firstCode = $tabs.first().data('code');
+                    if (firstCode) {
+                        $display.html(`<pre><code>${firstCode}</code></pre>`);
                     }
-                });
+                    
+                    $tabs.off('click.animated-code').on('click.animated-code', function(e) {
+                        e.preventDefault();
+                        
+                        const code = $(this).data('code');
+                        if (code && $display.length > 0) {
+                            $tabs.removeClass('active');
+                            $(this).addClass('active');
+                            
+                            $display.fadeOut(200, function() {
+                                $display.html(`<pre><code>${code}</code></pre>`);
+                                $display.fadeIn(200);
+                            });
+                        }
+                    });
+                }
             }
         });
     }
@@ -218,53 +217,53 @@ $(document).ready(function () {
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
                 let composerTextarea;
-                let hiddenColorPicker;
-
-                function createColorPicker() {
-                    if (!hiddenColorPicker) {
-                        hiddenColorPicker = document.createElement("input");
-                        hiddenColorPicker.type = 'color';
-                        hiddenColorPicker.style.position = 'absolute';
-                        hiddenColorPicker.style.left = '-9999px';
-                        hiddenColorPicker.style.visibility = 'hidden';
-                        hiddenColorPicker.style.width = '0';
-                        hiddenColorPicker.style.height = '0';
-                        hiddenColorPicker.id = 'extended-markdown-color-picker';
-                        document.body.appendChild(hiddenColorPicker);
-
-                        hiddenColorPicker.addEventListener('input', function() {
-                            if (composerTextarea) {
-                                updateColorInTextarea(this.value);
-                            }
-                        });
-                    }
-                }
-
-                function updateColorInTextarea(newColor) {
-                    const value = composerTextarea.value;
-                    const start = composerTextarea.selectionStart;
-                    const end = composerTextarea.selectionEnd;
-                    
-                    const beforeCursor = value.substring(0, start);
-                    const afterCursor = value.substring(end);
-                    
-                    const colorMatch = beforeCursor.match(/%\(#[0-9a-fA-F]{6}\)$/);
-                    if (colorMatch) {
-                        const matchStart = beforeCursor.lastIndexOf(colorMatch[0]);
-                        const newValue = value.substring(0, matchStart) + `%(${newColor})` + value.substring(start);
-                        
-                        composerTextarea.value = newValue;
-                        composerTextarea.selectionStart = matchStart + 2;
-                        composerTextarea.selectionEnd = matchStart + 9;
-                        
-                        $(composerTextarea).trigger('input');
-                    }
-                }
-
+                
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
                     composerTextarea = textarea;
-                    createColorPicker();
                     
+                    // 创建临时颜色选择器
+                    const colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.value = '#000000';
+                    colorInput.style.position = 'absolute';
+                    colorInput.style.left = '-9999px';
+                    colorInput.style.opacity = '0';
+                    
+                    document.body.appendChild(colorInput);
+                    
+                    // 监听颜色变化
+                    colorInput.addEventListener('input', function() {
+                        const newColor = this.value;
+                        const value = composerTextarea.value;
+                        const start = composerTextarea.selectionStart;
+                        
+                        // 查找并替换颜色代码
+                        const beforeCursor = value.substring(0, start);
+                        const colorRegex = /%\(#[0-9a-fA-F]{6}\)$/;
+                        const match = beforeCursor.match(colorRegex);
+                        
+                        if (match) {
+                            const matchStart = beforeCursor.lastIndexOf(match[0]);
+                            const newValue = value.substring(0, matchStart) + `%(${newColor})` + value.substring(start);
+                            
+                            composerTextarea.value = newValue;
+                            composerTextarea.selectionStart = matchStart + 2;
+                            composerTextarea.selectionEnd = matchStart + 9;
+                            
+                            $(composerTextarea).trigger('input');
+                        }
+                    });
+                    
+                    // 清理事件
+                    colorInput.addEventListener('blur', function() {
+                        setTimeout(() => {
+                            if (colorInput.parentNode) {
+                                colorInput.parentNode.removeChild(colorInput);
+                            }
+                        }, 100);
+                    });
+                    
+                    // 插入默认颜色语法
                     if (selectionStart === selectionEnd) {
                         controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
@@ -273,11 +272,10 @@ $(document).ready(function () {
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     }
                     
+                    // 触发颜色选择器
                     setTimeout(() => {
-                        if (hiddenColorPicker) {
-                            hiddenColorPicker.click();
-                        }
-                    }, 200);
+                        colorInput.click();
+                    }, 100);
                 });
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
