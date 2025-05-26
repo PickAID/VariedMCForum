@@ -146,6 +146,54 @@ $(document).ready(function () {
         });
     }
 
+    function initializeStepsNavigation() {
+        $('.steps-container').each(function() {
+            const $container = $(this);
+            
+            if (!$container.data('steps-initialized')) {
+                $container.data('steps-initialized', true);
+                
+                const $tabs = $container.find('.nav-link');
+                const $prevBtn = $container.find('.step-prev');
+                const $nextBtn = $container.find('.step-next');
+                const $currentStep = $container.find('.current-step');
+                const totalSteps = $tabs.length;
+                let currentIndex = 0;
+                
+                function updateButtons() {
+                    $prevBtn.prop('disabled', currentIndex === 0);
+                    $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
+                    $currentStep.text(currentIndex + 1);
+                }
+                
+                $prevBtn.on('click', function(e) {
+                    e.preventDefault();
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        $tabs.eq(currentIndex).click();
+                        updateButtons();
+                    }
+                });
+                
+                $nextBtn.on('click', function(e) {
+                    e.preventDefault();
+                    if (currentIndex < totalSteps - 1) {
+                        currentIndex++;
+                        $tabs.eq(currentIndex).click();
+                        updateButtons();
+                    }
+                });
+                
+                $tabs.on('click', function(e) {
+                    currentIndex = $tabs.index(this);
+                    updateButtons();
+                });
+                
+                updateButtons();
+            }
+        });
+    }
+
     ExtendedMarkdown.prepareFormattingTools = async function () {
         const [formatting, controls, translator] = await app.require(['composer/formatting', 'composer/controls', 'translator']);
         
@@ -282,6 +330,7 @@ $(document).ready(function () {
         initializeTabComponents();
         initializeCollapse();
         initializeAnimatedCodeGroups();
+        initializeStepsNavigation();
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {

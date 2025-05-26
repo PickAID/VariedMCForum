@@ -16,17 +16,22 @@
         "formatting": {
             "color": "颜色",
             "left": "左对齐",
-            "center": "居中",
+            "center": "居中对齐",
             "right": "右对齐",
             "justify": "两端对齐",
             "textheader": "文本标题",
             "groupedcode": "代码组",
             "animatedcode": "动画代码",
-            "bubbleinfo": "悬停提示",
+            "bubbleinfo": "气泡信息",
             "collapsible": "折叠",
             "noteinfo": "信息提示",
             "notewarning": "警告提示",
             "noteimportant": "重要提示"
         }
+    },
+    "steps": {
+        "previous": "上一步",
+        "next": "下一步",
+        "step": "第 {0} 步"
     }
 } 

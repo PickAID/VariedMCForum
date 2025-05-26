@@ -1,6 +1,7 @@
 'use strict';
 
 const slugify = require.main.require('./src/slugify');
+const { translator } = require.main.require('./src/translator');
 
 const textHeaderRegex = /<p dir="auto">#([a-zA-Z0-9-_]+)\(([^)]+)\)<\/p>/g;
 const tooltipRegex = /(<code.*?>.*?<\/code>)|°(.+?)°\((.+?)\)/g;
@@ -256,7 +257,7 @@ function applyTabs(textContent, id) {
     });
 }
 
-function applySteps(textContent, id) {
+async function applySteps(textContent, id) {
     return textContent.replace(stepsRegex, function (match, stepsContent) {
         const cleanStepsContent = cleanContent(stepsContent);
         let stepMatches = [];
@@ -280,7 +281,7 @@ function applySteps(textContent, id) {
         const stepsId = `steps-${id}-${Math.random().toString(36).substr(2, 9)}`;
         
         let items = stepMatches.map((content, index) => ({
-            label: `Step ${index + 1}`,
+            label: `第 ${index + 1} 步`,
             content: content
         }));
         
@@ -320,8 +321,8 @@ function applySteps(textContent, id) {
                     <span class="current-step">1</span> / <span class="total-steps">${items.length}</span>
                 </div>
                 <div class="steps-navigation">
-                    <button class="step-nav-btn step-prev" disabled>Previous</button>
-                    <button class="step-nav-btn step-next">Next</button>
+                    <button class="step-nav-btn step-prev" disabled>上一步</button>
+                    <button class="step-nav-btn step-next">下一步</button>
                 </div>
             </div>
         `;
