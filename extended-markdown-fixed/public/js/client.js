@@ -169,8 +169,7 @@ $(document).ready(function () {
                         }
                     });
                     
-                    $tabs.off('click.step-nav').on('click.step-nav', function(e) {
-                        e.preventDefault();
+                    $tabs.off('click.step-update').on('click.step-update', function() {
                         currentIndex = $tabs.index(this);
                         updateStepNavigation();
                     });
@@ -184,44 +183,44 @@ $(document).ready(function () {
     function initializeAnimatedCodeGroups() {
         $('.animated-code-group-container').each(function() {
             const $container = $(this);
-            const animatedId = $container.data('animated-id');
-            const $display = $container.find(`#${animatedId}-display`);
+            const $display = $container.find('.animated-code-display code');
             const $tabs = $container.find('.nav-link');
             
-            if (!$container.data('animated-initialized')) {
+            if (!$container.data('animated-initialized') && $tabs.length > 0) {
                 $container.data('animated-initialized', true);
                 
-                if ($tabs.length > 0 && $display.length > 0) {
-                    $tabs.first().addClass('active');
-                    
-                    const firstCode = $tabs.first().data('code');
-                    if (firstCode) {
-                        $display.html(`<pre><code>${firstCode}</code></pre>`);
+                const codeBlocks = [];
+                $tabs.each(function() {
+                    const codeContent = $(this).data('code-content');
+                    if (codeContent) {
+                        codeBlocks.push(codeContent);
                     }
-                    
-                    $tabs.off('click.animated-code').on('click.animated-code', function(e) {
-                        e.preventDefault();
-                        
-                        const $clickedTab = $(this);
-                        const newCode = $clickedTab.data('code');
-                        
-                        if (newCode && !$clickedTab.hasClass('active')) {
-                            $tabs.removeClass('active');
-                            $clickedTab.addClass('active');
-                            
-                            $display.fadeOut(150, function() {
-                                $display.html(`<pre><code>${newCode}</code></pre>`);
-                                $display.fadeIn(150);
-                            });
-                        }
-                    });
+                });
+                
+                if (codeBlocks.length > 0) {
+                    $display.text(codeBlocks[0]);
                 }
+                
+                $tabs.on('click', function(e) {
+                    e.preventDefault();
+                    
+                    const clickedIndex = $tabs.index(this);
+                    if (clickedIndex >= 0 && clickedIndex < codeBlocks.length) {
+                        $tabs.removeClass('active');
+                        $(this).addClass('active');
+                        
+                        $display.fadeOut(150, function() {
+                            $(this).text(codeBlocks[clickedIndex]).fadeIn(150);
+                        });
+                    }
+                });
             }
         });
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
         const [formatting, controls, translator] = await app.require(['composer/formatting', 'composer/controls', 'translator']);
+        
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
                 var composerTextarea;
@@ -229,57 +228,75 @@ $(document).ready(function () {
                 
                 if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
                     var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.visibility = 'hidden';
                     hiddenPicker.style.position = 'absolute';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.height = '0';
-                    hiddenPicker.style.padding = '0';
-                    hiddenPicker.style.margin = '0';
-                    hiddenPicker.style.border = '0';
+                    hiddenPicker.style.left = '-9999px';
+                    hiddenPicker.style.opacity = '0';
+                    hiddenPicker.style.width = '0px';
+                    hiddenPicker.style.height = '0px';
                     hiddenPicker.type = 'color';
                     hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
                     hiddenPicker.value = '#000000';
                     
-                    colorPickerButton.parentNode.insertBefore(hiddenPicker, colorPickerButton.nextSibling);
+                    document.body.appendChild(hiddenPicker);
                     
-                    hiddenPicker.addEventListener('input', function() {
+                    hiddenPicker.addEventListener('input', function(e) {
+                        const newColor = e.target.value;
+                        
                         if (composerTextarea) {
-                            var selectionStart = composerTextarea.selectionStart;
-                            var selectionEnd = composerTextarea.selectionEnd;
-                            var currentValue = composerTextarea.value;
+                            const currentValue = composerTextarea.value;
+                            const selectionStart = composerTextarea.selectionStart;
+                            const selectionEnd = composerTextarea.selectionEnd;
                             
-                            var beforeSelection = currentValue.substring(0, selectionStart);
-                            var afterSelection = currentValue.substring(selectionEnd);
+                            // 查找当前选中位置附近的颜色代码
+                            const beforeCursor = currentValue.substring(0, selectionStart);
+                            const afterCursor = currentValue.substring(selectionEnd);
                             
-                            var colorMatch = beforeSelection.match(/%\(#[0-9a-fA-F]{6}\)\[([^\]]*)\]$/);
-                            if (colorMatch) {
-                                var newValue = beforeSelection.replace(/%\(#[0-9a-fA-F]{6}\)\[([^\]]*)\]$/, `%(${this.value})[${colorMatch[1]}]`) + afterSelection;
-                                composerTextarea.value = newValue;
-                                composerTextarea.selectionStart = selectionStart - (colorMatch[0].length - `%(${this.value})[${colorMatch[1]}]`.length);
-                                composerTextarea.selectionEnd = composerTextarea.selectionStart;
+                            // 寻找最近的颜色语法 %(#xxxxxx)[
+                            const colorRegex = /%\(#[0-9a-fA-F]{6}\)\[/g;
+                            let match;
+                            let lastMatch = null;
+                            
+                            while ((match = colorRegex.exec(beforeCursor)) !== null) {
+                                lastMatch = match;
                             }
                             
-                            $(composerTextarea).trigger('input');
+                            if (lastMatch) {
+                                const startPos = beforeCursor.lastIndexOf('%(#');
+                                const endPos = beforeCursor.indexOf(')[', startPos) + 2;
+                                
+                                if (startPos !== -1 && endPos !== -1) {
+                                    const newColorCode = `%(${newColor})[`;
+                                    const newValue = currentValue.substring(0, startPos) + newColorCode + currentValue.substring(endPos);
+                                    
+                                    composerTextarea.value = newValue;
+                                    composerTextarea.selectionStart = startPos + 2;
+                                    composerTextarea.selectionEnd = startPos + 9;
+                                    
+                                    // 触发更新事件
+                                    $(composerTextarea).trigger('input').trigger('propertychange');
+                                }
+                            }
                         }
                     });
                 }
 
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
                     composerTextarea = textarea;
+                    const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
+                    
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文字') + ']');
+                        controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '%(#000000)[', ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     }
                     
-                    setTimeout(() => {
-                        var hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
-                        if (hiddenPicker) {
+                    if (hiddenPicker) {
+                        setTimeout(() => {
                             hiddenPicker.click();
-                        }
-                    }, 100);
+                        }, 100);
+                    }
                 });
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
@@ -337,20 +354,6 @@ console.log(hello);
 \`\`\`${strings.groupedcode_secondlang || 'python'}
 hello = 'world'
 print(hello)
-\`\`\`
-===`;
-                    controls.insertIntoTextarea(textarea, template);
-                });
-
-                formatting.addButtonDispatch('animatedcode', function (textarea, selectionStart, selectionEnd) {
-                    const template = `===animated-group
-\`\`\`javascript
-const hello = 'world';
-\`\`\`
-
-\`\`\`javascript
-const hello = 'world';
-console.log(hello);
 \`\`\`
 ===`;
                     controls.insertIntoTextarea(textarea, template);
