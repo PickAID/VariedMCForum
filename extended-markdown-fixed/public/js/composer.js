@@ -26,6 +26,16 @@ $(document).ready(function() {
                 name: 'ruby',
                 className: 'fa fa-language',
                 title: '插入音注标记'
+            },
+            {
+                name: 'superscript',
+                className: 'fa fa-superscript',
+                title: '上标'
+            },
+            {
+                name: 'subscript',
+                className: 'fa fa-subscript',
+                title: '下标'
             }
         ];
         
