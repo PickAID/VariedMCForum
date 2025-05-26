@@ -235,55 +235,43 @@ $(document).ready(function () {
         
         try {
             const tokenMap = createTokenMapping(oldTokens, newTokens);
-            
-            await animateRemoval(tokenMap.toRemove, $display);
-            await animateMovement(tokenMap.toKeep, $display);
-            await animateAddition(tokenMap.toAdd, $display);
-            
-            renderTokens(newTokens, $display);
-            
+            await executeAnimationSequence(tokenMap, $display);
         } finally {
             isAnimating = false;
         }
     }
 
     function createTokenMapping(oldTokens, newTokens) {
-        const oldMap = new Map();
-        const newMap = new Map();
+        const oldTokenMap = new Map(oldTokens.map(token => [token.key, token]));
+        const newTokenMap = new Map(newTokens.map(token => [token.key, token]));
         
-        oldTokens.forEach(token => {
-            oldMap.set(token.key, token);
-            if (token.tokens) {
-                token.tokens.forEach(t => oldMap.set(t.key, t));
-            }
-        });
+        const operations = {
+            keep: [],    // 保持不变的元素
+            remove: [],  // 需要删除的元素
+            add: []      // 需要添加的元素
+        };
         
-        newTokens.forEach(token => {
-            newMap.set(token.key, token);
-            if (token.tokens) {
-                token.tokens.forEach(t => newMap.set(t.key, t));
-            }
-        });
-        
-        const toRemove = [];
-        const toKeep = [];
-        const toAdd = [];
-        
-        oldMap.forEach((token, key) => {
-            if (!newMap.has(key)) {
-                toRemove.push(token);
+        oldTokenMap.forEach((token, key) => {
+            if (!newTokenMap.has(key)) {
+                operations.remove.push(token);
             } else {
-                toKeep.push(token);
+                operations.keep.push(token);
             }
         });
         
-        newMap.forEach((token, key) => {
-            if (!oldMap.has(key)) {
-                toAdd.push(token);
+        newTokenMap.forEach((token, key) => {
+            if (!oldTokenMap.has(key)) {
+                operations.add.push(token);
             }
         });
         
-        return { toRemove, toKeep, toAdd };
+        return operations;
+    }
+
+    async function executeAnimationSequence(machine, $display) {
+        await animateRemoval(machine.remove, $display);
+        await animateMovement(machine.keep, $display);
+        await animateAddition(machine.add, $display);
     }
 
     async function animateRemoval(tokensToRemove, $display) {
@@ -353,95 +341,63 @@ $(document).ready(function () {
         return div.innerHTML;
     }
 
-    ExtendedMarkdown.prepareFormattingTools = function () {
-        require(['composer/formatting'], function (formatting) {
-            if (formatting && formatting.addButtonDispatch) {
-                
-                formatting.addButtonDispatch('color', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const colorCode = prompt('请输入颜色代码 (例如: #ff0000, red, rgb(255,0,0))', '#ff0000');
-                    if (colorCode) {
-                        const replacement = selectedText ? 
-                            `%(${colorCode})[${selectedText}]` : 
-                            `%(${colorCode})[文字内容]`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + colorCode.length + 3;
-                            textarea.selectionEnd = selectionStart + colorCode.length + 7;
-                        }
-                    }
-                });
+    ExtendedMarkdown.prepareFormattingTools = async function () {
+        const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
+        
+        if (formatting && controls) {
+            formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '彩色文字';
+                controls.insertIntoTextarea(textarea, `%(#ff0000)[${text}]`);
+            });
 
-                formatting.addButtonDispatch('left', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const replacement = selectedText ? `|-${selectedText}` : `|-左对齐文字`;
-                    formatting.insertIntoTextarea(textarea, replacement);
-                    if (!selectedText) {
-                        textarea.selectionStart = selectionStart + 2;
-                        textarea.selectionEnd = selectionStart + 7;
-                    }
-                });
+            formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '左对齐文字';
+                controls.insertIntoTextarea(textarea, `|--${text}`);
+            });
 
-                formatting.addButtonDispatch('center', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const replacement = selectedText ? `|-${selectedText}-|` : `|-居中文字-|`;
-                    formatting.insertIntoTextarea(textarea, replacement);
-                    if (!selectedText) {
-                        textarea.selectionStart = selectionStart + 2;
-                        textarea.selectionEnd = selectionStart + 6;
-                    }
-                });
+            formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '居中文字';
+                controls.insertIntoTextarea(textarea, `|-${text}-|`);
+            });
 
-                formatting.addButtonDispatch('right', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const replacement = selectedText ? `${selectedText}-|` : `右对齐文字-|`;
-                    formatting.insertIntoTextarea(textarea, replacement);
-                    if (!selectedText) {
-                        textarea.selectionStart = selectionStart;
-                        textarea.selectionEnd = selectionStart + 4;
-                    }
-                });
+            formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '右对齐文字';
+                controls.insertIntoTextarea(textarea, `${text}-|`);
+            });
 
-                formatting.addButtonDispatch('justify', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const replacement = selectedText ? `|=${selectedText}=|` : `|=两端对齐文字=|`;
-                    formatting.insertIntoTextarea(textarea, replacement);
-                    if (!selectedText) {
-                        textarea.selectionStart = selectionStart + 2;
-                        textarea.selectionEnd = selectionStart + 8;
-                    }
-                });
+            formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '两端对齐文字';
+                controls.insertIntoTextarea(textarea, `|=${text}=|`);
+            });
 
-                formatting.addButtonDispatch('textheader', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const headerId = prompt('请输入锚点ID', 'header-id');
-                    if (headerId) {
-                        const replacement = selectedText ? 
-                            `#${headerId}(${selectedText})` : 
-                            `#${headerId}(标题文字)`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + headerId.length + 2;
-                            textarea.selectionEnd = selectionStart + headerId.length + 6;
-                        }
-                    }
-                });
+            formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '标题文字';
+                controls.insertIntoTextarea(textarea, `#anchor-id(${text})`);
+            });
 
-                formatting.addButtonDispatch('groupedcode', function(textarea, selectionStart, selectionEnd) {
-                    const template = `===group
+            formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
+                const template = `===group
 \`\`\`javascript
-console.log('Hello World');
+const hello = 'world';
+console.log(hello);
 \`\`\`
 
 \`\`\`python
-print('Hello World')
+hello = 'world'
+print(hello)
 \`\`\`
 ===`;
-                    formatting.insertIntoTextarea(textarea, template);
-                });
+                controls.insertIntoTextarea(textarea, template);
+            });
 
-                formatting.addButtonDispatch('animatedcode', function(textarea, selectionStart, selectionEnd) {
-                    const template = `===animated-group
+            formatting.addButtonDispatch('animatedcode', function (textarea, selectionStart, selectionEnd) {
+                const template = `===animated-group
 \`\`\`javascript
 const hello = 'world';
 \`\`\`
@@ -451,85 +407,33 @@ const hello = 'world';
 console.log(hello);
 \`\`\`
 ===`;
-                    formatting.insertIntoTextarea(textarea, template);
-                });
+                controls.insertIntoTextarea(textarea, template);
+            });
 
-                formatting.addButtonDispatch('bubbleinfo', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const tooltipText = prompt('请输入提示文字', '这是一个提示');
-                    if (tooltipText) {
-                        const replacement = selectedText ? 
-                            `°${selectedText}°(${tooltipText})` : 
-                            `°悬停文字°(${tooltipText})`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + 1;
-                            textarea.selectionEnd = selectionStart + 5;
-                        }
-                    }
-                });
+            formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const text = selectedText || '悬停文字';
+                controls.insertIntoTextarea(textarea, `°${text}°(提示内容)`);
+            });
 
-                formatting.addButtonDispatch('collapsible', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const title = prompt('请输入折叠标题', '点击展开');
-                    if (title) {
-                        const replacement = selectedText ? 
-                            `[spoiler=${title}]${selectedText}[/spoiler]` : 
-                            `[spoiler=${title}]隐藏内容[/spoiler]`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + title.length + 10;
-                            textarea.selectionEnd = selectionStart + title.length + 14;
-                        }
-                    }
-                });
+            formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
+                const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                const content = selectedText || '隐藏内容';
+                controls.insertIntoTextarea(textarea, `[spoiler=点击展开]${content}[/spoiler]`);
+            });
 
-                formatting.addButtonDispatch('noteinfo', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const title = prompt('请输入信息标题', '信息');
-                    if (title) {
-                        const replacement = selectedText ? 
-                            `!!! info [${title}]: ${selectedText}` : 
-                            `!!! info [${title}]: 这是一条信息提示`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + title.length + 15;
-                            textarea.selectionEnd = selectionStart + title.length + 23;
-                        }
-                    }
-                });
+            formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '!!! info [信息]: 这是一条信息提示');
+            });
 
-                formatting.addButtonDispatch('notewarning', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const title = prompt('请输入警告标题', '警告');
-                    if (title) {
-                        const replacement = selectedText ? 
-                            `!!! warning [${title}]: ${selectedText}` : 
-                            `!!! warning [${title}]: 这是一条警告提示`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + title.length + 18;
-                            textarea.selectionEnd = selectionStart + title.length + 26;
-                        }
-                    }
-                });
+            formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '!!! warning [警告]: 这是一条警告提示');
+            });
 
-                formatting.addButtonDispatch('noteimportant', function(textarea, selectionStart, selectionEnd) {
-                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                    const title = prompt('请输入重要标题', '重要');
-                    if (title) {
-                        const replacement = selectedText ? 
-                            `!!! important [${title}]: ${selectedText}` : 
-                            `!!! important [${title}]: 这是一条重要提示`;
-                        formatting.insertIntoTextarea(textarea, replacement);
-                        if (!selectedText) {
-                            textarea.selectionStart = selectionStart + title.length + 20;
-                            textarea.selectionEnd = selectionStart + title.length + 28;
-                        }
-                    }
-                });
-            }
-        });
+            formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
+                controls.insertIntoTextarea(textarea, '!!! important [重要]: 这是一条重要提示');
+            });
+        }
     };
 
     function pageReady() {
@@ -577,10 +481,6 @@ console.log(hello);
         initTimeout = setTimeout(() => {
             pageReady();
         }, 150);
-    });
-    
-    $(window).on('action:composer.enhanced', function (evt, data) {
-        ExtendedMarkdown.prepareFormattingTools();
     });
     
     pageReady();
