@@ -21,21 +21,6 @@ $(document).ready(function() {
                 name: 'collapsible',
                 className: 'fa fa-compress', 
                 title: '插入折叠框'
-            },
-            {
-                name: 'ruby',
-                className: 'fa fa-language',
-                title: '插入音注标记'
-            },
-            {
-                name: 'superscript',
-                className: 'fa fa-superscript',
-                title: '上标'
-            },
-            {
-                name: 'subscript',
-                className: 'fa fa-subscript',
-                title: '下标'
             }
         ];
         
@@ -85,33 +70,6 @@ $(document).ready(function() {
             e.stopPropagation();
             const textarea = $('.composer textarea');
             const text = '\n[spoiler=点击展开]\n隐藏内容\n[/spoiler]\n';
-            insertText(textarea, text);
-            return false;
-        });
-        
-        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="ruby"]', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const textarea = $('.composer textarea');
-            const text = '[ruby=mó gǎi]魔改[/ruby]';
-            insertText(textarea, text);
-            return false;
-        });
-        
-        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="superscript"]', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const textarea = $('.composer textarea');
-            const text = '^上标^';
-            insertText(textarea, text);
-            return false;
-        });
-        
-        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="subscript"]', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const textarea = $('.composer textarea');
-            const text = '~下标~';
             insertText(textarea, text);
             return false;
         });
