@@ -589,31 +589,12 @@ const ExtendedMarkdown = {
         ];
 
         payload.options = payload.options.concat(formatting);
-
         return payload;
     },
     
     async sanitizerConfig(config) {
         config.allowedAttributes['a'].push('name');
         return config;
-    },
-
-    async composerFormatting(payload) {
-        const { name } = payload;
-        
-        switch (name) {
-            case 'ruby':
-                payload.options.text = '[ruby=读音]文本[/ruby]';
-                break;
-            case 'superscript':
-                payload.options.text = '^上标^';
-                break;
-            case 'subscript':
-                payload.options.text = '~下标~';
-                break;
-        }
-        
-        return payload;
     }
 };
 
