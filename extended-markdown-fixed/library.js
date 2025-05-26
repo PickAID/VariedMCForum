@@ -19,7 +19,7 @@ const noteRegex = /(<code.*?>.*?<\/code>)|<p dir="auto">!!! (info|warning|import
 const superscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])~([^\s`<>~]+)~/g;
 
-const rubyRegex = /(<code.*?>.*?<\/code>)|@([^@(]+)\(([^)]+)\)/g;
+const rubyRegex = /(<pre><code[\s\S]*?<\/code><\/pre>|<code[\s\S]*?<\/code>)|(?<![\w@])@([^@()\s]+)\(([^)]+)\)(?![\w(])/g;
 
 const extendedTabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
@@ -378,9 +378,9 @@ function applyNotes(textContent) {
 }
 
 function applyRuby(textContent) {
-    return textContent.replace(rubyRegex, function (match, code, text, ruby) {
-        if (typeof (code) !== "undefined") {
-            return code;
+    return textContent.replace(rubyRegex, function (match, codeBlock, text, ruby) {
+        if (typeof (codeBlock) !== "undefined") {
+            return codeBlock;
         }
         return `<ruby>${text}<rt>${ruby}</rt></ruby>`;
     });
