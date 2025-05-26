@@ -152,40 +152,41 @@ $(document).ready(function () {
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
                 var composerTextarea;
+                var currentSelectionStart, currentSelectionEnd;
                 var colorPickerButton = document.querySelector('.btn[data-format="color"]');
                 
                 if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
-                    var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.position = 'absolute';
-                    hiddenPicker.style.left = '-9999px';
-                    hiddenPicker.style.top = '-9999px';
-                    hiddenPicker.style.width = '1px';
-                    hiddenPicker.style.height = '1px';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.type = 'color';
-                    hiddenPicker.value = '#000000';
-                    hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
-                    document.body.appendChild(hiddenPicker);
+                    var colorPicker = document.createElement("input");
+                    colorPicker.type = 'color';
+                    colorPicker.value = '#000000';
+                    colorPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
+                    colorPicker.style.position = 'absolute';
+                    colorPicker.style.left = '-9999px';
+                    colorPicker.style.opacity = '0';
+                    colorPicker.style.pointerEvents = 'none';
+                    document.body.appendChild(colorPicker);
                     
-                    hiddenPicker.addEventListener('change', function() {
+                    colorPicker.addEventListener('input', function() {
                         if (composerTextarea && this.value) {
                             var value = composerTextarea.value;
-                            var selectionStart = composerTextarea.selectionStart;
-                            var selectionEnd = composerTextarea.selectionEnd;
+                            var newColorCode = this.value;
                             
-                            var beforeCursor = value.substring(0, selectionStart);
-                            var colorRegex = /%\(#[0-9a-fA-F]{6}\)$/;
-                            var match = beforeCursor.match(colorRegex);
+                            var beforeSelection = value.substring(0, currentSelectionStart);
+                            var afterSelection = value.substring(currentSelectionEnd);
                             
-                            if (match) {
-                                var matchStart = beforeCursor.lastIndexOf(match[0]);
-                                var newValue = value.substring(0, matchStart) + `%(${this.value})` + value.substring(selectionStart);
+                            var colorPattern = /%(#[0-9a-fA-F]{6})\[/;
+                            var colorMatch = beforeSelection.match(colorPattern);
+                            
+                            if (colorMatch) {
+                                var matchIndex = beforeSelection.lastIndexOf(colorMatch[0]);
+                                var newValue = value.substring(0, matchIndex) + 
+                                              `%(${newColorCode})[` + 
+                                              value.substring(matchIndex + colorMatch[0].length);
                                 
                                 composerTextarea.value = newValue;
-                                composerTextarea.selectionStart = matchStart + 2;
-                                composerTextarea.selectionEnd = matchStart + 9;
-                                
-                                $(composerTextarea).trigger('input').trigger('propertychange');
+                                var newPosition = matchIndex + 2;
+                                composerTextarea.setSelectionRange(newPosition, newPosition + 7);
+                                $(composerTextarea).trigger('input');
                             }
                         }
                     });
@@ -193,18 +194,52 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
                     composerTextarea = textarea;
+                    currentSelectionStart = selectionStart;
+                    currentSelectionEnd = selectionEnd;
+                    
                     if (selectionStart === selectionEnd) {
                         controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
+                        currentSelectionStart = selectionStart + 2;
+                        currentSelectionEnd = selectionStart + 9;
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '%(#000000)[', ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
+                        currentSelectionStart = selectionStart + 2;
+                        currentSelectionEnd = selectionStart + 9;
                     }
                     
-                    const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
-                    if (hiddenPicker) {
-                        setTimeout(() => {
-                            hiddenPicker.click();
+                    var colorPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
+                    if (colorPicker) {
+                        colorPicker.style.position = 'fixed';
+                        colorPicker.style.left = '50%';
+                        colorPicker.style.top = '50%';
+                        colorPicker.style.transform = 'translate(-50%, -50%)';
+                        colorPicker.style.opacity = '1';
+                        colorPicker.style.pointerEvents = 'auto';
+                        colorPicker.style.zIndex = '9999';
+                        colorPicker.style.width = '50px';
+                        colorPicker.style.height = '50px';
+                        
+                        colorPicker.focus();
+                        colorPicker.click();
+                        
+                        var hideColorPicker = function() {
+                            colorPicker.style.position = 'absolute';
+                            colorPicker.style.left = '-9999px';
+                            colorPicker.style.opacity = '0';
+                            colorPicker.style.pointerEvents = 'none';
+                            colorPicker.removeEventListener('blur', hideColorPicker);
+                            document.removeEventListener('click', hideColorPicker);
+                        };
+                        
+                        setTimeout(function() {
+                            colorPicker.addEventListener('blur', hideColorPicker);
+                            document.addEventListener('click', function(e) {
+                                if (e.target !== colorPicker) {
+                                    hideColorPicker();
+                                }
+                            });
                         }, 100);
                     }
                 });
