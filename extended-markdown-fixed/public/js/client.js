@@ -117,12 +117,6 @@ $(document).ready(function () {
                 alert(tooltip);
             }
         });
-        
-        $('[data-bs-toggle="tooltip"]').each(function() {
-            if (window.bootstrap && window.bootstrap.Tooltip) {
-                new bootstrap.Tooltip(this);
-            }
-        });
     }
 
     function initStepsNavigation() {
@@ -223,66 +217,53 @@ $(document).ready(function () {
         
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
-                var composerTextarea;
-                var colorPickerButton = document.querySelector('.btn[data-format="color"]');
-                
-                if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
-                    var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.position = 'absolute';
-                    hiddenPicker.style.left = '-9999px';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.style.width = '0px';
-                    hiddenPicker.style.height = '0px';
-                    hiddenPicker.type = 'color';
-                    hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
-                    hiddenPicker.value = '#000000';
+                let composerTextarea;
+                let hiddenColorPicker;
+
+                function createColorPicker() {
+                    if (!hiddenColorPicker) {
+                        hiddenColorPicker = document.createElement("input");
+                        hiddenColorPicker.type = 'color';
+                        hiddenColorPicker.style.position = 'absolute';
+                        hiddenColorPicker.style.left = '-9999px';
+                        hiddenColorPicker.style.visibility = 'hidden';
+                        hiddenColorPicker.style.width = '0';
+                        hiddenColorPicker.style.height = '0';
+                        hiddenColorPicker.id = 'extended-markdown-color-picker';
+                        document.body.appendChild(hiddenColorPicker);
+
+                        hiddenColorPicker.addEventListener('input', function() {
+                            if (composerTextarea) {
+                                updateColorInTextarea(this.value);
+                            }
+                        });
+                    }
+                }
+
+                function updateColorInTextarea(newColor) {
+                    const value = composerTextarea.value;
+                    const start = composerTextarea.selectionStart;
+                    const end = composerTextarea.selectionEnd;
                     
-                    document.body.appendChild(hiddenPicker);
+                    const beforeCursor = value.substring(0, start);
+                    const afterCursor = value.substring(end);
                     
-                    hiddenPicker.addEventListener('input', function(e) {
-                        const newColor = e.target.value;
+                    const colorMatch = beforeCursor.match(/%\(#[0-9a-fA-F]{6}\)$/);
+                    if (colorMatch) {
+                        const matchStart = beforeCursor.lastIndexOf(colorMatch[0]);
+                        const newValue = value.substring(0, matchStart) + `%(${newColor})` + value.substring(start);
                         
-                        if (composerTextarea) {
-                            const currentValue = composerTextarea.value;
-                            const selectionStart = composerTextarea.selectionStart;
-                            const selectionEnd = composerTextarea.selectionEnd;
-                            
-                            // 查找当前选中位置附近的颜色代码
-                            const beforeCursor = currentValue.substring(0, selectionStart);
-                            const afterCursor = currentValue.substring(selectionEnd);
-                            
-                            // 寻找最近的颜色语法 %(#xxxxxx)[
-                            const colorRegex = /%\(#[0-9a-fA-F]{6}\)\[/g;
-                            let match;
-                            let lastMatch = null;
-                            
-                            while ((match = colorRegex.exec(beforeCursor)) !== null) {
-                                lastMatch = match;
-                            }
-                            
-                            if (lastMatch) {
-                                const startPos = beforeCursor.lastIndexOf('%(#');
-                                const endPos = beforeCursor.indexOf(')[', startPos) + 2;
-                                
-                                if (startPos !== -1 && endPos !== -1) {
-                                    const newColorCode = `%(${newColor})[`;
-                                    const newValue = currentValue.substring(0, startPos) + newColorCode + currentValue.substring(endPos);
-                                    
-                                    composerTextarea.value = newValue;
-                                    composerTextarea.selectionStart = startPos + 2;
-                                    composerTextarea.selectionEnd = startPos + 9;
-                                    
-                                    // 触发更新事件
-                                    $(composerTextarea).trigger('input').trigger('propertychange');
-                                }
-                            }
-                        }
-                    });
+                        composerTextarea.value = newValue;
+                        composerTextarea.selectionStart = matchStart + 2;
+                        composerTextarea.selectionEnd = matchStart + 9;
+                        
+                        $(composerTextarea).trigger('input');
+                    }
                 }
 
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
                     composerTextarea = textarea;
-                    const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
+                    createColorPicker();
                     
                     if (selectionStart === selectionEnd) {
                         controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
@@ -292,11 +273,11 @@ $(document).ready(function () {
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     }
                     
-                    if (hiddenPicker) {
-                        setTimeout(() => {
-                            hiddenPicker.click();
-                        }, 100);
-                    }
+                    setTimeout(() => {
+                        if (hiddenColorPicker) {
+                            hiddenColorPicker.click();
+                        }
+                    }, 200);
                 });
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
