@@ -117,37 +117,44 @@ $(document).ready(function () {
                 $container.data('steps-initialized', true);
                 
                 const $tabs = $container.find('.nav-link');
-                const $prevBtn = $container.find('.step-prev, .step-nav-btn.step-prev');
-                const $nextBtn = $container.find('.step-next, .step-nav-btn.step-next');
+                const $prevBtn = $container.find('.step-nav-btn.step-prev');
+                const $nextBtn = $container.find('.step-nav-btn.step-next');
                 const $currentStep = $container.find('.current-step');
+                const $totalSteps = $container.find('.total-steps');
                 const totalSteps = $tabs.length;
                 let currentIndex = 0;
+                
+                if ($totalSteps.length) {
+                    $totalSteps.text(totalSteps);
+                }
                 
                 function updateButtons() {
                     $prevBtn.prop('disabled', currentIndex === 0);
                     $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
-                    $currentStep.text(currentIndex + 1);
+                    if ($currentStep.length) {
+                        $currentStep.text(currentIndex + 1);
+                    }
                 }
                 
-                $prevBtn.on('click', function(e) {
+                $prevBtn.off('click.steps-nav').on('click.steps-nav', function(e) {
                     e.preventDefault();
                     if (currentIndex > 0) {
                         currentIndex--;
-                        $tabs.eq(currentIndex).click();
+                        $tabs.eq(currentIndex).trigger('click');
                         updateButtons();
                     }
                 });
                 
-                $nextBtn.on('click', function(e) {
+                $nextBtn.off('click.steps-nav').on('click.steps-nav', function(e) {
                     e.preventDefault();
                     if (currentIndex < totalSteps - 1) {
                         currentIndex++;
-                        $tabs.eq(currentIndex).click();
+                        $tabs.eq(currentIndex).trigger('click');
                         updateButtons();
                     }
                 });
                 
-                $tabs.on('click', function(e) {
+                $tabs.off('click.steps-tab').on('click.steps-tab', function(e) {
                     currentIndex = $tabs.index(this);
                     updateButtons();
                 });
@@ -329,7 +336,10 @@ $(document).ready(function () {
         setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
-        initializeStepsNavigation();
+        
+        setTimeout(() => {
+            initializeStepsNavigation();
+        }, 500);
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
@@ -337,4 +347,12 @@ $(document).ready(function () {
             });
         });
     }
+
+    $(document).on('action:posts.loaded action:topic.loaded', function() {
+        setTimeout(() => {
+            initializeStepsNavigation();
+            initializeTabComponents();
+            initializeCollapse();
+        }, 100);
+    });
 });
