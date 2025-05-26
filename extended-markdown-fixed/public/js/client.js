@@ -169,7 +169,8 @@ $(document).ready(function () {
                         }
                     });
                     
-                    $tabs.off('click.step-update').on('click.step-update', function() {
+                    $tabs.off('click.step-nav').on('click.step-nav', function(e) {
+                        e.preventDefault();
                         currentIndex = $tabs.index(this);
                         updateStepNavigation();
                     });
@@ -184,65 +185,264 @@ $(document).ready(function () {
         $('.animated-code-group-container').each(function() {
             const $container = $(this);
             const animatedId = $container.data('animated-id');
-            const $display = $container.find(`#${animatedId}-display`);
+            const $display = $container.find('.animated-code-display code');
             const $tabs = $container.find('.nav-link');
             
-            let currentContent = '';
-            let isAnimating = false;
-            
-            if ($tabs.length > 0) {
-                const firstTab = $tabs.first();
-                const firstLang = firstTab.text().trim();
-                currentContent = $display.text();
-            }
-            
-            $tabs.on('click', function(e) {
-                e.preventDefault();
+            if (!$container.data('animated-initialized') && $tabs.length > 0) {
+                $container.data('animated-initialized', true);
                 
-                if (isAnimating) return;
-                
-                const $clickedTab = $(this);
-                const targetLang = $clickedTab.text().trim();
-                
-                $tabs.removeClass('active');
-                $clickedTab.addClass('active');
-                
-                animateCodeChange($display, currentContent, targetLang).then(() => {
-                    currentContent = $display.text();
+                // 解析所有代码块为 tokens
+                const codeBlocks = [];
+                $tabs.each(function() {
+                    const codeContent = $(this).data('code-content');
+                    const lang = $(this).data('lang');
+                    if (codeContent) {
+                        codeBlocks.push({
+                            content: codeContent,
+                            lang: lang,
+                            tokens: tokenizeCode(codeContent, lang)
+                        });
+                    }
                 });
-            });
+                
+                // 初始化显示第一个代码块
+                if (codeBlocks.length > 0) {
+                    renderTokens($display, codeBlocks[0].tokens, codeBlocks[0].lang);
+                }
+                
+                // 绑定标签切换事件
+                $tabs.on('click', function(e) {
+                    e.preventDefault();
+                    
+                    const clickedIndex = $tabs.index(this);
+                    if (clickedIndex >= 0 && clickedIndex < codeBlocks.length) {
+                        $tabs.removeClass('active');
+                        $(this).addClass('active');
+                        
+                        // 执行魔法移动动画
+                        const currentTokens = getCurrentTokens($display);
+                        const newTokens = codeBlocks[clickedIndex].tokens;
+                        
+                        animateMagicMove($display, currentTokens, newTokens, codeBlocks[clickedIndex].lang);
+                    }
+                });
+            }
         });
     }
 
-    async function animateCodeChange($display, oldContent, newLang) {
-        isAnimating = true;
+    // Token 化代码
+    function tokenizeCode(code, lang) {
+        const lines = code.split('\n');
+        const tokens = [];
+        let tokenId = 0;
         
-        try {
-            $display.addClass('code-transitioning');
-            
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
-            const newContent = generateCodeForLanguage(newLang);
-            $display.text(newContent);
-            
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            $display.removeClass('code-transitioning');
-            
-        } finally {
-            isAnimating = false;
-        }
+        lines.forEach((line, lineIndex) => {
+            if (line.trim()) {
+                // 简单的基于正则的 token 化
+                const lineTokens = tokenizeLine(line, tokenId, lineIndex);
+                tokens.push(...lineTokens);
+                tokenId += lineTokens.length;
+            } else {
+                tokens.push({
+                    id: tokenId++,
+                    type: 'newline',
+                    content: '',
+                    line: lineIndex,
+                    hash: hashString('')
+                });
+            }
+        });
+        
+        return tokens;
     }
 
-    function generateCodeForLanguage(lang) {
-        const codeTemplates = {
-            'Javascript': 'const hello = \'world\';\nconsole.log(hello);',
-            'Python': 'hello = "world"\nprint(hello)',
-            'Java': 'public class Test {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}',
-            'C++': '#include <iostream>\nint main() {\n    std::cout << "Hello World" << std::endl;\n    return 0;\n}'
-        };
+    function tokenizeLine(line, startId, lineIndex) {
+        const tokens = [];
+        const patterns = [
+            { type: 'keyword', regex: /\b(const|let|var|function|class|if|else|for|while|return|import|export|from|as|async|await)\b/g },
+            { type: 'string', regex: /(["'`])((?:\\.|(?!\1)[^\\])*?)\1/g },
+            { type: 'number', regex: /\b\d+(\.\d+)?\b/g },
+            { type: 'comment', regex: /\/\/.*$|\/\*[\s\S]*?\*\//g },
+            { type: 'operator', regex: /[+\-*/%=<>!&|^~?:]/g },
+            { type: 'punctuation', regex: /[{}[\]();,\.]/g },
+            { type: 'identifier', regex: /\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g }
+        ];
         
-        return codeTemplates[lang] || 'console.log("Hello World");';
+        let matches = [];
+        patterns.forEach(pattern => {
+            let match;
+            while ((match = pattern.regex.exec(line)) !== null) {
+                matches.push({
+                    type: pattern.type,
+                    content: match[0],
+                    start: match.index,
+                    end: match.index + match[0].length
+                });
+            }
+        });
+        
+        // 按位置排序
+        matches.sort((a, b) => a.start - b.start);
+        
+        // 填充空白和创建 tokens
+        let pos = 0;
+        let tokenId = startId;
+        
+        matches.forEach(match => {
+            // 添加之前的空白
+            if (pos < match.start) {
+                const whitespace = line.slice(pos, match.start);
+                if (whitespace.trim() === '') {
+                    tokens.push({
+                        id: tokenId++,
+                        type: 'whitespace',
+                        content: whitespace,
+                        line: lineIndex,
+                        hash: hashString(whitespace)
+                    });
+                }
+            }
+            
+            // 添加匹配的 token
+            tokens.push({
+                id: tokenId++,
+                type: match.type,
+                content: match.content,
+                line: lineIndex,
+                hash: hashString(match.content + match.type)
+            });
+            
+            pos = match.end;
+        });
+        
+        // 添加行尾剩余内容
+        if (pos < line.length) {
+            const remaining = line.slice(pos);
+            tokens.push({
+                id: tokenId++,
+                type: 'text',
+                content: remaining,
+                line: lineIndex,
+                hash: hashString(remaining)
+            });
+        }
+        
+        return tokens;
+    }
+
+    function hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash;
+    }
+
+    function renderTokens($display, tokens, lang) {
+        const html = tokens.map(token => {
+            const className = token.type ? `token ${token.type}` : '';
+            return `<span class="${className}" data-token-id="${token.id}" data-hash="${token.hash}">${escapeHtml(token.content)}</span>`;
+        }).join('');
+        
+        $display.html(html);
+        $display.attr('class', `language-${lang}`);
+    }
+
+    function getCurrentTokens($display) {
+        const tokens = [];
+        $display.find('span[data-token-id]').each(function() {
+            const $span = $(this);
+            tokens.push({
+                id: parseInt($span.data('token-id')),
+                hash: parseInt($span.data('hash')),
+                content: $span.text(),
+                element: $span[0]
+            });
+        });
+        return tokens;
+    }
+
+    async function animateMagicMove($display, oldTokens, newTokens, lang) {
+        const operations = computeTokenOperations(oldTokens, newTokens);
+        
+        // 阶段 1: 标记要删除的 tokens
+        operations.removed.forEach(token => {
+            if (token.element) {
+                $(token.element).addClass('magic-move-leaving');
+            }
+        });
+        
+        await sleep(150);
+        
+        // 阶段 2: 移除已删除的 tokens
+        operations.removed.forEach(token => {
+            if (token.element) {
+                $(token.element).remove();
+            }
+        });
+        
+        // 阶段 3: 添加新 tokens 并标记
+        operations.added.forEach(addOp => {
+            const $newSpan = $(`<span class="token ${addOp.token.type || ''} magic-move-entering" data-token-id="${addOp.token.id}" data-hash="${addOp.token.hash}">${escapeHtml(addOp.token.content)}</span>`);
+            
+            if (addOp.position === 'start') {
+                $display.prepend($newSpan);
+            } else if (addOp.position === 'end') {
+                $display.append($newSpan);
+            } else if (addOp.afterElement) {
+                $(addOp.afterElement).after($newSpan);
+            } else {
+                $display.append($newSpan);
+            }
+        });
+        
+        await sleep(50);
+        
+        // 阶段 4: 清理动画类
+        $display.find('.magic-move-entering').removeClass('magic-move-entering');
+        
+        // 更新语言类
+        $display.attr('class', `language-${lang}`);
+    }
+
+    function computeTokenOperations(oldTokens, newTokens) {
+        const oldMap = new Map(oldTokens.map(t => [t.hash, t]));
+        const newMap = new Map(newTokens.map(t => [t.hash, t]));
+        
+        const removed = oldTokens.filter(t => !newMap.has(t.hash));
+        const added = [];
+        
+        newTokens.forEach((newToken, index) => {
+            if (!oldMap.has(newToken.hash)) {
+                let afterElement = null;
+                let position = 'end';
+                
+                if (index > 0) {
+                    const prevToken = newTokens[index - 1];
+                    const prevElement = oldMap.get(prevToken.hash);
+                    if (prevElement && prevElement.element) {
+                        afterElement = prevElement.element;
+                        position = 'after';
+                    }
+                } else {
+                    position = 'start';
+                }
+                
+                added.push({
+                    token: newToken,
+                    position: position,
+                    afterElement: afterElement
+                });
+            }
+        });
+        
+        return { removed, added };
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     function escapeHtml(text) {
@@ -257,57 +457,69 @@ $(document).ready(function () {
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
                 var composerTextarea;
-                var colorPickerButton = document.querySelector('.btn[data-format="color"]');
                 
-                if (colorPickerButton) {
+                // 创建隐藏的颜色选择器
+                var colorPickerButton = document.querySelector('.btn[data-format="color"]');
+                if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
                     var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.visibility = 'hidden';
-                    hiddenPicker.style.width = 0;
-                    hiddenPicker.style.padding = 0;
-                    hiddenPicker.style.margin = 0;
-                    hiddenPicker.style.height = 0;
-                    hiddenPicker.style.border = 0;
+                    hiddenPicker.style.position = 'absolute';
+                    hiddenPicker.style.left = '-9999px';
+                    hiddenPicker.style.opacity = '0';
+                    hiddenPicker.style.width = '1px';
+                    hiddenPicker.style.height = '1px';
                     hiddenPicker.type = 'color';
-                    hiddenPicker.id = 'extended-markdown-colorpicker';
-                    colorPickerButton.parentNode.insertBefore(hiddenPicker, colorPickerButton.nextSibling);
+                    hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
+                    hiddenPicker.value = '#000000';
                     
-                    hiddenPicker.addEventListener('input', function() {
-                        var selectionStart = composerTextarea.selectionStart;
-                        var selectionEnd = composerTextarea.selectionEnd;
-                        var currentValue = composerTextarea.value;
-                        var colorRegex = /%\(#[0-9a-fA-F]{6}\)/;
-                        var beforeCursor = currentValue.slice(0, selectionStart);
-                        var afterCursor = currentValue.slice(selectionEnd);
-                        
-                        var match = beforeCursor.match(/.*%\(#[0-9a-fA-F]{0,6}$/);
-                        if (match) {
-                            var startPos = match.index + match[0].indexOf('%(#');
-                            composerTextarea.value = currentValue.slice(0, startPos + 2) + this.value + ')' + currentValue.slice(selectionStart);
-                            composerTextarea.selectionStart = composerTextarea.selectionEnd = startPos + 2 + this.value.length + 1;
+                    document.body.appendChild(hiddenPicker);
+                    
+                    hiddenPicker.addEventListener('change', function() {
+                        if (composerTextarea) {
+                            const colorValue = this.value;
+                            const start = composerTextarea.selectionStart;
+                            const end = composerTextarea.selectionEnd;
+                            const text = composerTextarea.value;
+                            
+                            // 查找颜色值的位置并替换
+                            const beforeCursor = text.substring(0, start);
+                            const colorMatch = beforeCursor.match(/%\(#[0-9a-fA-F]{6}\)\[$/);
+                            
+                            if (colorMatch) {
+                                const colorStart = start - colorMatch[0].length + 2;
+                                const colorEnd = colorStart + 7;
+                                
+                                composerTextarea.value = text.substring(0, colorStart) + colorValue + text.substring(colorEnd);
+                                composerTextarea.selectionStart = colorEnd;
+                                composerTextarea.selectionEnd = colorEnd;
+                                
+                                // 触发更新事件
+                                $(composerTextarea).trigger('input').trigger('propertychange');
+                            }
                         }
-                        
-                        $(composerTextarea).trigger('input');
                     });
                 }
 
                 formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
                     composerTextarea = textarea;
+                    const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
+                    
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '%(#ff0000)[彩色文字]');
+                        controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || 'colored text') + ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
+                        controls.wrapSelectionInTextareaWith(textarea, '%(#000000)[', ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     }
+                    
                     if (hiddenPicker) {
-                        hiddenPicker.click();
+                        setTimeout(() => hiddenPicker.click(), 100);
                     }
                 });
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|-左对齐文字');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 7);
+                        controls.insertIntoTextarea(textarea, '|-' + (strings.align_left || 'left aligned text'));
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_left || 'left aligned text').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '|-', '');
                     }
@@ -315,8 +527,8 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|-居中文字-|');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 6);
+                        controls.insertIntoTextarea(textarea, '|-' + (strings.align_center || 'center aligned text') + '-|');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_center || 'center aligned text').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
                     }
@@ -324,8 +536,8 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '右对齐文字-|');
-                        controls.updateTextareaSelection(textarea, selectionStart, selectionStart + 5);
+                        controls.insertIntoTextarea(textarea, (strings.align_right || 'right aligned text') + '-|');
+                        controls.updateTextareaSelection(textarea, selectionStart, selectionStart + (strings.align_right || 'right aligned text').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '', '-|');
                     }
@@ -333,8 +545,8 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|=两端对齐文字=|');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 8);
+                        controls.insertIntoTextarea(textarea, '|=' + (strings.align_justify || 'justified text') + '=|');
+                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_justify || 'justified text').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
                     }
@@ -342,23 +554,21 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '#anchor-id(标题文字)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 10);
+                        controls.insertIntoTextarea(textarea, '#' + (strings.textheader_anchor || 'anchor-id') + '(' + (strings.textheader_title || 'Header Title') + ')');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.textheader_anchor || 'anchor-id').length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '#anchor-id(', ')');
+                        controls.wrapSelectionInTextareaWith(textarea, '#' + (strings.textheader_anchor || 'anchor-id') + '(', ')');
                     }
                 });
 
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
                     const template = `===group
-\`\`\`javascript
-const hello = 'world';
-console.log(hello);
+\`\`\`${strings.groupedcode_firstlang || 'javascript'}
+
 \`\`\`
 
-\`\`\`python
-hello = 'world'
-print(hello)
+\`\`\`${strings.groupedcode_secondlang || 'python'}
+
 \`\`\`
 ===`;
                     controls.insertIntoTextarea(textarea, template);
@@ -380,8 +590,8 @@ console.log(hello);
 
                 formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '°悬停文字°(提示内容)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 5);
+                        controls.insertIntoTextarea(textarea, '°' + (strings.bubbleinfo_text || 'tooltip content') + '°(提示内容)');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.bubbleinfo_text || 'tooltip content').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '°', '°(提示内容)');
                     }
@@ -389,8 +599,8 @@ console.log(hello);
 
                 formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]隐藏内容[/spoiler]');
-                        controls.updateTextareaSelection(textarea, selectionStart + 15, selectionStart + 19);
+                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]' + (strings.spoiler || 'hidden content') + '[/spoiler]');
+                        controls.updateTextareaSelection(textarea, selectionStart + 15, selectionStart + 15 + (strings.spoiler || 'hidden content').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '[spoiler=点击展开]', '[/spoiler]');
                     }
