@@ -83,7 +83,7 @@ $(document).ready(function () {
                 $button.data('collapse-initialized', true);
                 
                 const targetId = $button.attr('data-bs-target');
-                const $target = $(targetId);
+                const $target = $('#' + targetId);
                 
                 if ($target.length) {
                     const $icon = $button.find('.collapse-icon');
@@ -109,6 +109,43 @@ $(document).ready(function () {
         });
     }
 
+    function initializeAnimatedCodeGroups() {
+        $('.animated-code-group-container').each(function() {
+            const $container = $(this);
+            const animatedId = $container.data('animated-id');
+            const $display = $container.find(`#${animatedId}-display`);
+            const $tabs = $container.find('.nav-link');
+            
+            if (!$container.data('animated-initialized')) {
+                $container.data('animated-initialized', true);
+                
+                if ($tabs.length > 0 && $display.length > 0) {
+                    $tabs.first().addClass('active');
+                    
+                    const firstCode = $tabs.first().data('code');
+                    if (firstCode) {
+                        $display.html(`<pre><code>${firstCode}</code></pre>`);
+                    }
+                    
+                    $tabs.off('click.animated-code').on('click.animated-code', function(e) {
+                        e.preventDefault();
+                        
+                        const code = $(this).data('code');
+                        if (code && $display.length > 0) {
+                            $tabs.removeClass('active');
+                            $(this).addClass('active');
+                            
+                            $display.fadeOut(200, function() {
+                                $display.html(`<pre><code>${code}</code></pre>`);
+                                $display.fadeIn(200);
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     function initializeStepsNavigation() {
         $('.steps-container').each(function() {
             const $container = $(this);
@@ -117,44 +154,37 @@ $(document).ready(function () {
                 $container.data('steps-initialized', true);
                 
                 const $tabs = $container.find('.nav-link');
-                const $prevBtn = $container.find('.step-nav-btn.step-prev');
-                const $nextBtn = $container.find('.step-nav-btn.step-next');
+                const $prevBtn = $container.find('.step-prev');
+                const $nextBtn = $container.find('.step-next');
                 const $currentStep = $container.find('.current-step');
-                const $totalSteps = $container.find('.total-steps');
                 const totalSteps = $tabs.length;
                 let currentIndex = 0;
-                
-                if ($totalSteps.length) {
-                    $totalSteps.text(totalSteps);
-                }
                 
                 function updateButtons() {
                     $prevBtn.prop('disabled', currentIndex === 0);
                     $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
-                    if ($currentStep.length) {
-                        $currentStep.text(currentIndex + 1);
-                    }
+                    $currentStep.text(currentIndex + 1);
                 }
                 
-                $prevBtn.off('click.steps-nav').on('click.steps-nav', function(e) {
+                $prevBtn.on('click', function(e) {
                     e.preventDefault();
                     if (currentIndex > 0) {
                         currentIndex--;
-                        $tabs.eq(currentIndex).trigger('click');
+                        $tabs.eq(currentIndex).click();
                         updateButtons();
                     }
                 });
                 
-                $nextBtn.off('click.steps-nav').on('click.steps-nav', function(e) {
+                $nextBtn.on('click', function(e) {
                     e.preventDefault();
                     if (currentIndex < totalSteps - 1) {
                         currentIndex++;
-                        $tabs.eq(currentIndex).trigger('click');
+                        $tabs.eq(currentIndex).click();
                         updateButtons();
                     }
                 });
                 
-                $tabs.off('click.steps-tab').on('click.steps-tab', function(e) {
+                $tabs.on('click', function(e) {
                     currentIndex = $tabs.index(this);
                     updateButtons();
                 });
@@ -336,15 +366,19 @@ $(document).ready(function () {
         setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
-        
-        setTimeout(() => {
-            initializeStepsNavigation();
-        }, 500);
+        initializeAnimatedCodeGroups();
+        initializeStepsNavigation();
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
                 new bootstrap.Tooltip(element);
             });
+        });
+
+        document.querySelectorAll('button.extended-markdown-spoiler').forEach(function (element) {
+            element.onclick = function() {
+                element.children[0].className = element.attributes.getNamedItem("aria-expanded").value === "true" ? "fa fa-eye-slash" : "fa fa-eye";
+            };
         });
     }
 
@@ -353,6 +387,7 @@ $(document).ready(function () {
             initializeStepsNavigation();
             initializeTabComponents();
             initializeCollapse();
+            initializeAnimatedCodeGroups();
         }, 100);
     });
 });
