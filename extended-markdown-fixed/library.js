@@ -19,7 +19,7 @@ const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|
 const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
 
-const rubyRegex = /@([^@(]+)\(([^)]+)\)/g;
+const rubyRegex = /(<code.*?>.*?<\/code>)|@([^@(]+)\(([^)]+)\)/g;
 
 const extendedTabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
@@ -372,7 +372,10 @@ function applyNotes(textContent) {
 }
 
 function applyRuby(textContent) {
-    return textContent.replace(rubyRegex, function (match, text, ruby) {
+    return textContent.replace(rubyRegex, function (match, code, text, ruby) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
         return `<ruby>${text}<rt>${ruby}</rt></ruby>`;
     });
 }
