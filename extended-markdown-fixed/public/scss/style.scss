@@ -70,7 +70,7 @@
         color: #0c5460;
         
         h6 {
-            background: #63a1ff;
+            background: #d1ecf1;
             color: #084c61;
         }
     }
@@ -770,15 +770,11 @@ a.anchor-offset {
         border-bottom: none !important;
         box-shadow: none !important;
         list-style: none !important;
+        display: flex;
         
         .nav-item {
             margin-bottom: 0 !important;
             list-style: none !important;
-            
-            &::marker {
-                content: '';
-                display: none;
-            }
             
             .nav-link {
                 border: none !important;
@@ -788,93 +784,39 @@ a.anchor-offset {
                 color: #6c757d;
                 font-weight: 500;
                 font-size: 0.9rem;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                border-radius: 0 !important;
-                box-shadow: none !important;
+                transition: all 0.3s ease;
                 cursor: pointer;
-                position: relative;
                 
                 &.active {
                     background: #ffffff;
                     color: #495057;
-                    
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        right: 0;
-                        height: 2px;
-                        background: linear-gradient(90deg, #007bff, #6f42c1);
-                        animation: tabSlideIn 0.3s ease;
-                    }
+                    border-bottom: 2px solid #007bff !important;
                 }
                 
                 &:hover:not(.active) {
                     background: rgba(0, 123, 255, 0.1);
-                    color: #0d6efd;
-                    transform: translateY(-1px);
+                    color: #007bff;
                 }
             }
         }
     }
     
     .animated-code-content {
-        background: #ffffff;
-        position: relative;
-        
         .animated-code-display {
-            overflow: hidden;
-            
             pre {
                 margin: 0;
-                border-radius: 0 0 0.5rem 0.5rem;
-                background: #f8f9fa;
+                border: none;
+                border-radius: 0;
                 
                 code {
-                    display: block;
                     padding: 1rem;
-                    line-height: 1.6;
-                    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+                    background: #ffffff;
+                    display: block;
+                    transition: all 0.3s ease;
                     
-                    .code-line {
-                        display: block;
-                        position: relative;
-                        
-                        .token {
-                            position: relative;
-                            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                            
-                            &.keyword {
-                                color: #d73a49;
-                                font-weight: 600;
-                            }
-                            
-                            &.string {
-                                color: #032f62;
-                            }
-                            
-                            &.number {
-                                color: #005cc5;
-                            }
-                            
-                            &.comment {
-                                color: #6a737d;
-                                font-style: italic;
-                            }
-                            
-                            &.operator {
-                                color: #d73a49;
-                            }
-                            
-                            &.punctuation {
-                                color: #24292e;
-                            }
-                            
-                            &.identifier {
-                                color: #6f42c1;
-                            }
-                        }
+                    &.code-transitioning {
+                        opacity: 0.5;
+                        transform: translateY(-10px);
                     }
                 }
             }
@@ -883,70 +825,48 @@ a.anchor-offset {
     
     &.extended-dark-theme {
         background: #2d3748;
-        border-color: #495057;
+        border-color: #4a5568;
         
         .animated-code-nav {
-            background: #2d3748;
+            background: #1a202c;
             
-            .nav-item .nav-link {
-                color: #e2e8f0;
+            .nav-link {
+                color: #a0aec0;
                 
                 &.active {
-                    background: #1a1a1a;
-                    color: #6ea8fe;
-                    
-                    &::after {
-                        background: linear-gradient(90deg, #6ea8fe, #a78bfa);
-                    }
+                    background: #2d3748;
+                    color: #e2e8f0;
+                    border-bottom-color: #63b3ed !important;
                 }
                 
                 &:hover:not(.active) {
-                    background: rgba(110, 168, 254, 0.1);
-                    color: #6ea8fe;
+                    background: rgba(99, 179, 237, 0.2);
+                    color: #63b3ed;
                 }
             }
         }
         
-        .animated-code-content {
-            background: #1a1a1a;
+        .animated-code-content .animated-code-display pre code {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .animated-code-group-container {
+        .animated-code-nav {
+            flex-wrap: wrap;
             
-            .animated-code-display pre {
-                background: #1a1a1a;
-                
-                code {
-                    color: #e2e8f0;
-                    
-                    .token {
-                        &.keyword {
-                            color: #ff7b72;
-                        }
-                        
-                        &.string {
-                            color: #a5d6ff;
-                        }
-                        
-                        &.number {
-                            color: #79c0ff;
-                        }
-                        
-                        &.comment {
-                            color: #8b949e;
-                        }
-                        
-                        &.operator {
-                            color: #ff7b72;
-                        }
-                        
-                        &.punctuation {
-                            color: #e2e8f0;
-                        }
-                        
-                        &.identifier {
-                            color: #d2a8ff;
-                        }
-                    }
-                }
+            .nav-item .nav-link {
+                padding: 0.625rem 0.75rem;
+                font-size: 0.8rem;
             }
+        }
+        
+        .animated-code-content .animated-code-display pre code {
+            padding: 0.75rem;
+            font-size: 0.8rem;
         }
     }
 }

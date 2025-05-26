@@ -1,8 +1,8 @@
 {
-    "id": "nodebb-plugin-extended-markdown",
+    "id": "nodebb-plugin-extended-markdown-fixed",
     "name": "Extended Markdown",
     "description": "This plugin adds useful new features to nodebb markdown parser.",
-    "url": "https://github.com/MeiShiAdmin/nodebb-plugin-extended-markdown.git",
+    "url": "https://github.com/NodeBB/nodebb-plugin-extended-markdown-fixed",
     "library": "./library.js",
     "staticDirs": {
         "static": "./static"
@@ -11,33 +11,36 @@
         "public/scss/style.scss"
     ],
     "scripts": [
-        "public/js/client.js",
-        "public/js/composer.js"
+        "public/js/client.js"
     ],
     "languages": "public/languages",
     "hooks": [
         {
-            "hook": "filter:parse.post", 
+            "hook": "static:app.load",
+            "method": "init"
+        },
+        {
+            "hook": "filter:parse.post",
             "method": "parsePost"
         },
         {
-            "hook": "filter:parse.signature", 
+            "hook": "filter:parse.signature",
             "method": "parseSignature"
         },
         {
-            "hook": "filter:parse.aboutme", 
+            "hook": "filter:parse.aboutme",
             "method": "parseAboutMe"
         },
         {
-            "hook": "filter:parse.raw", 
+            "hook": "filter:parse.raw",
             "method": "parseRaw"
         },
         {
-            "hook": "filter:composer.formatting", 
+            "hook": "filter:composer.formatting",
             "method": "registerFormatting"
         },
         {
-            "hook": "filter:sanitizer.config", 
+            "hook": "filter:sanitizer.config",
             "method": "sanitizerConfig"
         }
     ],

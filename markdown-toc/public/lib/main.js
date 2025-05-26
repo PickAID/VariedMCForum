@@ -14,7 +14,7 @@ $(document).ready(function () {
 		
 		if (formatting && controls) {
 			formatting.addButtonDispatch('toc', function (textarea, selectionStart, selectionEnd) {
-				controls.insertIntoTextarea(textarea, '\n[TOC]\n');
+				controls.insertIntoTextarea(textarea, '[TOC]\n');
 			});
 		}
 	};
