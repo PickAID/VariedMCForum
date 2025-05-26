@@ -3,7 +3,7 @@
 const slugify = require.main.require('./src/slugify');
 const { translator } = require.main.require('./src/translator');
 
-const textHeaderRegex = /<p dir="auto">#([a-zA-Z0-9-_]+)\(([^)]+)\)<\/p>/g;
+const textHeaderRegex = /(<code.*?>.*?<\/code>)|<p dir="auto">#([a-zA-Z0-9-_]+)\(([^)]+)\)<\/p>/g;
 const tooltipRegex = /(<code.*?>.*?<\/code>)|°(.+?)°\((.+?)\)/g;
 
 const codeTabRegex = /(?:<p dir="auto">={3}group<\/p>\n)((?:<pre><code class=".+">[^]*?<\/code><\/pre>\n){2,})(?:<p dir="auto">={3}<\/p>)/g;
@@ -14,10 +14,10 @@ const colorRegex = /(<code.*?>.*?<\/code>)|%\((#[\dA-Fa-f]{6}|rgb\(\d{1,3}, ?\d{
 
 const paragraphAndHeadingRegex = /<(h[1-6]|p dir="auto")>([^]*?)<\/(h[1-6]|p)>/g;
 
-const noteRegex = /<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|<br \/>\n)*)<\/p>/g;
+const noteRegex = /(<code.*?>.*?<\/code>)|<p dir="auto">!!! (info|warning|important) \[([^\]]*)\]: ((.|<br \/>\n)*)<\/p>/g;
 
-const superscriptRegex = /([^\s`<>])\^([^\s`<>^]+)\^/g;
-const subscriptRegex = /([^\s`<>])~([^\s`<>~]+)~/g;
+const superscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])\^([^\s`<>^]+)\^/g;
+const subscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])~([^\s`<>~]+)~/g;
 
 const rubyRegex = /(<code.*?>.*?<\/code>)|@([^@(]+)\(([^)]+)\)/g;
 
@@ -196,8 +196,11 @@ function hashString(str) {
 }
 
 function applyTextHeaders(textContent) {
-    return textContent.replace(textHeaderRegex, function (match, anchorId, text) {
-        return `<div class="text-header" id="${anchorId}">${text}</div>`;
+    return textContent.replace(textHeaderRegex, function (match, code, anchor, title) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
+        return `<div class="text-header" id="${anchor}">${title}</div>`;
     });
 }
 
@@ -357,7 +360,10 @@ function applySpoiler(textContent, id) {
 }
 
 function applyNotes(textContent) {
-    return textContent.replace(noteRegex, function (match, type, title, content) {
+    return textContent.replace(noteRegex, function (match, code, type, title, content) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
         const icon = noteIcons[type] || 'fa-info-circle';
         const cleanTitle = title || type.charAt(0).toUpperCase() + type.slice(1);
         const cleanContent = content.replace(/<br \/>\n/g, '\n').trim();
@@ -381,11 +387,17 @@ function applyRuby(textContent) {
 }
 
 function applySuperscriptAndSubscript(textContent) {
-    textContent = textContent.replace(superscriptRegex, function (match, base, script) {
+    textContent = textContent.replace(superscriptRegex, function (match, code, base, script) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
         return `${base}<sup>${script}</sup>`;
     });
     
-    textContent = textContent.replace(subscriptRegex, function (match, base, script) {
+    textContent = textContent.replace(subscriptRegex, function (match, code, base, script) {
+        if (typeof (code) !== "undefined") {
+            return code;
+        }
         return `${base}<sub>${script}</sub>`;
     });
     
