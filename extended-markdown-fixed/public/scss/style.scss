@@ -19,23 +19,13 @@
 }
 
 .extended-markdown-tooltip {
-    color: #0d6efd;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
+    text-decoration: none !important;
+    border-bottom: 1px dotted;
+    cursor: help;
     
     &:hover {
-        color: #0a58ca;
-        text-decoration: underline;
-    }
-    
-    &.extended-dark-theme {
-        color: #6ea8fe;
-        
-        &:hover {
-            color: #9ec5fe;
-            text-decoration: underline;
-        }
+        text-decoration: none !important;
+        border-bottom-color: transparent;
     }
 }
 

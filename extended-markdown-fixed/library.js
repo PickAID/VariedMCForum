@@ -257,7 +257,7 @@ function applyTabs(textContent, id) {
     });
 }
 
-async function applySteps(textContent, id) {
+function applySteps(textContent, id) {
     return textContent.replace(stepsRegex, function (match, stepsContent) {
         const cleanStepsContent = cleanContent(stepsContent);
         let stepMatches = [];
