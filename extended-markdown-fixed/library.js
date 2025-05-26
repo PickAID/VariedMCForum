@@ -19,7 +19,7 @@ const noteRegex = /(<code.*?>.*?<\/code>)|<p dir="auto">!!! (info|warning|import
 const superscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])\^([^\s`<>^]+)\^/g;
 const subscriptRegex = /(<code.*?>.*?<\/code>)|([^\s`<>])~([^\s`<>~]+)~/g;
 
-const rubyRegex = /(<pre><code[\s\S]*?<\/code><\/pre>|<code[\s\S]*?<\/code>)|(?<![\w@])@([^@()\s]+)\(([^)]+)\)(?![\w(])/g;
+const rubyRegex = /(<pre><code[\s\S]*?<\/code><\/pre>|<code[\s\S]*?<\/code>)|\[ruby=([^\]]+)\]([^\[]+)\[\/ruby\]/g;
 
 const extendedTabsRegex = /(?:<p dir="auto">)?\[tabs\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/tabs\](?:<\/p>)?/gi;
 const tabRegex = /(?:<p dir="auto">)?\[tab=([^\]]+)\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="auto">)?\[tab=|(?:<p dir="auto">)?\[\/tabs\]|$)/gi;
@@ -378,7 +378,7 @@ function applyNotes(textContent) {
 }
 
 function applyRuby(textContent) {
-    return textContent.replace(rubyRegex, function (match, codeBlock, text, ruby) {
+    return textContent.replace(rubyRegex, function (match, codeBlock, ruby, text) {
         if (typeof (codeBlock) !== "undefined") {
             return codeBlock;
         }
@@ -569,26 +569,20 @@ const ExtendedMarkdown = {
         callback(null, textContent);
     },
     
-    async registerFormatting(payload) {
-        const formatting = [
-            { name: "color", className: "fa fa-eyedropper", title: "[[extendedmarkdown:composer.formatting.color]]" },
-            { name: "left", className: "fa fa-align-left", title: "[[extendedmarkdown:composer.formatting.left]]" },
-            { name: "center", className: "fa fa-align-center", title: "[[extendedmarkdown:composer.formatting.center]]" },
-            { name: "right", className: "fa fa-align-right", title: "[[extendedmarkdown:composer.formatting.right]]" },
-            { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
-            { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
-            { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
-            // { name: "animatedcode", className: "fa fa-magic", title: "[[extendedmarkdown:composer.formatting.animatedcode]]" },
-            { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
-            { name: "collapsible", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
-            { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
-            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
-            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" }
-        ];
-
-        payload.options = payload.options.concat(formatting);
-
-        return payload;
+    async registerFormatting(formatting) {
+        formatting.push({
+            name: 'superscript',
+            className: 'fa fa-superscript',
+            title: '上标'
+        });
+        
+        formatting.push({
+            name: 'subscript', 
+            className: 'fa fa-subscript',
+            title: '下标'
+        });
+        
+        return formatting;
     },
     
     async sanitizerConfig(config) {

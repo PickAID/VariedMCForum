@@ -83,7 +83,25 @@ $(document).ready(function() {
             e.preventDefault();
             e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '@魔改(mó gǎi)';
+            const text = '[ruby=mó gǎi]魔改[/ruby]';
+            insertText(textarea, text);
+            return false;
+        });
+        
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="superscript"]', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const textarea = $('.composer textarea');
+            const text = '^上标^';
+            insertText(textarea, text);
+            return false;
+        });
+        
+        $(document).off('click.extended-markdown').on('click.extended-markdown', '[data-format="subscript"]', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const textarea = $('.composer textarea');
+            const text = '~下标~';
             insertText(textarea, text);
             return false;
         });
