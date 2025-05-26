@@ -295,10 +295,10 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('ruby', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '@汉字(pīn yīn)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 3);
+                        controls.insertIntoTextarea(textarea, '[ruby=拼音]汉字[/ruby]');
+                        controls.updateTextareaSelection(textarea, selectionStart + 7, selectionStart + 9);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '@', '(拼音)');
+                        controls.wrapSelectionInTextareaWith(textarea, '[ruby=拼音]', '[/ruby]');
                     }
                 });
 
