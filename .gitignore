@@ -116,4 +116,5 @@ webpack.prod.js
 !markdown-toc/*
 !extended-markdown-fixed/*
 !tag-color-maker/*
+!tag-color/*
 !markdown/*

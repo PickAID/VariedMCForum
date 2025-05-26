@@ -18,7 +18,7 @@ $(document).ready(function () {
     function applyExtendedMarkdownTheme(isDark) {
         const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .bubble-info').forEach(element => {
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .bubble-info, .animated-code-group-container').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
@@ -50,43 +50,71 @@ $(document).ready(function () {
     }
 
     function initializeTabComponents() {
-        $('[data-bs-toggle="tab"]').on('click', function(e) {
-            e.preventDefault();
-            const targetId = $(this).attr('data-bs-target');
-            const $target = $(targetId);
+        $('.code-group-container, .extended-tabs-container, .steps-container').each(function() {
+            const $container = $(this);
             
-            $(this).closest('.nav-tabs').find('.nav-link').removeClass('active');
-            $(this).addClass('active');
-            
-            $target.closest('.tab-content').find('.tab-pane').removeClass('show active');
-            $target.addClass('show active');
+            if (!$container.data('tabs-initialized')) {
+                $container.data('tabs-initialized', true);
+                
+                $container.find('[data-bs-toggle="tab"]').off('click.extended-tabs').on('click.extended-tabs', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = $(this).data('bs-target');
+                    const $target = $(targetId);
+                    
+                    if ($target.length) {
+                        $container.find('.nav-link').removeClass('active').attr('aria-selected', 'false');
+                        $container.find('.tab-pane').removeClass('show active');
+                        
+                        $(this).addClass('active').attr('aria-selected', 'true');
+                        $target.addClass('show active');
+                    }
+                });
+            }
         });
     }
 
     function initializeCollapse() {
-        $('.extended-markdown-collapsible').off('click').on('click', function (e) {
-            e.preventDefault();
-            const $button = $(this);
-            const $icon = $button.find('.collapse-icon');
-            const targetId = $button.attr('data-bs-target') || $button.attr('aria-controls');
-            const $target = targetId ? $('#' + targetId.replace('#', '')) : $button.next('.collapsible-content');
-
-            if ($target.is(':visible')) {
-                $target.hide();
-                $button.attr('aria-expanded', 'false');
-                $icon.css('transform', 'rotate(0deg)');
-            } else {
-                $target.show();
-                $button.attr('aria-expanded', 'true');
-                $icon.css('transform', 'rotate(90deg)');
+        $('.collapsible-wrapper').each(function() {
+            const $wrapper = $(this);
+            const $button = $wrapper.find('.extended-markdown-collapsible');
+            
+            if ($button.length && !$button.data('collapse-initialized')) {
+                $button.data('collapse-initialized', true);
+                
+                const targetId = $button.attr('data-bs-target');
+                const $target = $('#' + targetId);
+                
+                if ($target.length) {
+                    const $icon = $button.find('.collapse-icon');
+                    
+                    $target.hide();
+                    
+                    $button.on('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if ($target.is(':visible')) {
+                            $target.hide();
+                            $button.attr('aria-expanded', 'false');
+                            $icon.css('transform', 'rotate(0deg)');
+                        } else {
+                            $target.show();
+                            $button.attr('aria-expanded', 'true');
+                            $icon.css('transform', 'rotate(90deg)');
+                        }
+                    });
+                }
             }
         });
     }
 
     function initializeTooltips() {
-        $('[data-bs-toggle="tooltip"]').each(function() {
-            if (window.bootstrap && window.bootstrap.Tooltip) {
-                new bootstrap.Tooltip(this);
+        $('.extended-markdown-tooltip').off('click.tooltip').on('click.tooltip', function(e) {
+            e.preventDefault();
+            const tooltip = $(this).attr('data-tooltip');
+            if (tooltip) {
+                alert(tooltip);
             }
         });
     }
@@ -94,69 +122,56 @@ $(document).ready(function () {
     function initStepsNavigation() {
         $('.steps-container').each(function() {
             const $container = $(this);
-            const $prevBtn = $container.find('.step-prev');
-            const $nextBtn = $container.find('.step-next');
-            const $currentStep = $container.find('.current-step');
-            const $totalSteps = $container.find('.total-steps');
-            const $tabs = $container.find('.nav-link');
             
-            let currentStepIndex = 0;
-            const totalStepsCount = $tabs.length;
-            
-            function updateStepDisplay() {
-                $currentStep.text(currentStepIndex + 1);
-                $prevBtn.prop('disabled', currentStepIndex === 0);
-                $nextBtn.prop('disabled', currentStepIndex === totalStepsCount - 1);
+            if (!$container.data('steps-initialized')) {
+                $container.data('steps-initialized', true);
                 
-                $tabs.removeClass('active');
-                $tabs.eq(currentStepIndex).addClass('active').tab('show');
-            }
-            
-            $prevBtn.on('click', function() {
-                if (currentStepIndex > 0) {
-                    currentStepIndex--;
-                    updateStepDisplay();
-                }
-            });
-            
-            $nextBtn.on('click', function() {
-                if (currentStepIndex < totalStepsCount - 1) {
-                    currentStepIndex++;
-                    updateStepDisplay();
-                }
-            });
-            
-            $tabs.on('click', function() {
-                currentStepIndex = $tabs.index(this);
-                updateStepDisplay();
-            });
-        });
-    }
-
-    ExtendedMarkdown.prepareFormattingTools = function () {
-        require(['composer/formatting'], function (formatting) {
-            if (formatting && formatting.addButtonDispatch) {
-                formatting.addButtonDispatch('spoiler', function(textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        formatting.insertIntoTextarea(textarea, '[spoiler=点击展开]隐藏内容[/spoiler]');
-                        textarea.selectionStart = selectionStart + 15;
-                        textarea.selectionEnd = selectionStart + 19;
-                    } else {
-                        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
-                        formatting.insertIntoTextarea(textarea, `[spoiler=点击展开]${selectedText}[/spoiler]`);
+                const $prevBtn = $container.find('.step-prev');
+                const $nextBtn = $container.find('.step-next');
+                const $counter = $container.find('.current-step');
+                const $tabs = $container.find('.nav-link');
+                
+                if ($tabs.length > 0) {
+                    let currentIndex = 0;
+                    const totalSteps = $tabs.length;
+                    
+                    function updateStepNavigation() {
+                        $tabs.removeClass('active').attr('aria-selected', 'false');
+                        $container.find('.tab-pane').removeClass('show active');
+                        
+                        $tabs.eq(currentIndex).addClass('active').attr('aria-selected', 'true');
+                        const targetId = $tabs.eq(currentIndex).attr('data-bs-target');
+                        $(targetId).addClass('show active');
+                        
+                        $prevBtn.prop('disabled', currentIndex === 0);
+                        $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
+                        
+                        $counter.text(currentIndex + 1);
                     }
-                });
+                    
+                    $prevBtn.off('click.step-nav').on('click.step-nav', function() {
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            updateStepNavigation();
+                        }
+                    });
+                    
+                    $nextBtn.off('click.step-nav').on('click.step-nav', function() {
+                        if (currentIndex < totalSteps - 1) {
+                            currentIndex++;
+                            updateStepNavigation();
+                        }
+                    });
+                    
+                    $tabs.off('click.step-update').on('click.step-update', function() {
+                        currentIndex = $tabs.index(this);
+                        updateStepNavigation();
+                    });
+                    
+                    updateStepNavigation();
+                }
             }
         });
-    };
-
-    function pageReady() {
-        setupExtendedMarkdownTheme();
-        initializeTabComponents();
-        initializeCollapse();
-        initializeTooltips();
-        initStepsNavigation();
-        initializeAnimatedCodeGroups();
     }
 
     function initializeAnimatedCodeGroups() {
@@ -169,7 +184,6 @@ $(document).ready(function () {
             let currentTokens = [];
             let isAnimating = false;
             
-            // 初始化第一个标签的内容
             if ($tabs.length > 0) {
                 const initialTokensData = $container.attr('data-initial-tokens');
                 if (initialTokensData) {
@@ -189,44 +203,43 @@ $(document).ready(function () {
                 
                 const newTokens = JSON.parse(newTokensData.replace(/&apos;/g, "'"));
                 
-                // 更新激活状态
                 $tabs.removeClass('active');
                 $clickedTab.addClass('active');
                 
-                // 执行魔法移动动画
-                performMagicMove(currentTokens, newTokens, $display).then(() => {
+                animateCodeTransition(currentTokens, newTokens, $display).then(() => {
                     currentTokens = newTokens;
                 });
             });
         });
     }
 
-    function renderTokens(keyedTokens, $display) {
-        const content = keyedTokens.map(line => {
-            if (line.tokens && line.tokens.length > 0) {
-                const tokenElements = line.tokens.map(token => 
-                    `<span class="token ${token.style}" data-token-key="${token.key}">${escapeHtml(token.content)}</span>`
-                ).join('');
-                return `<div class="code-line" data-line-key="${line.key}">${tokenElements}</div>`;
-            } else {
-                return `<div class="code-line" data-line-key="${line.key}">${escapeHtml(line.content)}</div>`;
+    function renderTokens(tokens, $display) {
+        let html = '';
+        tokens.forEach(token => {
+            if (token.type === 'line') {
+                if (token.tokens && token.tokens.length > 0) {
+                    const tokenElements = token.tokens.map(t => 
+                        `<span class="token ${t.style}" data-token-key="${t.key}">${escapeHtml(t.content)}</span>`
+                    ).join('');
+                    html += `<div class="code-line" data-line-key="${token.key}">${tokenElements}</div>`;
+                } else {
+                    html += `<div class="code-line" data-line-key="${token.key}">${escapeHtml(token.content)}</div>`;
+                }
             }
-        }).join('');
-        
-        $display.html(content);
+        });
+        $display.html(html);
     }
 
-    async function performMagicMove(oldTokens, newTokens, $display) {
+    async function animateCodeTransition(oldTokens, newTokens, $display) {
         isAnimating = true;
         
         try {
-            // 创建魔法移动状态机
-            const machine = createMagicMoveMachine(oldTokens, newTokens);
+            const tokenMap = createTokenMapping(oldTokens, newTokens);
             
-            // 执行动画序列
-            await executeAnimationSequence(machine, $display);
+            await animateRemoval(tokenMap.toRemove, $display);
+            await animateMovement(tokenMap.toKeep, $display);
+            await animateAddition(tokenMap.toAdd, $display);
             
-            // 最终渲染
             renderTokens(newTokens, $display);
             
         } finally {
@@ -234,65 +247,43 @@ $(document).ready(function () {
         }
     }
 
-    function createMagicMoveMachine(oldTokens, newTokens) {
-        const oldTokenMap = new Map();
-        const newTokenMap = new Map();
+    function createTokenMapping(oldTokens, newTokens) {
+        const oldMap = new Map();
+        const newMap = new Map();
         
-        // 构建 token 映射
-        oldTokens.forEach(line => {
-            oldTokenMap.set(line.key, line);
-            if (line.tokens) {
-                line.tokens.forEach(token => {
-                    oldTokenMap.set(token.key, token);
-                });
+        oldTokens.forEach(token => {
+            oldMap.set(token.key, token);
+            if (token.tokens) {
+                token.tokens.forEach(t => oldMap.set(t.key, t));
             }
         });
         
-        newTokens.forEach(line => {
-            newTokenMap.set(line.key, line);
-            if (line.tokens) {
-                line.tokens.forEach(token => {
-                    newTokenMap.set(token.key, token);
-                });
+        newTokens.forEach(token => {
+            newMap.set(token.key, token);
+            if (token.tokens) {
+                token.tokens.forEach(t => newMap.set(t.key, t));
             }
         });
         
-        // 分类操作
-        const operations = {
-            keep: [],    // 保持不变的元素
-            move: [],    // 需要移动的元素
-            remove: [],  // 需要删除的元素
-            add: []      // 需要添加的元素
-        };
+        const toRemove = [];
+        const toKeep = [];
+        const toAdd = [];
         
-        // 找出需要删除的元素
-        oldTokenMap.forEach((token, key) => {
-            if (!newTokenMap.has(key)) {
-                operations.remove.push(token);
+        oldMap.forEach((token, key) => {
+            if (!newMap.has(key)) {
+                toRemove.push(token);
             } else {
-                operations.keep.push(token);
+                toKeep.push(token);
             }
         });
         
-        // 找出需要添加的元素
-        newTokenMap.forEach((token, key) => {
-            if (!oldTokenMap.has(key)) {
-                operations.add.push(token);
+        newMap.forEach((token, key) => {
+            if (!oldMap.has(key)) {
+                toAdd.push(token);
             }
         });
         
-        return operations;
-    }
-
-    async function executeAnimationSequence(machine, $display) {
-        // 阶段1：标记删除的元素
-        await animateRemoval(machine.remove, $display);
-        
-        // 阶段2：移动现有元素
-        await animateMovement(machine.keep, $display);
-        
-        // 阶段3：添加新元素
-        await animateAddition(machine.add, $display);
+        return { toRemove, toKeep, toAdd };
     }
 
     async function animateRemoval(tokensToRemove, $display) {
@@ -331,7 +322,6 @@ $(document).ready(function () {
         if (tokensToAdd.length === 0) return;
         
         return new Promise(resolve => {
-            // 在正确位置插入新元素
             tokensToAdd.forEach(token => {
                 let elementHtml = '';
                 if (token.type === 'line') {
@@ -347,7 +337,6 @@ $(document).ready(function () {
                     elementHtml = `<span class="token ${token.style} magic-move-entering" data-token-key="${token.key}">${escapeHtml(token.content)}</span>`;
                 }
                 
-                // 简化插入逻辑 - 在实际应用中需要更精确的位置计算
                 $display.append(elementHtml);
             });
             
@@ -362,6 +351,194 @@ $(document).ready(function () {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    ExtendedMarkdown.prepareFormattingTools = function () {
+        require(['composer/formatting'], function (formatting) {
+            if (formatting && formatting.addButtonDispatch) {
+                
+                formatting.addButtonDispatch('color', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const colorCode = prompt('请输入颜色代码 (例如: #ff0000, red, rgb(255,0,0))', '#ff0000');
+                    if (colorCode) {
+                        const replacement = selectedText ? 
+                            `%(${colorCode})[${selectedText}]` : 
+                            `%(${colorCode})[文字内容]`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + colorCode.length + 3;
+                            textarea.selectionEnd = selectionStart + colorCode.length + 7;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('left', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const replacement = selectedText ? `|-${selectedText}` : `|-左对齐文字`;
+                    formatting.insertIntoTextarea(textarea, replacement);
+                    if (!selectedText) {
+                        textarea.selectionStart = selectionStart + 2;
+                        textarea.selectionEnd = selectionStart + 7;
+                    }
+                });
+
+                formatting.addButtonDispatch('center', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const replacement = selectedText ? `|-${selectedText}-|` : `|-居中文字-|`;
+                    formatting.insertIntoTextarea(textarea, replacement);
+                    if (!selectedText) {
+                        textarea.selectionStart = selectionStart + 2;
+                        textarea.selectionEnd = selectionStart + 6;
+                    }
+                });
+
+                formatting.addButtonDispatch('right', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const replacement = selectedText ? `${selectedText}-|` : `右对齐文字-|`;
+                    formatting.insertIntoTextarea(textarea, replacement);
+                    if (!selectedText) {
+                        textarea.selectionStart = selectionStart;
+                        textarea.selectionEnd = selectionStart + 4;
+                    }
+                });
+
+                formatting.addButtonDispatch('justify', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const replacement = selectedText ? `|=${selectedText}=|` : `|=两端对齐文字=|`;
+                    formatting.insertIntoTextarea(textarea, replacement);
+                    if (!selectedText) {
+                        textarea.selectionStart = selectionStart + 2;
+                        textarea.selectionEnd = selectionStart + 8;
+                    }
+                });
+
+                formatting.addButtonDispatch('textheader', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const headerId = prompt('请输入锚点ID', 'header-id');
+                    if (headerId) {
+                        const replacement = selectedText ? 
+                            `#${headerId}(${selectedText})` : 
+                            `#${headerId}(标题文字)`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + headerId.length + 2;
+                            textarea.selectionEnd = selectionStart + headerId.length + 6;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('groupedcode', function(textarea, selectionStart, selectionEnd) {
+                    const template = `===group
+\`\`\`javascript
+console.log('Hello World');
+\`\`\`
+
+\`\`\`python
+print('Hello World')
+\`\`\`
+===`;
+                    formatting.insertIntoTextarea(textarea, template);
+                });
+
+                formatting.addButtonDispatch('animatedcode', function(textarea, selectionStart, selectionEnd) {
+                    const template = `===animated-group
+\`\`\`javascript
+const hello = 'world';
+\`\`\`
+
+\`\`\`javascript
+const hello = 'world';
+console.log(hello);
+\`\`\`
+===`;
+                    formatting.insertIntoTextarea(textarea, template);
+                });
+
+                formatting.addButtonDispatch('bubbleinfo', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const tooltipText = prompt('请输入提示文字', '这是一个提示');
+                    if (tooltipText) {
+                        const replacement = selectedText ? 
+                            `°${selectedText}°(${tooltipText})` : 
+                            `°悬停文字°(${tooltipText})`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + 1;
+                            textarea.selectionEnd = selectionStart + 5;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('collapsible', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const title = prompt('请输入折叠标题', '点击展开');
+                    if (title) {
+                        const replacement = selectedText ? 
+                            `[spoiler=${title}]${selectedText}[/spoiler]` : 
+                            `[spoiler=${title}]隐藏内容[/spoiler]`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + title.length + 10;
+                            textarea.selectionEnd = selectionStart + title.length + 14;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('noteinfo', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const title = prompt('请输入信息标题', '信息');
+                    if (title) {
+                        const replacement = selectedText ? 
+                            `!!! info [${title}]: ${selectedText}` : 
+                            `!!! info [${title}]: 这是一条信息提示`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + title.length + 15;
+                            textarea.selectionEnd = selectionStart + title.length + 23;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('notewarning', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const title = prompt('请输入警告标题', '警告');
+                    if (title) {
+                        const replacement = selectedText ? 
+                            `!!! warning [${title}]: ${selectedText}` : 
+                            `!!! warning [${title}]: 这是一条警告提示`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + title.length + 18;
+                            textarea.selectionEnd = selectionStart + title.length + 26;
+                        }
+                    }
+                });
+
+                formatting.addButtonDispatch('noteimportant', function(textarea, selectionStart, selectionEnd) {
+                    const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+                    const title = prompt('请输入重要标题', '重要');
+                    if (title) {
+                        const replacement = selectedText ? 
+                            `!!! important [${title}]: ${selectedText}` : 
+                            `!!! important [${title}]: 这是一条重要提示`;
+                        formatting.insertIntoTextarea(textarea, replacement);
+                        if (!selectedText) {
+                            textarea.selectionStart = selectionStart + title.length + 20;
+                            textarea.selectionEnd = selectionStart + title.length + 28;
+                        }
+                    }
+                });
+            }
+        });
+    };
+
+    function pageReady() {
+        setupExtendedMarkdownTheme();
+        initializeTabComponents();
+        initializeCollapse();
+        initializeTooltips();
+        initStepsNavigation();
+        initializeAnimatedCodeGroups();
     }
 
     let initTimeout;
@@ -400,6 +577,10 @@ $(document).ready(function () {
         initTimeout = setTimeout(() => {
             pageReady();
         }, 150);
+    });
+    
+    $(window).on('action:composer.enhanced', function (evt, data) {
+        ExtendedMarkdown.prepareFormattingTools();
     });
     
     pageReady();

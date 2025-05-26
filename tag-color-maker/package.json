@@ -1,18 +1,10 @@
 {
-  "name": "nodebb-plugin-tag-color-maker",
+  "name": "nodebb-plugin-tag-color-editor",
   "version": "1.0.0",
   "description": "A NodeBB plugin to add colors to tags",
   "main": "library.js",
   "author": "NodeBB",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NodeBB/nodebb-plugin-tag-color-maker"
-  },
-  "bugs": {
-    "url": "https://github.com/NodeBB/nodebb-plugin-tag-color-maker/issues"
-  },
-  "homepage": "https://github.com/NodeBB/nodebb-plugin-tag-color-maker",
   "peerDependencies": {
     "nodebb": ">=1.0.0"
   },

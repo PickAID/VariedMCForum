@@ -1,5 +1,6 @@
 {
-	"id": "nodebb-plugin-tag-color-editor",
+	"id": "nodebb-plugin-tag-color-maker",
+	"url": "https://github.com/NodeBB/nodebb-plugin-tag-color-maker",
 	"library": "./library.js",
 	"scss": [
 		"public/scss/style.scss"

@@ -1,0 +1,65 @@
+[data-tag="forge"] {
+    background-color: #DFA86A;
+    color: #FAF4F3;
+}
+.tag-list [data-tag="forge"] {
+    background-color: #DFA86A !important;
+    color: #FAF4F3 !important;
+}
+
+[data-tag="forge"] .tag-topic-count {
+    color: #FAF4F3 !important;
+}
+
+[data-tag="neoforge"] {
+    background-color: #E68C37;
+    color: #FFFFFF;
+}
+
+.tag-list [data-tag="neoforge"] {
+    background-color: #E68C37 !important;
+    color: #FFFFFF !important;
+}
+
+[data-tag="neoforge"] .tag-topic-count {
+    color: #FFFFFF !important;
+}
+
+[data-tag="fabric"] {
+    background-color: #DBD0B4;
+    color: #111111;
+}
+.tag-list [data-tag="fabric"] {
+    background-color: #DBD0B4 !important;
+    color: #111111 !important;
+}
+
+[data-tag="fabric"] .tag-topic-count {
+    color: #111111 !important;
+}
+
+[data-tag="kubejs"] {
+    background-color: #C186E6;
+    color: #FFFFFF;
+}
+.tag-list [data-tag="kubejs"] {
+    background-color: #C186E6 !important;
+    color: #FFFFFF !important;
+}
+
+[data-tag="kubejs"] .tag-topic-count {
+    color: #FFFFFF !important;
+}
+
+[data-tag="unsafe"] {
+    background-color: rgb(167, 50, 50) !important;
+    color: #FFFFFF;
+}
+.tag-list [data-tag="unsafe"] {
+    background-color: rgb(167, 50, 50) !important;
+    color: #FFFFFF !important;
+}
+
+[data-tag="unsafe"] .tag-topic-count {
+    color: #FFFFFF !important;
+}

@@ -83,7 +83,7 @@ $(document).ready(function() {
             e.preventDefault();
             e.stopPropagation();
             const textarea = $('.composer textarea');
-            const text = '@中国(zhōng guó)';
+            const text = '@魔改(mó gǎi)';
             insertText(textarea, text);
             return false;
         });
