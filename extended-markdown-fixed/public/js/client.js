@@ -109,71 +109,6 @@ $(document).ready(function () {
         });
     }
 
-    function initializeTooltips() {
-        $('.extended-markdown-tooltip').off('click.tooltip').on('click.tooltip', function(e) {
-            e.preventDefault();
-            const tooltip = $(this).attr('data-tooltip');
-            if (tooltip) {
-                alert(tooltip);
-            }
-        });
-    }
-
-    function initStepsNavigation() {
-        $('.steps-container').each(function() {
-            const $container = $(this);
-            
-            if (!$container.data('steps-initialized')) {
-                $container.data('steps-initialized', true);
-                
-                const $prevBtn = $container.find('.step-prev');
-                const $nextBtn = $container.find('.step-next');
-                const $counter = $container.find('.current-step');
-                const $tabs = $container.find('.nav-link');
-                
-                if ($tabs.length > 0) {
-                    let currentIndex = 0;
-                    const totalSteps = $tabs.length;
-                    
-                    function updateStepNavigation() {
-                        $tabs.removeClass('active').attr('aria-selected', 'false');
-                        $container.find('.tab-pane').removeClass('show active');
-                        
-                        $tabs.eq(currentIndex).addClass('active').attr('aria-selected', 'true');
-                        const targetId = $tabs.eq(currentIndex).attr('data-bs-target');
-                        $(targetId).addClass('show active');
-                        
-                        $prevBtn.prop('disabled', currentIndex === 0);
-                        $nextBtn.prop('disabled', currentIndex === totalSteps - 1);
-                        
-                        $counter.text(currentIndex + 1);
-                    }
-                    
-                    $prevBtn.off('click.step-nav').on('click.step-nav', function() {
-                        if (currentIndex > 0) {
-                            currentIndex--;
-                            updateStepNavigation();
-                        }
-                    });
-                    
-                    $nextBtn.off('click.step-nav').on('click.step-nav', function() {
-                        if (currentIndex < totalSteps - 1) {
-                            currentIndex++;
-                            updateStepNavigation();
-                        }
-                    });
-                    
-                    $tabs.off('click.step-update').on('click.step-update', function() {
-                        currentIndex = $tabs.index(this);
-                        updateStepNavigation();
-                    });
-                    
-                    updateStepNavigation();
-                }
-            }
-        });
-    }
-
     function initializeAnimatedCodeGroups() {
         $('.animated-code-group-container').each(function() {
             const $container = $(this);
@@ -216,54 +151,47 @@ $(document).ready(function () {
         
         if (formatting && controls) {
             translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
-                let composerTextarea;
+                var composerTextarea;
+                var colorPickerButton = document.querySelector('.btn[data-format="color"]');
                 
-                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                    composerTextarea = textarea;
+                if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
+                    var hiddenPicker = document.createElement("input");
+                    hiddenPicker.style.visibility = 'hidden';
+                    hiddenPicker.style.width = '0px';
+                    hiddenPicker.style.padding = '0px';
+                    hiddenPicker.style.margin = '0px';
+                    hiddenPicker.style.height = '0px';
+                    hiddenPicker.style.border = '0px';
+                    hiddenPicker.type = 'color';
+                    hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
+                    colorPickerButton.parentNode.insertBefore(hiddenPicker, colorPickerButton.nextSibling);
                     
-                    // 创建临时颜色选择器
-                    const colorInput = document.createElement('input');
-                    colorInput.type = 'color';
-                    colorInput.value = '#000000';
-                    colorInput.style.position = 'absolute';
-                    colorInput.style.left = '-9999px';
-                    colorInput.style.opacity = '0';
-                    
-                    document.body.appendChild(colorInput);
-                    
-                    // 监听颜色变化
-                    colorInput.addEventListener('input', function() {
-                        const newColor = this.value;
-                        const value = composerTextarea.value;
-                        const start = composerTextarea.selectionStart;
-                        
-                        // 查找并替换颜色代码
-                        const beforeCursor = value.substring(0, start);
-                        const colorRegex = /%\(#[0-9a-fA-F]{6}\)$/;
-                        const match = beforeCursor.match(colorRegex);
-                        
-                        if (match) {
-                            const matchStart = beforeCursor.lastIndexOf(match[0]);
-                            const newValue = value.substring(0, matchStart) + `%(${newColor})` + value.substring(start);
+                    hiddenPicker.addEventListener('input', function() {
+                        if (composerTextarea) {
+                            var value = composerTextarea.value;
+                            var selectionStart = composerTextarea.selectionStart;
+                            var selectionEnd = composerTextarea.selectionEnd;
                             
-                            composerTextarea.value = newValue;
-                            composerTextarea.selectionStart = matchStart + 2;
-                            composerTextarea.selectionEnd = matchStart + 9;
+                            var beforeCursor = value.substring(0, selectionStart);
+                            var colorRegex = /%\(#[0-9a-fA-F]{6}\)$/;
+                            var match = beforeCursor.match(colorRegex);
                             
-                            $(composerTextarea).trigger('input');
+                            if (match) {
+                                var matchStart = beforeCursor.lastIndexOf(match[0]);
+                                var newValue = value.substring(0, matchStart) + `%(${this.value})` + value.substring(selectionStart);
+                                
+                                composerTextarea.value = newValue;
+                                composerTextarea.selectionStart = matchStart + 2;
+                                composerTextarea.selectionEnd = matchStart + 9;
+                                
+                                $(composerTextarea).trigger('input').trigger('propertychange');
+                            }
                         }
                     });
-                    
-                    // 清理事件
-                    colorInput.addEventListener('blur', function() {
-                        setTimeout(() => {
-                            if (colorInput.parentNode) {
-                                colorInput.parentNode.removeChild(colorInput);
-                            }
-                        }, 100);
-                    });
-                    
-                    // 插入默认颜色语法
+                }
+
+                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
+                    composerTextarea = textarea;
                     if (selectionStart === selectionEnd) {
                         controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
@@ -272,10 +200,10 @@ $(document).ready(function () {
                         controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
                     }
                     
-                    // 触发颜色选择器
-                    setTimeout(() => {
-                        colorInput.click();
-                    }, 100);
+                    const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
+                    if (hiddenPicker) {
+                        hiddenPicker.click();
+                    }
                 });
 
                 formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
@@ -316,41 +244,31 @@ $(document).ready(function () {
 
                 formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '#' + (strings.textheader_anchor || 'anchor-id') + '(' + (strings.textheader_title || '标题文字') + ')');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.textheader_anchor || 'anchor-id').length);
+                        controls.insertIntoTextarea(textarea, '#' + (strings.textheader_anchor || 'anchor') + '(' + (strings.textheader_title || '标题') + ')');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.textheader_anchor || 'anchor').length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '#' + (strings.textheader_anchor || 'anchor-id') + '(', ')');
+                        controls.wrapSelectionInTextareaWith(textarea, '#' + (strings.textheader_anchor || 'anchor') + '(', ')');
                     }
                 });
 
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    const template = `===group
-\`\`\`${strings.groupedcode_firstlang || 'javascript'}
-const hello = 'world';
-console.log(hello);
-\`\`\`
-
-\`\`\`${strings.groupedcode_secondlang || 'python'}
-hello = 'world'
-print(hello)
-\`\`\`
-===`;
+                    const template = '===group\n```' + (strings.groupedcode_firstlang || 'javascript') + '\nconst hello = "world";\n```\n```' + (strings.groupedcode_secondlang || 'python') + '\nhello = "world"\n```\n===';
                     controls.insertIntoTextarea(textarea, template);
                 });
 
                 formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '°' + (strings.bubbleinfo_text || '悬停文字') + '°(提示内容)');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.bubbleinfo_text || '悬停文字').length);
+                        controls.insertIntoTextarea(textarea, '°' + (strings.bubbleinfo_text || '信息文本') + '°(' + (strings.bubbleinfo_text || '信息文本') + ')');
+                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.bubbleinfo_text || '信息文本').length);
                     } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '°', '°(提示内容)');
+                        controls.wrapSelectionInTextareaWith(textarea, '°', '°(' + (strings.bubbleinfo_text || '信息文本') + ')');
                     }
                 });
 
                 formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
                     if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]' + (strings.spoiler || '隐藏内容') + '[/spoiler]');
-                        controls.updateTextareaSelection(textarea, selectionStart + 15, selectionStart + 15 + (strings.spoiler || '隐藏内容').length);
+                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]' + (strings.spoiler || '剧透') + '[/spoiler]');
+                        controls.updateTextareaSelection(textarea, selectionStart + 15, selectionStart + 15 + (strings.spoiler || '剧透').length);
                     } else {
                         controls.wrapSelectionInTextareaWith(textarea, '[spoiler=点击展开]', '[/spoiler]');
                     }
@@ -371,52 +289,22 @@ print(hello)
         }
     };
 
-    function pageReady() {
+    async function pageReady() {
         setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
-        initializeTooltips();
-        initStepsNavigation();
         initializeAnimatedCodeGroups();
-    }
-
-    let initTimeout;
-    const observer = new MutationObserver(function(mutations) {
-        let shouldInit = false;
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        if (node.matches && (
-                            node.matches('.code-group-container, .extended-tabs-container, .steps-container, .collapsible-wrapper, .animated-code-group-container') ||
-                            node.querySelector('.code-group-container, .extended-tabs-container, .steps-container, .collapsible-wrapper, .animated-code-group-container')
-                        )) {
-                            shouldInit = true;
-                        }
-                    }
-                });
-            }
-        });
         
-        if (shouldInit) {
-            clearTimeout(initTimeout);
-            initTimeout = setTimeout(() => {
-                pageReady();
-            }, 100);
-        }
-    });
-    
-    observer.observe(document.documentElement, {
-        childList: true, 
-        subtree: true 
-    });
+        require(['bootstrap'], function (bootstrap) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
+                new bootstrap.Tooltip(element);
+            });
+        });
 
-    $(window).on('action:ajaxify.end', function() {
-        clearTimeout(initTimeout);
-        initTimeout = setTimeout(() => {
-            pageReady();
-        }, 150);
-    });
-    
-    pageReady();
+        document.querySelectorAll('button.extended-markdown-spoiler').forEach(function (element) {
+            element.onclick = function() {
+                element.children[0].className = element.attributes.getNamedItem("aria-expanded").value === "true" ? "fa fa-eye-slash" : "fa fa-eye";
+            };
+        });
+    }
 });
