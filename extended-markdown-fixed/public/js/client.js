@@ -156,18 +156,19 @@ $(document).ready(function () {
                 
                 if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
                     var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.visibility = 'hidden';
-                    hiddenPicker.style.width = '0px';
-                    hiddenPicker.style.padding = '0px';
-                    hiddenPicker.style.margin = '0px';
-                    hiddenPicker.style.height = '0px';
-                    hiddenPicker.style.border = '0px';
+                    hiddenPicker.style.position = 'absolute';
+                    hiddenPicker.style.left = '-9999px';
+                    hiddenPicker.style.top = '-9999px';
+                    hiddenPicker.style.width = '1px';
+                    hiddenPicker.style.height = '1px';
+                    hiddenPicker.style.opacity = '0';
                     hiddenPicker.type = 'color';
+                    hiddenPicker.value = '#000000';
                     hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
-                    colorPickerButton.parentNode.insertBefore(hiddenPicker, colorPickerButton.nextSibling);
+                    document.body.appendChild(hiddenPicker);
                     
-                    hiddenPicker.addEventListener('input', function() {
-                        if (composerTextarea) {
+                    hiddenPicker.addEventListener('change', function() {
+                        if (composerTextarea && this.value) {
                             var value = composerTextarea.value;
                             var selectionStart = composerTextarea.selectionStart;
                             var selectionEnd = composerTextarea.selectionEnd;
@@ -202,7 +203,9 @@ $(document).ready(function () {
                     
                     const hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
                     if (hiddenPicker) {
-                        hiddenPicker.click();
+                        setTimeout(() => {
+                            hiddenPicker.click();
+                        }, 100);
                     }
                 });
 
