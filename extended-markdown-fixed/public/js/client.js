@@ -195,133 +195,80 @@ $(document).ready(function () {
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
-        const [formatting, controls, translator] = await app.require(['composer/formatting', 'composer/controls', 'translator']);
-        
-        if (formatting && controls) {
-            translator.getTranslations(window.config.userLang || window.config.defaultLang, 'extendedmarkdown', function (strings) {
-                var composerTextarea;
-                var colorPickerButton = document.querySelector('.btn[data-format="color"]');
-                
-                if (colorPickerButton && !document.getElementById('nodebb-plugin-extended-markdown-colorpicker')) {
-                    var hiddenPicker = document.createElement("input");
-                    hiddenPicker.style.visibility = 'hidden';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.padding = '0';
-                    hiddenPicker.style.margin = '0';
-                    hiddenPicker.style.height = '0';
-                    hiddenPicker.style.border = '0';
-                    hiddenPicker.type = 'color';
-                    hiddenPicker.id = 'nodebb-plugin-extended-markdown-colorpicker';
-                    colorPickerButton.parentNode.insertBefore(hiddenPicker, colorPickerButton.nextSibling);
-                    
-                    hiddenPicker.addEventListener('input', function() {
-                        if (composerTextarea) {
-                            var selectionStart = composerTextarea.selectionStart;
-                            var selectionEnd = composerTextarea.selectionEnd;
-                            composerTextarea.value = composerTextarea.value.slice(0, selectionStart) + this.value + composerTextarea.value.slice(selectionEnd);
-                            $(composerTextarea).trigger('input').trigger('propertychange');
-                            composerTextarea.selectionStart = selectionStart;
-                            composerTextarea.selectionEnd = selectionStart + this.value.length;
-                        }
-                    });
-                }
-
-                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
-                    composerTextarea = textarea;
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '%(#000000)[' + (strings.color_text || '彩色文本') + ']');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '%(#000000)[', ']');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 9);
-                    }
-                    
-                    var hiddenPicker = document.getElementById('nodebb-plugin-extended-markdown-colorpicker');
-                    if (hiddenPicker) {
-                        hiddenPicker.click();
-                    }
+        try {
+            const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
+            
+            if (formatting && controls) {
+                formatting.addButtonDispatch('tabs', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n[tabs]\n[tab=标签1]\n内容1\n[tab=标签2]\n内容2\n[/tabs]\n');
                 });
 
-                formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|-' + (strings.align_left || '左对齐文字'));
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_left || '左对齐文字').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '|-', '');
-                    }
+                formatting.addButtonDispatch('steps', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n[steps]\n[step]\n第一步描述\n[step]\n第二步描述\n[/steps]\n');
                 });
 
-                formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|-' + (strings.align_center || '居中文字') + '-|');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_center || '居中文字').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
-                    }
+                formatting.addButtonDispatch('ruby', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '[ruby=读音]', '[/ruby]');
                 });
 
-                formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, (strings.align_right || '右对齐文字') + '-|');
-                        controls.updateTextareaSelection(textarea, selectionStart, selectionStart + (strings.align_right || '右对齐文字').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '', '-|');
-                    }
+                formatting.addButtonDispatch('superscript', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '^', '^');
                 });
 
-                formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '|=' + (strings.align_justify || '两端对齐文字') + '=|');
-                        controls.updateTextareaSelection(textarea, selectionStart + 2, selectionStart + 2 + (strings.align_justify || '两端对齐文字').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
-                    }
+                formatting.addButtonDispatch('subscript', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '~', '~');
                 });
 
                 formatting.addButtonDispatch('textheader', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '#' + (strings.textheader_anchor || 'anchor') + '(' + (strings.textheader_title || '标题') + ')');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.textheader_anchor || 'anchor').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '#' + (strings.textheader_anchor || 'anchor') + '(', ')');
-                    }
+                    controls.wrapSelectionInTextareaWith(textarea, '#锚点名(', ')');
                 });
-
+                
                 formatting.addButtonDispatch('groupedcode', function (textarea, selectionStart, selectionEnd) {
-                    const template = '===group\n```' + (strings.groupedcode_firstlang || 'javascript') + '\nconst hello = "world";\n```\n```' + (strings.groupedcode_secondlang || 'python') + '\nhello = "world"\n```\n===';
-                    controls.insertIntoTextarea(textarea, template);
+                    controls.insertIntoTextarea(textarea, '\n===group\n```javascript\nJavaScript代码\n```\n```python\nPython代码\n```\n===\n');
                 });
-
+                
                 formatting.addButtonDispatch('bubbleinfo', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '°' + (strings.bubbleinfo_text || '信息文本') + '°(' + (strings.bubbleinfo_text || '信息文本') + ')');
-                        controls.updateTextareaSelection(textarea, selectionStart + 1, selectionStart + 1 + (strings.bubbleinfo_text || '信息文本').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '°', '°(' + (strings.bubbleinfo_text || '信息文本') + ')');
-                    }
+                    controls.wrapSelectionInTextareaWith(textarea, '°', '°(提示文本)');
+                });
+                
+                formatting.addButtonDispatch('color', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '%(#ff0000)[', ']');
+                });
+                
+                formatting.addButtonDispatch('left', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|-', '');
+                });
+                
+                formatting.addButtonDispatch('center', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|-', '-|');
+                });
+                
+                formatting.addButtonDispatch('right', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '', '-|');
+                });
+                
+                formatting.addButtonDispatch('justify', function (textarea, selectionStart, selectionEnd) {
+                    controls.wrapSelectionInTextareaWith(textarea, '|=', '=|');
+                });
+                
+                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! info [标题]: 内容\n');
+                });
+                
+                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! warning [标题]: 内容\n');
+                });
+                
+                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
+                    controls.insertIntoTextarea(textarea, '\n!!! important [标题]: 内容\n');
                 });
 
                 formatting.addButtonDispatch('collapsible', function (textarea, selectionStart, selectionEnd) {
-                    if (selectionStart === selectionEnd) {
-                        controls.insertIntoTextarea(textarea, '[spoiler=点击展开]' + (strings.spoiler || '剧透') + '[/spoiler]');
-                        controls.updateTextareaSelection(textarea, selectionStart + 15, selectionStart + 15 + (strings.spoiler || '剧透').length);
-                    } else {
-                        controls.wrapSelectionInTextareaWith(textarea, '[spoiler=点击展开]', '[/spoiler]');
-                    }
+                    controls.insertIntoTextarea(textarea, '\n[spoiler=点击展开]\n隐藏内容\n[/spoiler]\n');
                 });
-
-                formatting.addButtonDispatch('noteinfo', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! info [信息]: 这是一条信息提示');
-                });
-
-                formatting.addButtonDispatch('notewarning', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! warning [警告]: 这是一条警告提示');
-                });
-
-                formatting.addButtonDispatch('noteimportant', function (textarea, selectionStart, selectionEnd) {
-                    controls.insertIntoTextarea(textarea, '!!! important [重要]: 这是一条重要提示');
-                });
-            });
+            }
+        } catch (error) {
+            console.warn('Extended Markdown: Could not load formatting tools', error);
         }
     };
 
