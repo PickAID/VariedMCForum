@@ -562,7 +562,7 @@ const ExtendedMarkdown = {
             { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
             { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
             { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
-            { name: "animatedcode", className: "fa fa-magic", title: "[[extendedmarkdown:composer.formatting.animatedcode]]" },
+            // { name: "animatedcode", className: "fa fa-magic", title: "[[extendedmarkdown:composer.formatting.animatedcode]]" },
             { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
             { name: "collapsible", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
             { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
