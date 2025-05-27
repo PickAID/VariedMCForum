@@ -14,6 +14,9 @@
         "public/js/client.js",
         "public/js/composer-preview.js"
     ],
+    "modules": {
+        "mermaid": "https://letmefly.xyz/Links/mermaid.min.js"
+    },
     "languages": "public/languages",
     "hooks": [
         {

@@ -511,7 +511,7 @@ function applyMermaid(textContent, id) {
         const cleanCode = cleanContent(mermaidCode);
         
         return `<div class="mermaid-container">
-            <pre class="mermaid">${cleanCode}</pre>
+            <pre class="mermaid" id="${mermaidId}">${cleanCode}</pre>
         </div>`;
     });
 }
@@ -620,6 +620,20 @@ const ExtendedMarkdown = {
         config.allowedAttributes['div'].push('class', 'id');
         config.allowedAttributes['pre'] = config.allowedAttributes['pre'] || [];
         config.allowedAttributes['pre'].push('class', 'id');
+        config.allowedTags.push('svg', 'g', 'path', 'text', 'rect', 'circle', 'line', 'polygon', 'polyline', 'ellipse', 'defs', 'marker', 'foreignObject');
+        config.allowedAttributes['svg'] = ['class', 'id', 'width', 'height', 'viewBox', 'xmlns', 'style'];
+        config.allowedAttributes['g'] = ['class', 'id', 'transform', 'style'];
+        config.allowedAttributes['path'] = ['class', 'id', 'd', 'fill', 'stroke', 'stroke-width', 'style'];
+        config.allowedAttributes['text'] = ['class', 'id', 'x', 'y', 'text-anchor', 'style', 'font-size', 'font-family'];
+        config.allowedAttributes['rect'] = ['class', 'id', 'x', 'y', 'width', 'height', 'fill', 'stroke', 'style'];
+        config.allowedAttributes['circle'] = ['class', 'id', 'cx', 'cy', 'r', 'fill', 'stroke', 'style'];
+        config.allowedAttributes['line'] = ['class', 'id', 'x1', 'y1', 'x2', 'y2', 'stroke', 'style'];
+        config.allowedAttributes['polygon'] = ['class', 'id', 'points', 'fill', 'stroke', 'style'];
+        config.allowedAttributes['polyline'] = ['class', 'id', 'points', 'fill', 'stroke', 'style'];
+        config.allowedAttributes['ellipse'] = ['class', 'id', 'cx', 'cy', 'rx', 'ry', 'fill', 'stroke', 'style'];
+        config.allowedAttributes['defs'] = ['class', 'id'];
+        config.allowedAttributes['marker'] = ['class', 'id', 'markerWidth', 'markerHeight', 'refX', 'refY', 'orient', 'markerUnits'];
+        config.allowedAttributes['foreignObject'] = ['class', 'id', 'x', 'y', 'width', 'height'];
         return config;
     }
 };
