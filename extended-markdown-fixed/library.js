@@ -510,16 +510,8 @@ function applyMermaid(textContent, id) {
         const mermaidId = `mermaid-${mermaidCount}-${id}`;
         const cleanCode = cleanContent(mermaidCode);
         
-        // 防止HTML实体编码问题
-        const encodedCode = cleanCode
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#x27;');
-        
         return `<div class="mermaid-container">
-            <div class="mermaid" id="${mermaidId}" data-mermaid-source="${encodeURIComponent(cleanCode)}">${encodedCode}</div>
+            <pre class="mermaid" id="${mermaidId}">${cleanCode}</pre>
         </div>`;
     });
 }

@@ -31,22 +31,20 @@ $(document).ready(function() {
                 fontFamily: 'inherit'
             });
             
-            $preview.find('.mermaid-container .mermaid').each(function() {
-                const $this = $(this);
-                const source = decodeURIComponent($this.data('mermaid-source') || '');
-                const id = $this.attr('id') || 'preview-mermaid-' + Math.random().toString(36).substr(2, 9);
+            $preview.find('.mermaid-container pre.mermaid').each(function() {
+                const element = this;
                 
-                if (source) {
+                if (!$(element).data('preview-rendered')) {
                     try {
-                        const cleanSource = source.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                        
-                        mermaid.render(id + '-svg', cleanSource).then(function(result) {
-                            $this.html(result.svg);
+                        mermaid.run({
+                            nodes: [element]
+                        }).then(() => {
+                            $(element).data('preview-rendered', true);
                         }).catch(function(error) {
-                            $this.html('<div class="mermaid-error">预览: ' + error.message + '</div>');
+                            $(element).html('<div class="mermaid-error">预览错误: ' + error.message + '</div>');
                         });
                     } catch (error) {
-                        $this.html('<div class="mermaid-error">预览错误: ' + error.message + '</div>');
+                        $(element).html('<div class="mermaid-error">预览错误: ' + error.message + '</div>');
                     }
                 }
             });

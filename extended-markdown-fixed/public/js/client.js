@@ -215,52 +215,54 @@ $(document).ready(function () {
                           localStorage.getItem('theme') === 'dark';
             
             mermaid.initialize({
-                startOnLoad: false,
+                startOnLoad: true,
                 theme: isDark ? 'dark' : 'default',
                 securityLevel: 'loose',
-                fontFamily: 'inherit',
-                themeVariables: {
-                    fontFamily: 'inherit'
-                }
+                fontFamily: 'inherit'
             });
             
-            $('.mermaid-container .mermaid').each(function() {
+            $('.mermaid-container pre.mermaid').each(function() {
                 const $this = $(this);
                 if (!$this.data('mermaid-rendered')) {
-                    const source = decodeURIComponent($this.data('mermaid-source') || '');
-                    const id = $this.attr('id');
-                    
-                    if (source && id) {
-                        try {
-                            const cleanSource = source.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                            
-                            mermaid.render(id + '-svg', cleanSource).then(function(result) {
-                                $this.html(result.svg);
-                                $this.data('mermaid-rendered', true);
-                            }).catch(function(error) {
-                                console.error('Mermaid渲染错误:', error);
-                                $this.html('<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>');
-                            });
-                        } catch (error) {
-                            console.error('Mermaid渲染错误:', error);
-                            $this.html('<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>');
-                        }
-                    }
+                    $this.data('mermaid-rendered', true);
                 }
             });
         });
     }
 
     function reinitializeMermaidWithTheme() {
-        $('.mermaid-container .mermaid').each(function() {
+        $('.mermaid-container pre.mermaid').each(function() {
             const $this = $(this);
             $this.removeData('mermaid-rendered');
-            const source = decodeURIComponent($this.data('mermaid-source') || '');
-            if (source) {
-                $this.text(source);
-            }
+            $this.removeClass('mermaid-processed');
+            $this.removeAttr('data-processed');
         });
-        initializeMermaid();
+        
+        require(['mermaid'], function(mermaid) {
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                          document.body.classList.contains('dark') || 
+                          localStorage.getItem('theme') === 'dark';
+            
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: isDark ? 'dark' : 'default',
+                securityLevel: 'loose',
+                fontFamily: 'inherit'
+            });
+            
+            $('.mermaid-container pre.mermaid').each(function() {
+                const element = this;
+                const id = element.id || 'mermaid-' + Math.random().toString(36).substr(2, 9);
+                
+                try {
+                    mermaid.run({
+                        nodes: [element]
+                    });
+                } catch (error) {
+                    console.error('Mermaid主题切换错误:', error);
+                }
+            });
+        });
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {

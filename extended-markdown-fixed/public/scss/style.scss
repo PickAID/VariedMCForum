@@ -954,7 +954,12 @@ a.anchor-offset {
     overflow-x: auto;
     transition: all 0.3s ease;
     
-    .mermaid {
+    pre.mermaid {
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        font-family: inherit;
         display: inline-block;
         max-width: 100%;
         
@@ -1004,7 +1009,7 @@ a.anchor-offset {
         padding: 0.75rem;
         margin: 0.75rem 0;
         
-        .mermaid {
+        pre.mermaid {
             font-size: 0.9em;
         }
         
