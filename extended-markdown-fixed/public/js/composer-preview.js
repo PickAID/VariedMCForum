@@ -25,17 +25,14 @@ $(document).ready(function() {
     });
     
     function updateMermaidPreview() {
-        if (typeof window.mermaid !== 'undefined') {
-            processMermaidPreview();
-        } else {
-            require(['mermaid'], function(mermaid) {
-                if (mermaid) {
-                    window.mermaid = mermaid;
-                    processMermaidPreview();
-                } else {
-                    loadMermaidForPreview();
-                }
-            });
+        try {
+            if (typeof window.mermaid !== 'undefined') {
+                processMermaidPreview();
+            } else {
+                loadMermaidForPreview();
+            }
+        } catch (error) {
+            console.error('Mermaid预览更新错误:', error);
         }
     }
     
@@ -46,10 +43,14 @@ $(document).ready(function() {
         
         const script = document.createElement('script');
         script.src = 'https://letmefly.xyz/Links/mermaid.min.js';
+        script.async = true;
         script.onload = function() {
             if (window.mermaid) {
                 processMermaidPreview();
             }
+        };
+        script.onerror = function() {
+            console.warn('预览中无法加载Mermaid');
         };
         document.head.appendChild(script);
     }
@@ -81,16 +82,15 @@ $(document).ready(function() {
                                 element.innerHTML = result.svg;
                             }).catch(function(error) {
                                 console.error('Mermaid预览错误:', error);
-                                element.innerHTML = '<div class="mermaid-error">预览失败: ' + error.message + '</div>';
+                                element.innerHTML = '<div class="mermaid-error">预览失败</div>';
                             });
                         } else {
-                            // 旧版本兼容
                             element.innerHTML = source;
                             window.mermaid.init(undefined, element);
                         }
                     } catch (error) {
                         console.error('Mermaid预览处理错误:', error);
-                        element.innerHTML = '<div class="mermaid-error">预览处理失败: ' + error.message + '</div>';
+                        element.innerHTML = '<div class="mermaid-error">预览处理失败</div>';
                     }
                 }
             });
