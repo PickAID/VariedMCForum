@@ -30,41 +30,23 @@ $(document).ready(function () {
             });
         }
         
-        if (document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
+        if (document.documentElement.classList.contains('dark') || 
             document.body.classList.contains('dark') ||
             localStorage.getItem('theme') === 'dark') {
             applyExtendedMarkdownTheme(true);
         }
-        
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
-                    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                    applyExtendedMarkdownTheme(isDark);
-                }
-            });
-        });
-        
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['data-bs-theme']
-        });
     }
 
     function applyExtendedMarkdownTheme(isDark) {
         const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
                 element.classList.remove(themeClass);
             }
         });
-        
-        setTimeout(function() {
-            reinitializeMermaidWithTheme();
-        }, 100);
     }
 
     function initializeTabComponents() {
@@ -210,98 +192,6 @@ $(document).ready(function () {
                 updateButtons();
             }
         });
-    }
-
-    function initializeMermaid() {
-        // 直接加载CDN版本的mermaid
-        if (typeof window.mermaid !== 'undefined') {
-            initMermaidElements();
-        } else {
-            require(['mermaid'], function(mermaid) {
-                if (mermaid) {
-                    window.mermaid = mermaid;
-                    initMermaidElements();
-                } else {
-                    // 备用CDN加载
-                    loadMermaidFromCDN();
-                }
-            });
-        }
-    }
-    
-    function loadMermaidFromCDN() {
-        if (document.querySelector('script[src*="mermaid"]')) {
-            return;
-        }
-        
-        const script = document.createElement('script');
-        script.src = 'https://letmefly.xyz/Links/mermaid.min.js';
-        script.onload = function() {
-            if (window.mermaid) {
-                initMermaidElements();
-            }
-        };
-        script.onerror = function() {
-            console.warn('无法加载Mermaid CDN');
-        };
-        document.head.appendChild(script);
-    }
-    
-    function initMermaidElements() {
-        try {
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
-                          document.body.classList.contains('dark') || 
-                          localStorage.getItem('theme') === 'dark';
-            
-            window.mermaid.initialize({
-                startOnLoad: false,
-                theme: isDark ? 'dark' : 'default',
-                securityLevel: 'loose',
-                fontFamily: 'inherit'
-            });
-            
-            document.querySelectorAll('.mermaid-container pre.mermaid:not([data-processed])').forEach(function(element) {
-                if (element && element.textContent) {
-                    element.setAttribute('data-processed', 'true');
-                    
-                    try {
-                        const source = element.textContent.trim();
-                        const id = element.id || 'mermaid-' + Math.random().toString(36).substr(2, 9);
-                        element.id = id;
-                        
-                        if (window.mermaid.render) {
-                            window.mermaid.render(id + '-svg', source).then(function(result) {
-                                element.innerHTML = result.svg;
-                            }).catch(function(error) {
-                                console.error('Mermaid渲染错误:', error);
-                                element.innerHTML = '<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>';
-                            });
-                        } else {
-                            // 旧版本mermaid的兼容处理
-                            element.innerHTML = source;
-                            window.mermaid.init(undefined, element);
-                        }
-                    } catch (error) {
-                        console.error('Mermaid处理错误:', error);
-                        element.innerHTML = '<div class="mermaid-error">图表处理失败: ' + error.message + '</div>';
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Mermaid初始化失败:', error);
-        }
-    }
-
-    function reinitializeMermaidWithTheme() {
-        document.querySelectorAll('.mermaid-container pre.mermaid').forEach(function(element) {
-            if (element) {
-                element.removeAttribute('data-processed');
-            }
-        });
-        
-        setTimeout(function() {
-            initializeMermaid();
-        }, 200);
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
@@ -466,11 +356,6 @@ $(document).ready(function () {
                         controls.wrapSelectionInTextareaWith(textarea, '~', '~');
                     }
                 });
-
-                formatting.addButtonDispatch('mermaid', function (textarea, selectionStart, selectionEnd) {
-                    const mermaidTemplate = '\n[mermaid]\ngraph TD\n    A[开始] --> B[处理]\n    B --> C[结束]\n[/mermaid]\n';
-                    controls.insertIntoTextarea(textarea, mermaidTemplate);
-                });
             }
         } catch (error) {
             console.warn('Extended Markdown: Could not load formatting tools', error);
@@ -483,7 +368,6 @@ $(document).ready(function () {
         initializeCollapse();
         initializeAnimatedCodeGroups();
         initializeStepsNavigation();
-        initializeMermaid();
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
@@ -504,7 +388,6 @@ $(document).ready(function () {
             initializeTabComponents();
             initializeCollapse();
             initializeAnimatedCodeGroups();
-            initializeMermaid();
         }, 100);
     });
 });
