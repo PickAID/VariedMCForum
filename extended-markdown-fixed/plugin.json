@@ -11,14 +11,17 @@
         "public/scss/style.scss"
     ],
     "scripts": [
-        "public/js/client.js",
-        "public/js/composer-preview.js"
+        "public/js/client.js"
     ],
     "languages": "public/languages",
     "hooks": [
         {
+            "hook": "static:app.load",
+            "method": "init"
+        },
+        {
             "hook": "filter:parse.post",
-            "method": "parseRaw"
+            "method": "parsePost"
         },
         {
             "hook": "filter:parse.signature",

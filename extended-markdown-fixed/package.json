@@ -1,27 +1,14 @@
 {
     "name": "nodebb-plugin-extended-markdown-fixed",
-    "version": "1.8.5",
-    "description": "This plugin adds useful new features to nodebb markdown parser.",
+    "version": "1.0.0",
+    "description": "Extended Markdown plugin for NodeBB",
     "main": "library.js",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/NodeBB/nodebb-plugin-extended-markdown-fixed"
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "keywords": [
-        "nodebb",
-        "plugin",
-        "markdown",
-        "extended"
-    ],
-    "author": {
-        "name": "NodeBB Inc.",
-        "email": "support@nodebb.org"
+    "peerDependencies": {
+        "nodebb": ">=1.0.0"
     },
-    "license": "BSD-2-Clause",
-    "bugs": {
-        "url": "https://github.com/NodeBB/nodebb-plugin-extended-markdown-fixed/issues"
-    },
-    "readmeFilename": "README.md",
     "nbbpm": {
         "compatibility": "^3.0.0"
     }
