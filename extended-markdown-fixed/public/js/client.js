@@ -61,6 +61,10 @@ $(document).ready(function () {
                 element.classList.remove(themeClass);
             }
         });
+        
+        setTimeout(function() {
+            reinitializeMermaidWithTheme();
+        }, 100);
     }
 
     function initializeTabComponents() {
@@ -215,27 +219,37 @@ $(document).ready(function () {
                           localStorage.getItem('theme') === 'dark';
             
             mermaid.initialize({
-                startOnLoad: true,
+                startOnLoad: false,
                 theme: isDark ? 'dark' : 'default',
                 securityLevel: 'loose',
                 fontFamily: 'inherit'
             });
             
-            $('.mermaid-container pre.mermaid').each(function() {
-                const $this = $(this);
-                if (!$this.data('mermaid-rendered')) {
-                    $this.data('mermaid-rendered', true);
+            document.querySelectorAll('.mermaid-container pre.mermaid:not([data-processed])').forEach(function(element) {
+                if (element && typeof element.setAttribute === 'function') {
+                    element.setAttribute('data-processed', 'true');
+                    try {
+                        mermaid.run({
+                            nodes: [element]
+                        }).catch(function(error) {
+                            console.error('Mermaid渲染错误:', error);
+                            element.innerHTML = '<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>';
+                        });
+                    } catch (error) {
+                        console.error('Mermaid初始化错误:', error);
+                        element.innerHTML = '<div class="mermaid-error">图表初始化失败: ' + error.message + '</div>';
+                    }
                 }
             });
         });
     }
 
     function reinitializeMermaidWithTheme() {
-        $('.mermaid-container pre.mermaid').each(function() {
-            const $this = $(this);
-            $this.removeData('mermaid-rendered');
-            $this.removeClass('mermaid-processed');
-            $this.removeAttr('data-processed');
+        document.querySelectorAll('.mermaid-container pre.mermaid').forEach(function(element) {
+            if (element) {
+                element.removeAttribute('data-processed');
+                element.classList.remove('mermaid-processed');
+            }
         });
         
         require(['mermaid'], function(mermaid) {
@@ -250,16 +264,19 @@ $(document).ready(function () {
                 fontFamily: 'inherit'
             });
             
-            $('.mermaid-container pre.mermaid').each(function() {
-                const element = this;
-                const id = element.id || 'mermaid-' + Math.random().toString(36).substr(2, 9);
-                
-                try {
-                    mermaid.run({
-                        nodes: [element]
-                    });
-                } catch (error) {
-                    console.error('Mermaid主题切换错误:', error);
+            document.querySelectorAll('.mermaid-container pre.mermaid').forEach(function(element) {
+                if (element && typeof element.setAttribute === 'function') {
+                    try {
+                        mermaid.run({
+                            nodes: [element]
+                        }).catch(function(error) {
+                            console.error('Mermaid主题切换错误:', error);
+                            element.innerHTML = '<div class="mermaid-error">主题切换失败: ' + error.message + '</div>';
+                        });
+                    } catch (error) {
+                        console.error('Mermaid主题切换错误:', error);
+                        element.innerHTML = '<div class="mermaid-error">主题切换失败: ' + error.message + '</div>';
+                    }
                 }
             });
         });
