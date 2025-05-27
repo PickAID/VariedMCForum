@@ -11,7 +11,8 @@
         "public/scss/style.scss"
     ],
     "scripts": [
-        "public/js/client.js"
+        "public/js/client.js",
+        "public/js/composer-preview.js"
     ],
     "modules": {
         "mermaid": "mermaid/dist/mermaid.min.js"

@@ -510,8 +510,16 @@ function applyMermaid(textContent, id) {
         const mermaidId = `mermaid-${mermaidCount}-${id}`;
         const cleanCode = cleanContent(mermaidCode);
         
+        // 防止HTML实体编码问题
+        const encodedCode = cleanCode
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+        
         return `<div class="mermaid-container">
-            <div class="mermaid" id="${mermaidId}" data-mermaid-source="${encodeURIComponent(cleanCode)}">${cleanCode}</div>
+            <div class="mermaid" id="${mermaidId}" data-mermaid-source="${encodeURIComponent(cleanCode)}">${encodedCode}</div>
         </div>`;
     });
 }
@@ -590,19 +598,19 @@ const ExtendedMarkdown = {
     
     async registerFormatting(payload) {
         const formatting = [
-            { name: "color", className: "fa fa-eyedropper", title: "[[extendedmarkdown:composer.formatting.color]]" },
-            { name: "left", className: "fa fa-align-left", title: "[[extendedmarkdown:composer.formatting.left]]" },
-            { name: "center", className: "fa fa-align-center", title: "[[extendedmarkdown:composer.formatting.center]]" },
-            { name: "right", className: "fa fa-align-right", title: "[[extendedmarkdown:composer.formatting.right]]" },
-            { name: "justify", className: "fa fa-align-justify", title: "[[extendedmarkdown:composer.formatting.justify]]" },
-            { name: "textheader", className: "fa fa-header", title: "[[extendedmarkdown:composer.formatting.textheader]]" },
-            { name: "groupedcode", className: "fa fa-file-code-o", title: "[[extendedmarkdown:composer.formatting.groupedcode]]" },
-            { name: "bubbleinfo", className: "fa fa-info-circle", title: "[[extendedmarkdown:composer.formatting.bubbleinfo]]" },
-            { name: "collapsible", className: "fa fa-eye-slash", title: "[[extendedmarkdown:composer.formatting.spoiler]]" },
-            { name: "noteinfo", className: "fa fa-info", title: "[[extendedmarkdown:composer.formatting.noteinfo]]" },
-            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "[[extendedmarkdown:composer.formatting.notewarning]]" },
-            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "[[extendedmarkdown:composer.formatting.noteimportant]]" },
-            { name: 'tabs', className: 'fa fa-folder-open', title: '插入标签页' },
+            { name: "color", className: "fa fa-eyedropper", title: "颜色" },
+            { name: "left", className: "fa fa-align-left", title: "左对齐" },
+            { name: "center", className: "fa fa-align-center", title: "居中对齐" },
+            { name: "right", className: "fa fa-align-right", title: "右对齐" },
+            { name: "justify", className: "fa fa-align-justify", title: "两端对齐" },
+            { name: "textheader", className: "fa fa-header", title: "文本标题" },
+            { name: "groupedcode", className: "fa fa-file-code-o", title: "代码组" },
+            { name: "bubbleinfo", className: "fa fa-info-circle", title: "气泡信息" },
+            { name: "collapsible", className: "fa fa-eye-slash", title: "折叠内容" },
+            { name: "noteinfo", className: "fa fa-info", title: "信息提示" },
+            { name: "notewarning", className: "fa fa-exclamation-triangle", title: "警告提示" },
+            { name: "noteimportant", className: "fa fa-exclamation-circle", title: "重要提示" },
+            { name: 'tabs', className: 'fa fa-folder-open', title: '插入标签卡' },
             { name: 'steps', className: 'fa fa-tasks', title: '插入步骤' },
             { name: 'ruby', className: 'fa fa-language', title: '插入音注标记' },
             { name: 'superscript', className: 'fa fa-superscript', title: '上标' },

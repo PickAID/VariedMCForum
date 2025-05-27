@@ -30,17 +30,31 @@ $(document).ready(function () {
             });
         }
         
-        if (document.documentElement.classList.contains('dark') || 
+        if (document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
             document.body.classList.contains('dark') ||
             localStorage.getItem('theme') === 'dark') {
             applyExtendedMarkdownTheme(true);
         }
+        
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                    applyExtendedMarkdownTheme(isDark);
+                }
+            });
+        });
+        
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme']
+        });
     }
 
     function applyExtendedMarkdownTheme(isDark) {
         const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
@@ -196,11 +210,18 @@ $(document).ready(function () {
 
     function initializeMermaid() {
         require(['mermaid'], function(mermaid) {
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                          document.body.classList.contains('dark') || 
+                          localStorage.getItem('theme') === 'dark';
+            
             mermaid.initialize({
                 startOnLoad: false,
-                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+                theme: isDark ? 'dark' : 'default',
                 securityLevel: 'loose',
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                themeVariables: {
+                    fontFamily: 'inherit'
+                }
             });
             
             $('.mermaid-container .mermaid').each(function() {
@@ -211,18 +232,35 @@ $(document).ready(function () {
                     
                     if (source && id) {
                         try {
-                            mermaid.render(id + '-svg', source, function(svgCode) {
-                                $this.html(svgCode);
+                            const cleanSource = source.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                            
+                            mermaid.render(id + '-svg', cleanSource).then(function(result) {
+                                $this.html(result.svg);
                                 $this.data('mermaid-rendered', true);
+                            }).catch(function(error) {
+                                console.error('Mermaid渲染错误:', error);
+                                $this.html('<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>');
                             });
                         } catch (error) {
                             console.error('Mermaid渲染错误:', error);
-                            $this.html('<div class="mermaid-error">图表渲染失败</div>');
+                            $this.html('<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>');
                         }
                     }
                 }
             });
         });
+    }
+
+    function reinitializeMermaidWithTheme() {
+        $('.mermaid-container .mermaid').each(function() {
+            const $this = $(this);
+            $this.removeData('mermaid-rendered');
+            const source = decodeURIComponent($this.data('mermaid-source') || '');
+            if (source) {
+                $this.text(source);
+            }
+        });
+        initializeMermaid();
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {
