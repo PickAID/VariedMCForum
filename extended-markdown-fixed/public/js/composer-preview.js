@@ -40,7 +40,46 @@ $(document).ready(function() {
     function updateMermaidPreview($preview) {
         if (!$preview || !$preview.length) return;
         
-        require(['mermaid'], function(mermaid) {
+        if (window.mermaid) {
+            processMermaidInPreview(window.mermaid, $preview);
+        } else {
+            loadMermaidForPreview().then(function(mermaid) {
+                processMermaidInPreview(mermaid, $preview);
+            }).catch(function(error) {
+                console.error('预览中无法加载Mermaid:', error);
+            });
+        }
+    }
+    
+    function loadMermaidForPreview() {
+        return new Promise(function(resolve, reject) {
+            if (window.mermaid) {
+                resolve(window.mermaid);
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.innerHTML = `
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                window.mermaid = mermaid;
+                window.dispatchEvent(new CustomEvent('mermaid-preview-loaded', { detail: mermaid }));
+            `;
+            
+            window.addEventListener('mermaid-preview-loaded', function(event) {
+                resolve(event.detail);
+            }, { once: true });
+            
+            script.onerror = function() {
+                reject(new Error('Failed to load Mermaid for preview'));
+            };
+            
+            document.head.appendChild(script);
+        });
+    }
+    
+    function processMermaidInPreview(mermaid, $preview) {
+        try {
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
             
             mermaid.initialize({
@@ -57,19 +96,27 @@ $(document).ready(function() {
                     element.setAttribute('data-preview-processed', 'true');
                     
                     try {
-                        mermaid.run({
-                            nodes: [element]
-                        }).catch(function(error) {
-                            console.error('Mermaid预览错误:', error);
-                            element.innerHTML = '<div class="mermaid-error">预览错误: ' + error.message + '</div>';
-                        });
+                        const source = element.textContent.trim();
+                        if (source) {
+                            const id = element.id || 'preview-mermaid-' + Math.random().toString(36).substr(2, 9);
+                            element.id = id;
+                            
+                            mermaid.render(id + '-svg', source).then(function(result) {
+                                element.innerHTML = result.svg;
+                            }).catch(function(error) {
+                                console.error('Mermaid预览渲染错误:', error);
+                                element.innerHTML = '<div class="mermaid-error">预览渲染失败: ' + error.message + '</div>';
+                            });
+                        }
                     } catch (error) {
-                        console.error('Mermaid预览错误:', error);
-                        element.innerHTML = '<div class="mermaid-error">预览错误: ' + error.message + '</div>';
+                        console.error('Mermaid预览处理错误:', error);
+                        element.innerHTML = '<div class="mermaid-error">预览处理失败: ' + error.message + '</div>';
                     }
                 }
             });
-        });
+        } catch (error) {
+            console.error('Mermaid预览初始化错误:', error);
+        }
     }
     
     $(document).on('action:composer.preview', function() {

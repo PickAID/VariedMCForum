@@ -511,7 +511,7 @@ function applyMermaid(textContent, id) {
         const cleanCode = cleanContent(mermaidCode);
         
         return `<div class="mermaid-container">
-            <pre class="mermaid" id="${mermaidId}">${cleanCode}</pre>
+            <pre class="mermaid" id="${mermaidId}" data-original-text="${encodeURIComponent(cleanCode)}">${cleanCode}</pre>
         </div>`;
     });
 }
