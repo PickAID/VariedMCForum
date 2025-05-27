@@ -39,7 +39,6 @@ const noteIcons = {
 
 function ensureString(text) {
     if (typeof text !== 'string') {
-        console.warn('Expected string but got:', typeof text, text);
         return '';
     }
     return text;
@@ -53,7 +52,7 @@ function applyColor(textContent) {
     textContent = ensureString(textContent);
     return textContent.replace(colorRegex, function (match, code, color, content) {
         if (code) return code;
-        return `<span style="color: ${color}">${content}</span>`;
+        return `<span style="color: ${ensureString(color)}">${ensureString(content)}</span>`;
     });
 }
 
@@ -61,7 +60,7 @@ function applyTextHeaders(textContent) {
     textContent = ensureString(textContent);
     return textContent.replace(textHeaderRegex, function (match, code, id, content) {
         if (code) return code;
-        return `<h2 class="text-header" id="${slugify(id)}">${content}</h2>`;
+        return `<h2 class="text-header" id="${slugify(ensureString(id))}">${ensureString(content)}</h2>`;
     });
 }
 
@@ -69,13 +68,14 @@ function applyTooltips(textContent) {
     textContent = ensureString(textContent);
     return textContent.replace(tooltipRegex, function (match, code, content, tooltip) {
         if (code) return code;
-        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltip}">${content}</span>`;
+        return `<span class="extended-markdown-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="${ensureString(tooltip)}">${ensureString(content)}</span>`;
     });
 }
 
 function applyAlignments(textContent) {
     textContent = ensureString(textContent);
     return textContent.replace(paragraphAndHeadingRegex, function (match, tag, content, closingTag) {
+        content = ensureString(content);
         if (content.includes('--left--')) {
             return match.replace('--left--', '').replace(`<${tag}>`, `<${tag} style="text-align: left;">`);
         } else if (content.includes('--center--')) {
@@ -94,7 +94,7 @@ function applyMermaid(textContent, id) {
     let mermaidCount = 0;
     return textContent.replace(mermaidRegex, function (match, mermaidCode) {
         mermaidCount++;
-        const mermaidId = `mermaid-${mermaidCount}-${id}`;
+        const mermaidId = `mermaid-${mermaidCount}-${ensureString(id)}`;
         const cleanCode = cleanContent(mermaidCode);
         
         return `<div class="mermaid-container">
@@ -107,10 +107,18 @@ function applyNote(textContent) {
     textContent = ensureString(textContent);
     return textContent.replace(noteRegex, function (match, code, type, title, content) {
         if (code) return code;
+        
+        type = ensureString(type);
+        title = ensureString(title);
+        content = ensureString(content);
+        
+        const iconClass = noteIcons[type] || 'fa-info-circle';
+        const displayTitle = title || (type.charAt(0).toUpperCase() + type.slice(1));
+        
         return `<div class="markdown-alert alert-${type}">
             <div class="alert-title">
-                <i class="fa ${noteIcons[type]}"></i>
-                ${title || type.charAt(0).toUpperCase() + type.slice(1)}
+                <i class="fa ${iconClass}"></i>
+                ${displayTitle}
             </div>
             <div class="alert-content">${content}</div>
         </div>`;
@@ -121,12 +129,12 @@ function applySuperscriptAndSubscript(textContent) {
     textContent = ensureString(textContent);
     textContent = textContent.replace(superscriptRegex, function (match, code, prefix, content) {
         if (code) return code;
-        return `${prefix}<sup>${content}</sup>`;
+        return `${ensureString(prefix)}<sup>${ensureString(content)}</sup>`;
     });
     
     textContent = textContent.replace(subscriptRegex, function (match, code, prefix, content) {
         if (code) return code;
-        return `${prefix}<sub>${content}</sub>`;
+        return `${ensureString(prefix)}<sub>${ensureString(content)}</sub>`;
     });
     
     return textContent;
@@ -134,55 +142,67 @@ function applySuperscriptAndSubscript(textContent) {
 
 function applyRuby(textContent) {
     textContent = ensureString(textContent);
-    return textContent.replace(rubyRegex, function (match, codeBlock, reading, text) {
-        if (codeBlock) return codeBlock;
-        return `<ruby>${text}<rt>${reading}</rt></ruby>`;
+    return textContent.replace(rubyRegex, function (match, code, reading, text) {
+        if (code) return code;
+        return `<ruby>${ensureString(text)}<rt>${ensureString(reading)}</rt></ruby>`;
     });
 }
 
 function applyAnchors(textContent) {
     textContent = ensureString(textContent);
-    return textContent.replace(/<h([1-6])[^>]*id="([^"]*)"[^>]*>([^<]*)<\/h[1-6]>/g, function (match, level, id, content) {
-        return `${match}<a name="${id}"></a>`;
+    return textContent.replace(/<h([1-6])([^>]*?)>([^<]+)<\/h[1-6]>/g, function(match, level, attrs, text) {
+        const cleanText = ensureString(text).trim();
+        const anchor = slugify(cleanText);
+        return `<h${level}${attrs}><a name="${anchor}"></a>${cleanText}</h${level}>`;
     });
 }
 
 function applyGroupCode(textContent, id) {
     textContent = ensureString(textContent);
+    
     if (textContent.match(codeTabRegex)) {
         let count = 0;
         textContent = textContent.replace(codeTabRegex, (match, codes) => {
-            count++;
-            let cleanCodes = codes.trim();
+            let cleanCodes = ensureString(codes).trim();
             let codeArray = cleanCodes.substring(5, cleanCodes.length - 6).split(/<\/pre>\n<pre>/g);
+            let items = [];
             
-            let tabsHtml = '<ul class="nav nav-tabs code-tabs" role="tablist">';
-            let contentHtml = '<div class="tab-content code-content">';
-            
-            for (let i in codeArray) {
-                const langMatch = langCodeRegex.exec(codeArray[i]);
-                if (langMatch) {
-                    const lang = langMatch[1];
-                    let codeContent = codeArray[i]
-                        .replace(/<\/?pre[^>]*>/g, '')
-                        .replace(/<code[^>]*>/g, '')
-                        .replace(/<\/code>/g, '')
-                        .trim();
-                    
-                    const isActive = i == 0 ? 'active' : '';
-                    const tabId = `tab-${id}-${count}-${i}`;
-                    const contentId = `content-${id}-${count}-${i}`;
-                    
-                    tabsHtml += `<li class="nav-item" role="presentation">
-                        <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${i == 0}">
-                            ${lang}
-                        </button>
-                    </li>`;
-                    
-                    contentHtml += `<div class="tab-pane fade show ${isActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
-                        <pre><code class="${lang}">${codeContent}</code></pre>
-                    </div>`;
+            for (let i = 0; i < codeArray.length; i++) {
+                const code = ensureString(codeArray[i]);
+                const langMatch = langCodeRegex.exec(code);
+                if (langMatch && langMatch[1]) {
+                    const language = ensureString(langMatch[1]);
+                    const codeContent = code.replace(/<code class=".+">/g, '').replace(/<\/code>/g, '');
+                    items.push({
+                        language: language,
+                        content: ensureString(codeContent)
+                    });
                 }
+            }
+            
+            if (items.length === 0) return match;
+            
+            count++;
+            const groupId = `code-group-${id}-${count}`;
+            let tabsHtml = `<ul class="nav nav-tabs" role="tablist">`;
+            let contentHtml = `<div class="tab-content">`;
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const tabId = `${groupId}-tab-${i}`;
+                const contentId = `${groupId}-content-${i}`;
+                const isActive = i === 0 ? 'active' : '';
+                const showActive = i === 0 ? 'show active' : '';
+                
+                tabsHtml += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${i === 0}">
+                        ${item.language}
+                    </button>
+                </li>`;
+                
+                contentHtml += `<div class="tab-pane fade ${showActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
+                    <pre><code class="language-${item.language}">${item.content}</code></pre>
+                </div>`;
             }
             
             tabsHtml += '</ul>';
@@ -191,34 +211,49 @@ function applyGroupCode(textContent, id) {
             return `<div class="code-group-container">${tabsHtml}${contentHtml}</div>`;
         });
     }
+    
     return textContent;
 }
 
 function applyExtendedTabs(textContent, id) {
     textContent = ensureString(textContent);
-    return textContent.replace(extendedTabsRegex, function(match, content) {
+    return textContent.replace(extendedTabsRegex, function(match, tabsContent) {
+        tabsContent = ensureString(tabsContent);
+        let tabs = [];
         let tabCount = 0;
-        let tabsHtml = '<ul class="nav nav-tabs extended-tabs-nav" role="tablist">';
-        let contentHtml = '<div class="tab-content extended-tabs-content">';
         
-        content = content.replace(tabRegex, function(tabMatch, title, tabContent) {
-            const isActive = tabCount === 0 ? 'active' : '';
-            const tabId = `extended-tab-${id}-${tabCount}`;
-            const contentId = `extended-content-${id}-${tabCount}`;
-            
-            tabsHtml += `<li class="nav-item" role="presentation">
-                <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${tabCount === 0}">
-                    ${title.trim()}
-                </button>
-            </li>`;
-            
-            contentHtml += `<div class="tab-pane fade show ${isActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
-                ${tabContent.trim()}
-            </div>`;
-            
+        tabsContent.replace(tabRegex, function(tabMatch, title, content) {
+            tabs.push({
+                title: ensureString(title).trim(),
+                content: ensureString(content).trim()
+            });
             tabCount++;
             return '';
         });
+        
+        if (tabs.length === 0) return match;
+        
+        const tabsId = `tabs-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        let tabsHtml = `<ul class="nav nav-tabs" role="tablist">`;
+        let contentHtml = `<div class="tab-content">`;
+        
+        for (let i = 0; i < tabs.length; i++) {
+            const tab = tabs[i];
+            const tabId = `${tabsId}-tab-${i}`;
+            const contentId = `${tabsId}-content-${i}`;
+            const isActive = i === 0 ? 'active' : '';
+            const showActive = i === 0 ? 'show active' : '';
+            
+            tabsHtml += `<li class="nav-item" role="presentation">
+                <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${i === 0}">
+                    ${tab.title}
+                </button>
+            </li>`;
+            
+            contentHtml += `<div class="tab-pane fade ${showActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
+                ${tab.content}
+            </div>`;
+        }
         
         tabsHtml += '</ul>';
         contentHtml += '</div>';
@@ -229,34 +264,43 @@ function applyExtendedTabs(textContent, id) {
 
 function applySteps(textContent, id) {
     textContent = ensureString(textContent);
-    return textContent.replace(stepsRegex, function(match, content) {
-        let stepCount = 0;
-        let tabsHtml = '<ul class="nav nav-tabs steps-nav" role="tablist">';
-        let contentHtml = '<div class="tab-content steps-content">';
-        let navigationHtml = '<div class="steps-navigation"><button class="btn btn-secondary step-prev" disabled>上一步</button><span class="step-indicator">第 <span class="current-step">1</span> 步，共 ';
+    return textContent.replace(stepsRegex, function(match, stepsContent) {
+        stepsContent = ensureString(stepsContent);
+        let steps = [];
         
-        content = content.replace(stepRegex, function(stepMatch, stepContent) {
-            const isActive = stepCount === 0 ? 'active' : '';
-            const tabId = `step-tab-${id}-${stepCount}`;
-            const contentId = `step-content-${id}-${stepCount}`;
-            
-            tabsHtml += `<li class="nav-item" role="presentation">
-                <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${stepCount === 0}">
-                    ${stepCount + 1}
-                </button>
-            </li>`;
-            
-            contentHtml += `<div class="tab-pane fade show ${isActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
-                ${stepContent.trim()}
-            </div>`;
-            
-            stepCount++;
+        stepsContent.replace(stepRegex, function(stepMatch, stepContent) {
+            steps.push(ensureString(stepContent).trim());
             return '';
         });
         
+        if (steps.length === 0) return match;
+        
+        const stepsId = `steps-${id}-${Math.random().toString(36).substr(2, 9)}`;
+        let tabsHtml = `<ul class="nav nav-tabs" role="tablist">`;
+        let contentHtml = `<div class="tab-content">`;
+        let navigationHtml = `<div class="steps-navigation"><button class="btn btn-secondary step-prev">上一步</button><span class="step-counter">第 <span class="current-step">1</span> / `;
+        
+        for (let i = 0; i < steps.length; i++) {
+            const stepContent = steps[i];
+            const tabId = `${stepsId}-tab-${i}`;
+            const contentId = `${stepsId}-content-${i}`;
+            const isActive = i === 0 ? 'active' : '';
+            const showActive = i === 0 ? 'show active' : '';
+            
+            tabsHtml += `<li class="nav-item" role="presentation">
+                <button class="nav-link ${isActive}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${contentId}" type="button" role="tab" aria-controls="${contentId}" aria-selected="${i === 0}">
+                    ${i + 1}
+                </button>
+            </li>`;
+            
+            contentHtml += `<div class="tab-pane fade ${showActive}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
+                ${stepContent}
+            </div>`;
+        }
+        
         tabsHtml += '</ul>';
         contentHtml += '</div>';
-        navigationHtml += `${stepCount} 步</span><button class="btn btn-primary step-next">下一步</button></div>`;
+        navigationHtml += `${steps.length} 步</span><button class="btn btn-primary step-next">下一步</button></div>`;
         
         return `<div class="steps-container">${tabsHtml}${contentHtml}${navigationHtml}</div>`;
     });
@@ -265,9 +309,9 @@ function applySteps(textContent, id) {
 function applySpoiler(textContent, id) {
     textContent = ensureString(textContent);
     return textContent.replace(spoilerRegex, function(match, title, content) {
-        const spoilerId = `spoiler-${id}-${Math.random().toString(36).substr(2, 9)}`;
-        const cleanTitle = title.trim();
-        const cleanContent = content.trim();
+        const spoilerId = `spoiler-${ensureString(id)}-${Math.random().toString(36).substr(2, 9)}`;
+        const cleanTitle = ensureString(title).trim();
+        const cleanContent = ensureString(content).trim();
         
         return `<div class="spoiler">
             <button class="btn btn-outline-secondary extended-markdown-spoiler" type="button" data-bs-toggle="collapse" data-bs-target="#${spoilerId}" aria-expanded="false" aria-controls="${spoilerId}">
@@ -283,7 +327,6 @@ function applySpoiler(textContent, id) {
 const ExtendedMarkdown = {
     parseRaw: function (textContent, callback) {
         if (!textContent || typeof textContent !== 'string') {
-            console.warn('ExtendedMarkdown: Invalid textContent received:', typeof textContent);
             return callback(null, '');
         }
 
