@@ -213,103 +213,52 @@ $(document).ready(function () {
     }
 
     function initializeMermaid() {
-        if (window.mermaid) {
-            setupMermaid(window.mermaid);
-        } else {
-            loadMermaidFromCDN().then(function(mermaid) {
-                setupMermaid(mermaid);
-            }).catch(function(error) {
-                console.error('无法加载Mermaid库:', error);
-            });
+        if (typeof window !== 'undefined' && document.querySelector('.mermaid-container')) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+            script.onload = function() {
+                if (window.mermaid) {
+                    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                                  document.body.classList.contains('dark') || 
+                                  localStorage.getItem('theme') === 'dark';
+                    
+                    window.mermaid.initialize({
+                        startOnLoad: true,
+                        theme: isDark ? 'dark' : 'default',
+                        securityLevel: 'loose'
+                    });
+                }
+            };
+            
+            if (!document.querySelector('script[src*="mermaid"]')) {
+                document.head.appendChild(script);
+            }
         }
     }
 
-    function loadMermaidFromCDN() {
-        return new Promise(function(resolve, reject) {
-            if (window.mermaid) {
-                resolve(window.mermaid);
-                return;
-            }
+    function reinitializeMermaidWithTheme() {
+        if (window.mermaid) {
+            document.querySelectorAll('.mermaid-container pre.mermaid').forEach(function(element) {
+                element.removeAttribute('data-processed');
+                element.classList.remove('mermaid-processed');
+            });
             
-            const script = document.createElement('script');
-            script.type = 'module';
-            script.innerHTML = `
-                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                window.mermaid = mermaid;
-                window.dispatchEvent(new CustomEvent('mermaid-loaded', { detail: mermaid }));
-            `;
-            
-            window.addEventListener('mermaid-loaded', function(event) {
-                resolve(event.detail);
-            }, { once: true });
-            
-            script.onerror = function() {
-                reject(new Error('Failed to load Mermaid'));
-            };
-            
-            document.head.appendChild(script);
-        });
-    }
-
-    function setupMermaid(mermaid) {
-        try {
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
                           document.body.classList.contains('dark') || 
                           localStorage.getItem('theme') === 'dark';
             
-            mermaid.initialize({
-                startOnLoad: false,
+            window.mermaid.initialize({
+                startOnLoad: true,
                 theme: isDark ? 'dark' : 'default',
-                securityLevel: 'loose',
-                fontFamily: 'inherit'
+                securityLevel: 'loose'
             });
             
-            renderMermaidDiagrams(mermaid);
-        } catch (error) {
-            console.error('Mermaid初始化错误:', error);
+            setTimeout(function() {
+                if (window.mermaid && window.mermaid.init) {
+                    window.mermaid.init(undefined, '.mermaid-container pre.mermaid');
+                }
+            }, 100);
         }
-    }
-
-    function renderMermaidDiagrams(mermaid) {
-        const elements = document.querySelectorAll('.mermaid-container pre.mermaid:not([data-processed])');
-        
-        elements.forEach(function(element) {
-            if (element && typeof element.setAttribute === 'function') {
-                element.setAttribute('data-processed', 'true');
-                
-                try {
-                    const source = element.textContent.trim();
-                    if (source) {
-                        const id = element.id || 'mermaid-' + Math.random().toString(36).substr(2, 9);
-                        element.id = id;
-                        
-                        mermaid.render(id + '-svg', source).then(function(result) {
-                            element.innerHTML = result.svg;
-                        }).catch(function(error) {
-                            console.error('Mermaid渲染错误:', error);
-                            element.innerHTML = '<div class="mermaid-error">图表渲染失败: ' + error.message + '</div>';
-                        });
-                    }
-                } catch (error) {
-                    console.error('Mermaid处理错误:', error);
-                    element.innerHTML = '<div class="mermaid-error">图表处理失败: ' + error.message + '</div>';
-                }
-            }
-        });
-    }
-
-    function reinitializeMermaidWithTheme() {
-        document.querySelectorAll('.mermaid-container pre.mermaid').forEach(function(element) {
-            if (element) {
-                element.removeAttribute('data-processed');
-                const originalText = element.getAttribute('data-original-text');
-                if (originalText) {
-                    element.textContent = originalText;
-                }
-            }
-        });
-        
-        initializeMermaid();
     }
 
     ExtendedMarkdown.prepareFormattingTools = async function () {

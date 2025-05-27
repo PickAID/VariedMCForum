@@ -946,62 +946,22 @@ a.anchor-offset {
 
 .mermaid-container {
     margin: 1rem 0;
-    background: var(--bs-body-bg, #ffffff);
-    border: 1px solid var(--bs-border-color, #e9ecef);
-    border-radius: 0.5rem;
-    padding: 1rem;
     text-align: center;
     overflow-x: auto;
-    transition: all 0.3s ease;
     
     pre.mermaid {
         background: transparent;
         border: none;
         padding: 0;
         margin: 0;
-        font-family: inherit;
         display: inline-block;
         max-width: 100%;
-        
-        svg {
-            max-width: 100%;
-            height: auto;
-        }
-    }
-    
-    .mermaid-error {
-        color: var(--bs-danger, #dc3545);
-        padding: 1rem;
-        background: var(--bs-danger-bg-subtle, #f8d7da);
-        border-radius: 0.25rem;
-        border: 1px solid var(--bs-danger-border-subtle, #f5c6cb);
-        font-family: monospace;
-        font-size: 0.9em;
-        white-space: pre-wrap;
-    }
-}
-
-[data-bs-theme="dark"] .mermaid-container {
-    background: var(--bs-dark, #212529);
-    border-color: var(--bs-secondary, #6c757d);
-    color: var(--bs-body-color, #fff);
-    
-    .mermaid-error {
-        background: rgba(220, 53, 69, 0.2);
-        color: #ff6b6b;
-        border-color: rgba(220, 53, 69, 0.3);
     }
 }
 
 .extended-dark-theme.mermaid-container {
     background: #2d3748;
     border-color: #4a5568;
-    
-    .mermaid-error {
-        background: rgba(220, 53, 69, 0.2);
-        color: #ef9a9a;
-        border-color: rgba(220, 53, 69, 0.3);
-    }
 }
 
 @media (max-width: 768px) {
@@ -1011,11 +971,6 @@ a.anchor-offset {
         
         pre.mermaid {
             font-size: 0.9em;
-        }
-        
-        .mermaid-error {
-            font-size: 0.8em;
-            padding: 0.75rem;
         }
     }
 }
