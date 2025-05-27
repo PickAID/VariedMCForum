@@ -26,7 +26,8 @@
             "collapsible": "折叠",
             "noteinfo": "信息提示",
             "notewarning": "警告提示",
-            "noteimportant": "重要提示"
+            "noteimportant": "重要提示",
+            "mermaid": "插入图表"
         }
     },
     "steps": {

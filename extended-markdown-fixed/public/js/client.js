@@ -194,6 +194,37 @@ $(document).ready(function () {
         });
     }
 
+    function initializeMermaid() {
+        require(['mermaid'], function(mermaid) {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+                securityLevel: 'loose',
+                fontFamily: 'inherit'
+            });
+            
+            $('.mermaid-container .mermaid').each(function() {
+                const $this = $(this);
+                if (!$this.data('mermaid-rendered')) {
+                    const source = decodeURIComponent($this.data('mermaid-source') || '');
+                    const id = $this.attr('id');
+                    
+                    if (source && id) {
+                        try {
+                            mermaid.render(id + '-svg', source, function(svgCode) {
+                                $this.html(svgCode);
+                                $this.data('mermaid-rendered', true);
+                            });
+                        } catch (error) {
+                            console.error('Mermaid渲染错误:', error);
+                            $this.html('<div class="mermaid-error">图表渲染失败</div>');
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     ExtendedMarkdown.prepareFormattingTools = async function () {
         try {
             const [formatting, controls] = await app.require(['composer/formatting', 'composer/controls']);
@@ -356,6 +387,11 @@ $(document).ready(function () {
                         controls.wrapSelectionInTextareaWith(textarea, '~', '~');
                     }
                 });
+
+                formatting.addButtonDispatch('mermaid', function (textarea, selectionStart, selectionEnd) {
+                    const mermaidTemplate = '\n[mermaid]\ngraph TD\n    A[开始] --> B[处理]\n    B --> C[结束]\n[/mermaid]\n';
+                    controls.insertIntoTextarea(textarea, mermaidTemplate);
+                });
             }
         } catch (error) {
             console.warn('Extended Markdown: Could not load formatting tools', error);
@@ -368,6 +404,7 @@ $(document).ready(function () {
         initializeCollapse();
         initializeAnimatedCodeGroups();
         initializeStepsNavigation();
+        initializeMermaid();
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
@@ -388,6 +425,7 @@ $(document).ready(function () {
             initializeTabComponents();
             initializeCollapse();
             initializeAnimatedCodeGroups();
+            initializeMermaid();
         }, 100);
     });
 });

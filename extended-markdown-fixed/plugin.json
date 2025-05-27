@@ -13,6 +13,9 @@
     "scripts": [
         "public/js/client.js"
     ],
+    "modules": {
+        "mermaid": "mermaid/dist/mermaid.min.js"
+    },
     "languages": "public/languages",
     "hooks": [
         {

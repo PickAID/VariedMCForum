@@ -29,6 +29,8 @@ const stepRegex = /(?:<p dir="auto">)?\[step\](?:<\/p>)?([\s\S]*?)(?=(?:<p dir="
 
 const spoilerRegex = /(?:<p dir="auto">)?\[spoiler=([^\]]+)\](?:<\/p>)?(?:<br\s*\/?>|\s)*\n?([\s\S]*?)(?:<p dir="auto">)?\[\/spoiler\](?:<\/p>)?/gi;
 
+const mermaidRegex = /(?:<p dir="auto">)?\[mermaid\](?:<\/p>)?([\s\S]*?)(?:<p dir="auto">)?\[\/mermaid\](?:<\/p>)?/gi;
+
 const noteIcons = {
     info: 'fa-info-circle',
     warning: 'fa-exclamation-triangle',
@@ -501,6 +503,19 @@ function generateAnchorFromHeading(heading) {
     return `<a class="anchor-offset" name="${slugify(heading)}"></a>`;
 }
 
+function applyMermaid(textContent, id) {
+    let mermaidCount = 0;
+    return textContent.replace(mermaidRegex, function (match, mermaidCode) {
+        mermaidCount++;
+        const mermaidId = `mermaid-${mermaidCount}-${id}`;
+        const cleanCode = cleanContent(mermaidCode);
+        
+        return `<div class="mermaid-container">
+            <div class="mermaid" id="${mermaidId}" data-mermaid-source="${encodeURIComponent(cleanCode)}">${cleanCode}</div>
+        </div>`;
+    });
+}
+
 function applyExtendedMarkdown(textContent) {
     textContent = applyNotes(textContent);
     textContent = applyTextHeaders(textContent);
@@ -519,6 +534,7 @@ const ExtendedMarkdown = {
             data.postData.content = applyTabs(data.postData.content, data.postData.pid);
             data.postData.content = applySteps(data.postData.content, data.postData.pid);
             data.postData.content = applySpoiler(data.postData.content, data.postData.pid);
+            data.postData.content = applyMermaid(data.postData.content, data.postData.pid);
             data.postData.content = await applyExtendedMarkdown(data.postData.content);
             data.postData.content = applyGroupCode(data.postData.content, data.postData.pid);
             data.postData.content = applyAnimatedGroupCode(data.postData.content, data.postData.pid);
@@ -531,6 +547,7 @@ const ExtendedMarkdown = {
             data.userData.signature = applyTabs(data.userData.signature, "sig");
             data.userData.signature = applySteps(data.userData.signature, "sig");
             data.userData.signature = applySpoiler(data.userData.signature, "sig");
+            data.userData.signature = applyMermaid(data.userData.signature, "sig");
             data.userData.signature = await applyExtendedMarkdown(data.userData.signature);
             data.userData.signature = applyGroupCode(data.userData.signature, "sig");
             data.userData.signature = applyAnimatedGroupCode(data.userData.signature, "sig");
@@ -543,6 +560,7 @@ const ExtendedMarkdown = {
             data = applyTabs(data, "about");
             data = applySteps(data, "about");
             data = applySpoiler(data, "about");
+            data = applyMermaid(data, "about");
             data = await applyExtendedMarkdown(data);
             data = applyGroupCode(data, "about");
             data = applyAnimatedGroupCode(data, "about");
@@ -560,6 +578,7 @@ const ExtendedMarkdown = {
         textContent = applyTabs(textContent, postId);
         textContent = applySteps(textContent, postId);
         textContent = applySpoiler(textContent, postId);
+        textContent = applyMermaid(textContent, postId);
         textContent = applyGroupCode(textContent, postId);
         textContent = applyAnimatedGroupCode(textContent, postId);
         textContent = applyRuby(textContent);
@@ -587,7 +606,8 @@ const ExtendedMarkdown = {
             { name: 'steps', className: 'fa fa-tasks', title: '插入步骤' },
             { name: 'ruby', className: 'fa fa-language', title: '插入音注标记' },
             { name: 'superscript', className: 'fa fa-superscript', title: '上标' },
-            { name: 'subscript', className: 'fa fa-subscript', title: '下标' }
+            { name: 'subscript', className: 'fa fa-subscript', title: '下标' },
+            { name: 'mermaid', className: 'fa fa-sitemap', title: '插入图表' }
         ];
 
         payload.options = payload.options.concat(formatting);
@@ -596,6 +616,8 @@ const ExtendedMarkdown = {
     
     async sanitizerConfig(config) {
         config.allowedAttributes['a'].push('name');
+        config.allowedAttributes['div'] = config.allowedAttributes['div'] || [];
+        config.allowedAttributes['div'].push('class', 'id', 'data-mermaid-source');
         return config;
     }
 };
