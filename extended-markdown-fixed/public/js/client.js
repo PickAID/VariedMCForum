@@ -25,11 +25,51 @@ $(document).ready(function () {
 
     function getCurrentTheme() {
         // 检查多种可能的暗色主题标识
-        return document.documentElement.classList.contains('dark') || 
-               document.body.classList.contains('dark') ||
-               document.querySelector('[data-bs-theme="dark"]') !== null ||
-               localStorage.getItem('theme') === 'dark' ||
-               window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        // 1. 检查 data-bs-theme 属性
+        const htmlTheme = document.documentElement.getAttribute('data-bs-theme');
+        const bodyTheme = document.body.getAttribute('data-bs-theme');
+        if (htmlTheme === 'dark' || bodyTheme === 'dark') {
+            return true;
+        }
+        
+        // 2. 检查 class 属性中的暗色主题
+        const htmlClasses = document.documentElement.className;
+        const bodyClasses = document.body.className;
+        if (htmlClasses.includes('dark') || bodyClasses.includes('dark') ||
+            htmlClasses.includes('theme-dark') || bodyClasses.includes('theme-dark')) {
+            return true;
+        }
+        
+        // 3. 检查 NodeBB 特定的主题选择器
+        const darkThemeElements = document.querySelectorAll('[data-bs-theme="dark"], .dark, .theme-dark');
+        if (darkThemeElements.length > 0) {
+            return true;
+        }
+        
+        // 4. 检查 localStorage 中的主题设置
+        const storedTheme = localStorage.getItem('theme') || localStorage.getItem('nodebb-theme');
+        if (storedTheme && (storedTheme.includes('dark') || storedTheme.includes('Dark'))) {
+            return true;
+        }
+        
+        // 5. 检查系统偏好设置
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // 只有在没有明确设置的情况下才使用系统偏好
+            const hasExplicitTheme = htmlTheme || bodyTheme || storedTheme;
+            if (!hasExplicitTheme) {
+                return true;
+            }
+        }
+        
+        // 6. 检查 CSS 自定义属性（一些主题可能使用这种方式）
+        const computedStyle = getComputedStyle(document.documentElement);
+        const bgColor = computedStyle.getPropertyValue('--bs-body-bg') || computedStyle.getPropertyValue('background-color');
+        if (bgColor && (bgColor.includes('rgb(33') || bgColor.includes('#212') || bgColor.includes('#1a'))) {
+            return true;
+        }
+        
+        return false;
     }
 
     function setupExtendedMarkdownTheme() {
@@ -85,20 +125,31 @@ $(document).ready(function () {
             }
         });
         
-        // 特别处理 Composer 预览区域
-        const composerPreview = document.querySelector('.composer .preview');
-        if (composerPreview) {
-            composerPreview.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
-                if (isDark) {
-                    element.classList.add(themeClass);
-                } else {
-                    element.classList.remove(themeClass);
-                }
+        // 特别处理 Composer 预览区域 - 使用更多的选择器
+        const previewSelectors = [
+            '.composer .preview',
+            '.write-preview-container', 
+            '[component="composer/preview"]',
+            '.preview.w-100',
+            '.composer-preview',
+            '.markdown-preview'
+        ];
+        
+        previewSelectors.forEach(selector => {
+            const containers = document.querySelectorAll(selector);
+            containers.forEach(container => {
+                container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+                    if (isDark) {
+                        element.classList.add(themeClass);
+                    } else {
+                        element.classList.remove(themeClass);
+                    }
+                });
             });
-        }
+        });
         
         // 处理所有可能的预览容器
-        document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container').forEach(container => {
+        document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer').forEach(container => {
             container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
                 if (isDark) {
                     element.classList.add(themeClass);
@@ -107,6 +158,17 @@ $(document).ready(function () {
                 }
             });
         });
+        
+        // 强制重新检查新添加的元素
+        setTimeout(() => {
+            document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+                if (isDark) {
+                    element.classList.add(themeClass);
+                } else {
+                    element.classList.remove(themeClass);
+                }
+            });
+        }, 100);
     }
 
     function initializePreviewComponents() {
@@ -545,12 +607,21 @@ $(document).ready(function () {
     };
 
     async function pageReady() {
+        // 首先检测并应用主题
+        const currentTheme = getCurrentTheme();
+        applyExtendedMarkdownTheme(currentTheme);
+        
         setupExtendedMarkdownTheme();
         initializeTabComponents();
         initializeCollapse();
         initializeAnimatedCodeGroups();
         initializeStepsNavigation();
         initializePreviewComponents();
+        
+        // 再次应用主题以确保新组件被处理
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+        }, 100);
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
@@ -600,17 +671,8 @@ $(document).ready(function () {
         });
         
         // 监听所有可能的预览容器
-        document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer').forEach(container => {
-            previewObserver.observe(container, {
-                childList: true,
-                subtree: true
-            });
-        });
-        
-        // 如果容器还不存在，定期检查
-        const checkForPreviewContainers = setInterval(() => {
-            const newContainers = document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer');
-            newContainers.forEach(container => {
+        const observeContainers = () => {
+            document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer, .markdown-preview').forEach(container => {
                 if (!container.dataset.observerAttached) {
                     container.dataset.observerAttached = 'true';
                     previewObserver.observe(container, {
@@ -619,12 +681,19 @@ $(document).ready(function () {
                     });
                 }
             });
-            
-            // 5秒后停止检查
-            setTimeout(() => {
-                clearInterval(checkForPreviewContainers);
-            }, 5000);
+        };
+        
+        observeContainers();
+        
+        // 定期检查新的容器
+        const checkForPreviewContainers = setInterval(() => {
+            observeContainers();
         }, 500);
+        
+        // 10秒后停止检查
+        setTimeout(() => {
+            clearInterval(checkForPreviewContainers);
+        }, 10000);
     }
 
     $(document).on('action:posts.loaded action:topic.loaded', function() {
@@ -636,6 +705,11 @@ $(document).ready(function () {
             initializePreviewComponents();
             applyExtendedMarkdownTheme(getCurrentTheme());
         }, 100);
+        
+        // 再次检查以确保所有元素都被处理
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+        }, 500);
     });
     
     // 监听 Composer 相关事件
@@ -661,4 +735,31 @@ $(document).ready(function () {
             initializePreviewComponents();
         }, 50);
     });
+    
+    // 监听页面内容变化
+    $(document).on('action:ajaxify.contentLoaded', function() {
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+            initializePreviewComponents();
+        }, 100);
+    });
+    
+    // 监听 DOM 准备完成
+    $(document).on('DOMContentLoaded', function() {
+        applyExtendedMarkdownTheme(getCurrentTheme());
+    });
+    
+    // 立即执行一次主题检测（在脚本加载时）
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                applyExtendedMarkdownTheme(getCurrentTheme());
+            }, 100);
+        });
+    } else {
+        // DOM 已经准备好了
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+        }, 100);
+    }
 });
