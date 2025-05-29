@@ -15,6 +15,23 @@ $(document).ready(function () {
         ExtendedMarkdown.prepareFormattingTools();
     });
 
+    // 监听 Composer 预览变化
+    $(window).on('action:composer.preview', function(evt, data) {
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+            initializePreviewComponents();
+        }, 50);
+    });
+
+    function getCurrentTheme() {
+        // 检查多种可能的暗色主题标识
+        return document.documentElement.classList.contains('dark') || 
+               document.body.classList.contains('dark') ||
+               document.querySelector('[data-bs-theme="dark"]') !== null ||
+               localStorage.getItem('theme') === 'dark' ||
+               window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
     function setupExtendedMarkdownTheme() {
         const skinSwitcher = $(`[component="skinSwitcher"]`);
         if (skinSwitcher.length) {
@@ -30,22 +47,187 @@ $(document).ready(function () {
             });
         }
         
-        if (document.documentElement.classList.contains('dark') || 
-            document.body.classList.contains('dark') ||
-            localStorage.getItem('theme') === 'dark') {
-            applyExtendedMarkdownTheme(true);
-        }
+        // 初始主题检查
+        applyExtendedMarkdownTheme(getCurrentTheme());
+        
+        // 监听主题变化
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && 
+                    (mutation.attributeName === 'class' || mutation.attributeName === 'data-bs-theme')) {
+                    setTimeout(() => {
+                        applyExtendedMarkdownTheme(getCurrentTheme());
+                    }, 50);
+                }
+            });
+        });
+        
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class', 'data-bs-theme']
+        });
+        
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class', 'data-bs-theme']
+        });
     }
 
     function applyExtendedMarkdownTheme(isDark) {
         const themeClass = 'extended-dark-theme';
         
-        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
+        // 处理页面中的所有元素，包括 Composer 预览区域
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
                 element.classList.remove(themeClass);
             }
+        });
+        
+        // 特别处理 Composer 预览区域
+        const composerPreview = document.querySelector('.composer .preview');
+        if (composerPreview) {
+            composerPreview.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+                if (isDark) {
+                    element.classList.add(themeClass);
+                } else {
+                    element.classList.remove(themeClass);
+                }
+            });
+        }
+        
+        // 处理所有可能的预览容器
+        document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container').forEach(container => {
+            container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+                if (isDark) {
+                    element.classList.add(themeClass);
+                } else {
+                    element.classList.remove(themeClass);
+                }
+            });
+        });
+    }
+
+    function initializePreviewComponents() {
+        // 初始化预览区域中的组件
+        const previewContainers = document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container');
+        
+        previewContainers.forEach(container => {
+            // 初始化标签页组件
+            container.querySelectorAll('.code-group-container, .extended-tabs-container, .steps-container').forEach(tabContainer => {
+                if (!tabContainer.dataset.tabsInitialized) {
+                    tabContainer.dataset.tabsInitialized = 'true';
+                    
+                    tabContainer.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                        tab.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            const targetId = this.getAttribute('data-bs-target');
+                            const target = container.querySelector(targetId);
+                            
+                            if (target) {
+                                // 移除其他活动状态
+                                tabContainer.querySelectorAll('.nav-link').forEach(link => {
+                                    link.classList.remove('active');
+                                    link.setAttribute('aria-selected', 'false');
+                                });
+                                tabContainer.querySelectorAll('.tab-pane').forEach(pane => {
+                                    pane.classList.remove('show', 'active');
+                                });
+                                
+                                // 设置当前活动状态
+                                this.classList.add('active');
+                                this.setAttribute('aria-selected', 'true');
+                                target.classList.add('show', 'active');
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // 初始化折叠组件
+            container.querySelectorAll('.collapsible-wrapper').forEach(wrapper => {
+                const button = wrapper.querySelector('.extended-markdown-collapsible');
+                
+                if (button && !button.dataset.collapseInitialized) {
+                    button.dataset.collapseInitialized = 'true';
+                    
+                    const targetId = button.getAttribute('data-bs-target');
+                    const target = wrapper.querySelector('#' + targetId);
+                    
+                    if (target) {
+                        const icon = button.querySelector('.collapse-icon');
+                        target.style.display = 'none';
+                        
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            if (target.style.display === 'none') {
+                                target.style.display = 'block';
+                                button.setAttribute('aria-expanded', 'true');
+                                if (icon) icon.style.transform = 'rotate(90deg)';
+                            } else {
+                                target.style.display = 'none';
+                                button.setAttribute('aria-expanded', 'false');
+                                if (icon) icon.style.transform = 'rotate(0deg)';
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // 初始化步骤导航
+            container.querySelectorAll('.steps-container').forEach(stepsContainer => {
+                if (!stepsContainer.dataset.stepsInitialized) {
+                    stepsContainer.dataset.stepsInitialized = 'true';
+                    
+                    const tabs = stepsContainer.querySelectorAll('.nav-link');
+                    const prevBtn = stepsContainer.querySelector('.step-prev');
+                    const nextBtn = stepsContainer.querySelector('.step-next');
+                    const currentStep = stepsContainer.querySelector('.current-step');
+                    const totalSteps = tabs.length;
+                    let currentIndex = 0;
+                    
+                    function updateButtons() {
+                        if (prevBtn) prevBtn.disabled = currentIndex === 0;
+                        if (nextBtn) nextBtn.disabled = currentIndex === totalSteps - 1;
+                        if (currentStep) currentStep.textContent = currentIndex + 1;
+                    }
+                    
+                    if (prevBtn) {
+                        prevBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (currentIndex > 0) {
+                                currentIndex--;
+                                tabs[currentIndex].click();
+                                updateButtons();
+                            }
+                        });
+                    }
+                    
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (currentIndex < totalSteps - 1) {
+                                currentIndex++;
+                                tabs[currentIndex].click();
+                                updateButtons();
+                            }
+                        });
+                    }
+                    
+                    tabs.forEach((tab, index) => {
+                        tab.addEventListener('click', function() {
+                            currentIndex = index;
+                            updateButtons();
+                        });
+                    });
+                    
+                    updateButtons();
+                }
+            });
         });
     }
 
@@ -368,6 +550,7 @@ $(document).ready(function () {
         initializeCollapse();
         initializeAnimatedCodeGroups();
         initializeStepsNavigation();
+        initializePreviewComponents();
         
         require(['bootstrap'], function (bootstrap) {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
@@ -380,6 +563,68 @@ $(document).ready(function () {
                 element.children[0].className = element.attributes.getNamedItem("aria-expanded").value === "true" ? "fa fa-eye-slash" : "fa fa-eye";
             };
         });
+        
+        // 监听预览区域的DOM变化
+        const previewObserver = new MutationObserver((mutations) => {
+            let shouldUpdate = false;
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                    // 检查是否有新的 Extended Markdown 组件被添加
+                    const addedNodes = Array.from(mutation.addedNodes);
+                    const hasExtendedMarkdownElements = addedNodes.some(node => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            return node.classList.contains('markdown-alert') ||
+                                   node.classList.contains('code-group-container') ||
+                                   node.classList.contains('extended-tabs-container') ||
+                                   node.classList.contains('text-header') ||
+                                   node.classList.contains('steps-container') ||
+                                   node.classList.contains('collapsible-wrapper') ||
+                                   node.classList.contains('mermaid-container') ||
+                                   node.querySelector('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .steps-container, .collapsible-wrapper, .mermaid-container');
+                        }
+                        return false;
+                    });
+                    
+                    if (hasExtendedMarkdownElements) {
+                        shouldUpdate = true;
+                    }
+                }
+            });
+            
+            if (shouldUpdate) {
+                setTimeout(() => {
+                    applyExtendedMarkdownTheme(getCurrentTheme());
+                    initializePreviewComponents();
+                }, 10);
+            }
+        });
+        
+        // 监听所有可能的预览容器
+        document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer').forEach(container => {
+            previewObserver.observe(container, {
+                childList: true,
+                subtree: true
+            });
+        });
+        
+        // 如果容器还不存在，定期检查
+        const checkForPreviewContainers = setInterval(() => {
+            const newContainers = document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer');
+            newContainers.forEach(container => {
+                if (!container.dataset.observerAttached) {
+                    container.dataset.observerAttached = 'true';
+                    previewObserver.observe(container, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            });
+            
+            // 5秒后停止检查
+            setTimeout(() => {
+                clearInterval(checkForPreviewContainers);
+            }, 5000);
+        }, 500);
     }
 
     $(document).on('action:posts.loaded action:topic.loaded', function() {
@@ -388,6 +633,32 @@ $(document).ready(function () {
             initializeTabComponents();
             initializeCollapse();
             initializeAnimatedCodeGroups();
+            initializePreviewComponents();
+            applyExtendedMarkdownTheme(getCurrentTheme());
         }, 100);
+    });
+    
+    // 监听 Composer 相关事件
+    $(document).on('action:composer.loaded', function() {
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+            initializePreviewComponents();
+        }, 200);
+    });
+    
+    // 监听预览内容更新事件
+    $(document).on('action:composer.preview.ready', function() {
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+            initializePreviewComponents();
+        }, 50);
+    });
+    
+    // 兼容可能的其他预览更新事件
+    $(document).on('shown.bs.tab', '.composer .nav-link', function() {
+        setTimeout(() => {
+            applyExtendedMarkdownTheme(getCurrentTheme());
+            initializePreviewComponents();
+        }, 50);
     });
 });

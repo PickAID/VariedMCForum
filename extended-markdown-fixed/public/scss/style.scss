@@ -1054,3 +1054,149 @@ a.anchor-offset {
 }
 
 
+
+/* Mermaid专用文本样式 - 排除code元素和hljs */
+.dark-theme-fix .mermaid .messageText:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] .messageText:not(code *):not(.hljs *) {
+    color: #E0E0E0;
+}
+
+.dark-theme-fix .mermaid span:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] span:not(code *):not(.hljs *) {
+    color: #FFFFFF!important;
+}
+
+/* 更具体的Mermaid选择器 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg .flowchart-link:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .flowchart-link:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg text.actor>tspan:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg text.actor>tspan:not(code *):not(.hljs *) {
+    fill: #E0E0E0 !important;
+    stroke: none !important;
+}
+
+/* SVG内的所有Mermaid元素 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg .arrowhead:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .arrowhead:not(code *):not(.hljs *) {
+    fill: #8AB4F8 !important;
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg .arrowheadPath:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .arrowheadPath:not(code *):not(.hljs *) {
+    fill: #8AB4F8 !important;
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg .edgePath:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .edgePath:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg .edgePath path:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .edgePath path:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg .marker:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .marker:not(code *):not(.hljs *) {
+    fill: #8AB4F8 !important;
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg marker path:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg marker path:not(code *):not(.hljs *) {
+    fill: #8AB4F8 !important;
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg .flowchart-link path:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .flowchart-link path:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+/* SVG节点样式 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg rect:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg rect:not(code *):not(.hljs *) {
+    stroke: #5F6368 !important;
+    fill: #2D2D2D !important;
+}
+
+.dark-theme-fix .mermaid svg circle:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg circle:not(code *):not(.hljs *) {
+    stroke: #5F6368 !important;
+    fill: #2D2D2D !important;
+}
+
+.dark-theme-fix .mermaid svg polygon:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg polygon:not(code *):not(.hljs *) {
+    stroke: #5F6368 !important;
+    fill: #2D2D2D !important;
+}
+
+/* SVG标签样式 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg .edgeLabel:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .edgeLabel:not(code *):not(.hljs *) {
+    background-color: #1F1F1F !important;
+    color: #E0E0E0 !important;
+}
+
+.dark-theme-fix .mermaid svg .edgeLabel rect:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg .edgeLabel rect:not(code *):not(.hljs *) {
+    fill: #1F1F1F !important;
+    stroke: #5F6368 !important;
+}
+
+/* SVG文本样式 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg text:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg text:not(code *):not(.hljs *) {
+    fill: #E0E0E0 !important;
+}
+
+.dark-theme-fix .mermaid svg tspan:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg tspan:not(code *):not(.hljs *) {
+    fill: #E0E0E0 !important;
+}
+
+/* SVG路径和线条 - 排除code元素和hljs */
+.dark-theme-fix .mermaid svg path:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg path:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid svg line:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] svg line:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+/* 额外的备选选择器 - 排除code元素和hljs */
+.dark-theme-fix .mermaid .flowchart-link:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] .flowchart-link:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid text:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] text:not(code *):not(.hljs *) {
+    fill: #E0E0E0 !important;
+}
+
+.dark-theme-fix .mermaid path:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] path:not(code *):not(.hljs *) {
+    stroke: #8AB4F8 !important;
+}
+
+.dark-theme-fix .mermaid rect:not(code *):not(.hljs *),
+.dark-theme-fix [id^="mermaid"] rect:not(code *):not(.hljs *) {
+    stroke: #5F6368 !important;
+    fill: #2D2D2D !important;
+}
+
+/* 或者使用更直接的方法 - 直接排除整个code.mermaid */
+.dark-theme-fix code.mermaid * {
+    color: inherit !important;
+    fill: inherit !important;
+    stroke: inherit !important;
+}
