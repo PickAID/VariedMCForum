@@ -117,7 +117,7 @@ $(document).ready(function () {
         const themeClass = 'extended-dark-theme';
         
         // 处理页面中的所有元素，包括 Composer 预览区域
-        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+        document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
             if (isDark) {
                 element.classList.add(themeClass);
             } else {
@@ -138,7 +138,7 @@ $(document).ready(function () {
         previewSelectors.forEach(selector => {
             const containers = document.querySelectorAll(selector);
             containers.forEach(container => {
-                container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+                container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
                     if (isDark) {
                         element.classList.add(themeClass);
                     } else {
@@ -150,7 +150,7 @@ $(document).ready(function () {
         
         // 处理所有可能的预览容器
         document.querySelectorAll('.preview, [component="composer/preview"], .write-preview-container, .composer').forEach(container => {
-            container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+            container.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
                 if (isDark) {
                     element.classList.add(themeClass);
                 } else {
@@ -161,7 +161,7 @@ $(document).ready(function () {
         
         // 强制重新检查新添加的元素
         setTimeout(() => {
-            document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper, .mermaid-container').forEach(element => {
+            document.querySelectorAll('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .extended-markdown-tooltip, .spoiler, .steps-container, .collapsible-wrapper').forEach(element => {
                 if (isDark) {
                     element.classList.add(themeClass);
                 } else {
@@ -650,8 +650,7 @@ $(document).ready(function () {
                                    node.classList.contains('text-header') ||
                                    node.classList.contains('steps-container') ||
                                    node.classList.contains('collapsible-wrapper') ||
-                                   node.classList.contains('mermaid-container') ||
-                                   node.querySelector('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .steps-container, .collapsible-wrapper, .mermaid-container');
+                                   node.querySelector('.markdown-alert, .code-group-container, .extended-tabs-container, .text-header, .steps-container, .collapsible-wrapper');
                         }
                         return false;
                     });
