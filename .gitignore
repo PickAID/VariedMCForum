@@ -118,3 +118,6 @@ webpack.prod.js
 !tag-color-maker/*
 !tag-color/*
 !markdown/*
+
+# local superpowers planning artifacts
+docs/superpowers/

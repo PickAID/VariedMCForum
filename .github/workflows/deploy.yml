@@ -1,0 +1,68 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_PORT: ${{ secrets.PROD_PORT }}
+      PROD_USER: ${{ secrets.PROD_USER }}
+      PROD_NODEBB_PATH: ${{ secrets.PROD_NODEBB_PATH }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate deployment secrets
+        env:
+          PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          PROD_KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+        run: |
+          : "${PROD_HOST:?missing PROD_HOST secret}"
+          : "${PROD_PORT:?missing PROD_PORT secret}"
+          : "${PROD_USER:?missing PROD_USER secret}"
+          : "${PROD_NODEBB_PATH:?missing PROD_NODEBB_PATH secret}"
+          : "${PROD_SSH_PRIVATE_KEY:?missing PROD_SSH_PRIVATE_KEY secret}"
+          : "${PROD_KNOWN_HOSTS:?missing PROD_KNOWN_HOSTS secret}"
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "${{ secrets.PROD_SSH_PRIVATE_KEY }}" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "${{ secrets.PROD_KNOWN_HOSTS }}" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Sync repository overlay
+        run: |
+          rsync -az \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude 'config.json' \
+            --exclude 'logs/' \
+            --exclude 'pidfile' \
+            --exclude 'public/uploads/' \
+            --exclude 'build/' \
+            -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p ${PROD_PORT} -i $HOME/.ssh/id_ed25519" \
+            ./ "${PROD_USER}@${PROD_HOST}:${PROD_NODEBB_PATH}/"
+
+      - name: Run remote deployment script
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "${PROD_PORT}" -i "$HOME/.ssh/id_ed25519" \
+            "${PROD_USER}@${PROD_HOST}" \
+            "cd '${PROD_NODEBB_PATH}' && ./scripts/deploy-prod.sh"
