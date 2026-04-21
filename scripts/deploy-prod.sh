@@ -13,6 +13,9 @@ source "$SCRIPT_DIR/deploy-lib.sh"
 NODEBB_PATH="${NODEBB_PATH:-/home/nodebb/nodebb}"
 NODEBB_SERVICE="${NODEBB_SERVICE:-nodebb.service}"
 SYSTEMCTL_BIN="${SYSTEMCTL_BIN:-systemctl}"
+NPM_INSTALL_MAX_ATTEMPTS="${NPM_INSTALL_MAX_ATTEMPTS:-3}"
+NPM_INSTALL_RETRY_DELAY_SECONDS="${NPM_INSTALL_RETRY_DELAY_SECONDS:-5}"
+NPM_INSTALL_REGISTRY="${NPM_INSTALL_REGISTRY:-https://registry.npmmirror.com/}"
 MANAGED_PLUGINS_FILE=""
 
 cleanup_managed_plugins_file() {
@@ -66,6 +69,41 @@ preflight_validate_link_paths() {
   fi
 }
 
+run_npm_install() {
+  local attempt=1
+  local status=0
+  local -a npm_cmd=(
+    env
+    -u HTTP_PROXY
+    -u HTTPS_PROXY
+    -u http_proxy
+    -u https_proxy
+    -u NO_PROXY
+    -u no_proxy
+    npm
+    install
+    "--registry=${NPM_INSTALL_REGISTRY}"
+  )
+
+  while (( attempt <= NPM_INSTALL_MAX_ATTEMPTS )); do
+    if "${npm_cmd[@]}"; then
+      return 0
+    else
+      status=$?
+    fi
+
+    if (( attempt == NPM_INSTALL_MAX_ATTEMPTS )); then
+      return "$status"
+    fi
+
+    deploy_log "npm install failed with exit ${status}; retrying (${attempt}/${NPM_INSTALL_MAX_ATTEMPTS}) in ${NPM_INSTALL_RETRY_DELAY_SECONDS}s"
+    sleep "$NPM_INSTALL_RETRY_DELAY_SECONDS"
+    attempt=$((attempt + 1))
+  done
+
+  return "$status"
+}
+
 main() {
   local plugin_dir
   local package_name
@@ -93,7 +131,7 @@ main() {
   done < "$MANAGED_PLUGINS_FILE"
 
   deploy_log "Installing root dependencies"
-  npm install
+  run_npm_install
 
   while IFS= read -r -d '' plugin_dir; do
     [[ -n "$plugin_dir" ]] || continue
@@ -101,7 +139,7 @@ main() {
     deploy_log "Installing ${package_name}"
     (
       cd "$plugin_dir"
-      npm install
+      run_npm_install
     )
     ensure_plugin_symlink "$NODEBB_PATH" "$plugin_dir" "$package_name"
   done < "$MANAGED_PLUGINS_FILE"
