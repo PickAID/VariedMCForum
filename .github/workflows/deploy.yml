@@ -48,16 +48,15 @@ jobs:
           printf '%s\n' "${{ secrets.PROD_KNOWN_HOSTS }}" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
+      - name: Verify sync safety
+        run: |
+          chmod +x ./scripts/verify-sync-safety.sh
+          ./scripts/verify-sync-safety.sh
+
       - name: Sync repository overlay
         run: |
           rsync -az \
-            --exclude '.git/' \
-            --exclude 'node_modules/' \
-            --exclude 'config.json' \
-            --exclude 'logs/' \
-            --exclude 'pidfile' \
-            --exclude 'public/uploads/' \
-            --exclude 'build/' \
+            --exclude-from='.deployignore' \
             -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p ${PROD_PORT} -i $HOME/.ssh/id_ed25519" \
             ./ "${PROD_USER}@${PROD_HOST}:${PROD_NODEBB_PATH}/"
 

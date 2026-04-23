@@ -16,11 +16,121 @@ SYSTEMCTL_BIN="${SYSTEMCTL_BIN:-systemctl}"
 NPM_INSTALL_MAX_ATTEMPTS="${NPM_INSTALL_MAX_ATTEMPTS:-3}"
 NPM_INSTALL_RETRY_DELAY_SECONDS="${NPM_INSTALL_RETRY_DELAY_SECONDS:-5}"
 NPM_INSTALL_REGISTRY="${NPM_INSTALL_REGISTRY:-https://registry.npmmirror.com/}"
+BACKUP_ROOT="${BACKUP_ROOT:-$NODEBB_PATH/backups/deploy}"
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
 MANAGED_PLUGINS_FILE=""
 
 cleanup_managed_plugins_file() {
   if [[ -n "$MANAGED_PLUGINS_FILE" ]]; then
     rm -f "$MANAGED_PLUGINS_FILE"
+  fi
+}
+
+require_command() {
+  local command_name="$1"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "required command not found: $command_name" >&2
+    return 1
+  fi
+}
+
+read_nodebb_database() {
+  node -e '
+    const fs = require("fs");
+    const path = require("path");
+    const config = JSON.parse(fs.readFileSync(path.join(process.argv[1], "config.json"), "utf8"));
+
+    if (typeof config.database !== "string" || !config.database) {
+      process.stderr.write("config.json missing database type\n");
+      process.exit(1);
+    }
+
+    process.stdout.write(config.database);
+  ' "$NODEBB_PATH"
+}
+
+read_mongo_uri() {
+  node -e '
+    const fs = require("fs");
+    const path = require("path");
+    const config = JSON.parse(fs.readFileSync(path.join(process.argv[1], "config.json"), "utf8"));
+
+    if (config.database !== "mongo") {
+      process.stderr.write(`unsupported database for mongo backup: ${config.database || "unknown"}\n`);
+      process.exit(1);
+    }
+
+    if (config.mongo && typeof config.mongo.uri === "string" && config.mongo.uri) {
+      process.stdout.write(config.mongo.uri);
+      process.exit(0);
+    }
+
+    const mongo = config.mongo || {};
+    const host = mongo.host || "127.0.0.1";
+    const port = mongo.port || 27017;
+    const database = mongo.database;
+
+    if (!database) {
+      process.stderr.write("config.json missing mongo.database\n");
+      process.exit(1);
+    }
+
+    let auth = "";
+    if (mongo.username) {
+      auth = encodeURIComponent(mongo.username);
+      if (mongo.password) {
+        auth += `:${encodeURIComponent(mongo.password)}`;
+      }
+      auth += "@";
+    }
+
+    const params = new URLSearchParams();
+    if (mongo.authSource) {
+      params.set("authSource", mongo.authSource);
+    }
+
+    const query = params.toString();
+    const uri = `mongodb://${auth}${host}:${port}/${database}${query ? `?${query}` : ""}`;
+    process.stdout.write(uri);
+  ' "$NODEBB_PATH"
+}
+
+backup_production_data() {
+  local timestamp
+  local backup_dir
+  local database_type
+  local mongo_uri
+
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  backup_dir="${BACKUP_ROOT}/${timestamp}"
+
+  mkdir -p "$backup_dir"
+
+  deploy_log "Backing up production data to ${backup_dir}"
+  cp config.json "${backup_dir}/config.json"
+
+  if [[ -d public/uploads ]]; then
+    tar -C "$NODEBB_PATH" -czf "${backup_dir}/uploads.tar.gz" public/uploads
+  else
+    deploy_log "Skipping uploads backup: public/uploads not found"
+  fi
+
+  database_type="$(read_nodebb_database)"
+  case "$database_type" in
+    mongo)
+      require_command mongodump
+      mongo_uri="$(read_mongo_uri)"
+      mongodump --uri "$mongo_uri" --archive="${backup_dir}/mongo.archive.gz" --gzip
+      ;;
+    *)
+      echo "unsupported database type for backup: ${database_type}" >&2
+      return 1
+      ;;
+  esac
+
+  if [[ "$BACKUP_RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
+    find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +"$BACKUP_RETENTION_DAYS" -exec rm -rf {} +
   fi
 }
 
@@ -120,6 +230,8 @@ main() {
   fi
 
   preflight_validate_node_modules_path "$resolved_root"
+
+  backup_production_data
 
   deploy_log "Preflight: validating managed plugin package names"
   while IFS= read -r -d '' plugin_dir; do

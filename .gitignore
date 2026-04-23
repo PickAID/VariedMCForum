@@ -114,11 +114,50 @@ webpack.dev.js
 webpack.installer.js
 webpack.prod.js
 
-!markdown-toc/*
-!extended-markdown-fixed/*
-!tag-color-maker/*
-!tag-color/*
-!markdown/*
+!/markdown-toc/
+!/markdown-toc/**
+!/extended-markdown-fixed/
+!/extended-markdown-fixed/**
+!/tag-color-maker/
+!/tag-color-maker/**
+!/tag-color/
+!/tag-color/**
+!/markdown/
+!/markdown/**
+
+# keep custom plugin sources, but never commit plugin-local installs or lockfiles
+/markdown-toc/node_modules/
+/markdown-toc/package-lock.json
+/markdown-toc/yarn.lock
+/extended-markdown-fixed/node_modules/
+/extended-markdown-fixed/package-lock.json
+/extended-markdown-fixed/yarn.lock
+/tag-color-maker/node_modules/
+/tag-color-maker/package-lock.json
+/tag-color-maker/yarn.lock
+/tag-color/node_modules/
+/tag-color/package-lock.json
+/tag-color/yarn.lock
+/markdown/node_modules/
+/markdown/package-lock.json
+/markdown/yarn.lock
 
 # local superpowers planning artifacts
 docs/superpowers/
+
+# local backup data must never be committed
+/backups/
+/backups/**
+
+# local-only runtime files must never be committed
+/config.local.json
+/docker-compose.local-mongo.yml
+/scripts/local-dev.sh
+/scripts/local-mongo.sh
+/scripts/local-nodebb.sh
+/docs/LOCAL_TESTING.md
+
+# local NodeBB markdown mirror
+!docs/nodebb/
+!docs/nodebb/*.md
+!docs/nodebb/**/*.md
