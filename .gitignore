@@ -1,6 +1,6 @@
 .worktrees/
 dist/
-yarn.lock
+/yarn.lock
 npm-debug.log
 node_modules/
 sftp-config.json
@@ -21,7 +21,7 @@ feeds/recent.rss
 .eslintcache
 .svn
 
-logs/
+/logs/
 
 pidfile
 
@@ -65,7 +65,7 @@ coverage
 *.log
 test/files/normalise.jpg.png
 test/files/normalise-resized.jpg
-package-lock.json
+/package-lock.json
 /package.json
 *.mongodb
 link-plugins.sh
@@ -76,43 +76,43 @@ test.sh
 
 
 .codeclimate.yml
-.docker
-.dockerignore
-.editorconfig
-.husky
-.mocharc.yml
-.tx
-app.js
-build
-CHANGELOG.md
-commitlint.config.js
-dev.Dockerfile
-docker-compose-pgsql.yml
-docker-compose-redis.yml
-docker-compose.yml
-Dockerfile
-eslint.config.mjs
-Gruntfile.js
-install
-LICENSE
-loader.js
-log.txt
-logs
-nodebb
-nodebb.bat
+/.docker
+/.dockerignore
+/.editorconfig
+/.husky
+/.mocharc.yml
+/.tx
+/app.js
+/build
+/CHANGELOG.md
+/commitlint.config.js
+/dev.Dockerfile
+/docker-compose-pgsql.yml
+/docker-compose-redis.yml
+/docker-compose.yml
+/Dockerfile
+/eslint.config.mjs
+/Gruntfile.js
+/install
+/LICENSE
+/loader.js
+/log.txt
+/logs
+/nodebb
+/nodebb.bat
 node_modules
-package-lock.json
-package.json
-pidfile
-README.md
-renovate.json
-require-main.js
-test
-types
-webpack.common.js
-webpack.dev.js
-webpack.installer.js
-webpack.prod.js
+/package-lock.json
+/package.json
+/pidfile
+/README.md
+/renovate.json
+/require-main.js
+/test
+/types
+/webpack.common.js
+/webpack.dev.js
+/webpack.installer.js
+/webpack.prod.js
 
 !/markdown-toc/
 !/markdown-toc/**
@@ -126,21 +126,10 @@ webpack.prod.js
 !/markdown/**
 
 # keep custom plugin sources, but never commit plugin-local installs or lockfiles
-/markdown-toc/node_modules/
-/markdown-toc/package-lock.json
-/markdown-toc/yarn.lock
-/extended-markdown-fixed/node_modules/
-/extended-markdown-fixed/package-lock.json
-/extended-markdown-fixed/yarn.lock
-/tag-color-maker/node_modules/
-/tag-color-maker/package-lock.json
-/tag-color-maker/yarn.lock
-/tag-color/node_modules/
-/tag-color/package-lock.json
-/tag-color/yarn.lock
-/markdown/node_modules/
-/markdown/package-lock.json
-/markdown/yarn.lock
+/*/node_modules/
+/*/package-lock.json
+/*/yarn.lock
+/*/pnpm-lock.yaml
 
 # local superpowers planning artifacts
 docs/superpowers/

@@ -2,27 +2,7 @@ name: Resync production plugins
 
 on:
   workflow_dispatch:
-    inputs:
-      base_branch:
-        description: Base branch to sync against
-        required: true
-        default: main
-      target_branch:
-        description: Branch to push synced production plugin sources to
-        required: true
-        default: sync/production-plugins
   workflow_call:
-    inputs:
-      base_branch:
-        description: Base branch to sync against
-        required: false
-        type: string
-        default: main
-      target_branch:
-        description: Branch to push synced production plugin sources to
-        required: false
-        type: string
-        default: sync/production-plugins
     secrets:
       PROD_HOST:
         required: true
@@ -56,13 +36,13 @@ jobs:
       PROD_PORT: ${{ secrets.PROD_PORT }}
       PROD_USER: ${{ secrets.PROD_USER }}
       PROD_NODEBB_PATH: ${{ secrets.PROD_NODEBB_PATH }}
-      BASE_BRANCH: ${{ inputs.base_branch }}
-      TARGET_BRANCH: ${{ inputs.target_branch }}
+      BASE_BRANCH: main
+      TARGET_BRANCH: main
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_branch }}
+          ref: main
           fetch-depth: 0
 
       - name: Validate resync secrets
@@ -119,6 +99,9 @@ jobs:
             rsync -az --delete \
               --exclude '.git/' \
               --exclude 'node_modules/' \
+              --exclude 'package-lock.json' \
+              --exclude 'yarn.lock' \
+              --exclude 'pnpm-lock.yaml' \
               --exclude '.env' \
               --exclude '.env.*' \
               --exclude 'config.json' \
@@ -147,8 +130,7 @@ jobs:
 
       - name: Verify resync safety
         run: |
-          chmod +x ./scripts/verify-plugin-resync-safety.sh
-          ./scripts/verify-plugin-resync-safety.sh
+          bash ./scripts/verify-plugin-resync-safety.sh
 
       - name: Commit and push synced plugin changes
         run: |
@@ -159,7 +141,7 @@ jobs:
 
           while IFS= read -r dir; do
             [[ -n "$dir" ]] || continue
-            git add -- "$dir"
+            git add -f -- "$dir"
           done <<< "${PLUGIN_SYNC_DIRS}"
 
           if git diff --cached --quiet; then
@@ -169,5 +151,5 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: resync production plugin sources"
-          git push --force-with-lease origin "HEAD:${TARGET_BRANCH}"
+          git commit -m "chore: sync production plugin sources [skip deploy]"
+          git push origin "HEAD:${TARGET_BRANCH}"

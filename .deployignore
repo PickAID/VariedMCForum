@@ -34,18 +34,10 @@ build/
 /scripts/local-dev.sh
 /scripts/update-nodebb-docs.sh
 /docs/LOCAL_TESTING.md
-/extended-markdown-fixed/node_modules/
-/extended-markdown-fixed/package-lock.json
-/extended-markdown-fixed/yarn.lock
-/markdown-toc/node_modules/
-/markdown-toc/package-lock.json
-/markdown-toc/yarn.lock
-/tag-color/node_modules/
-/tag-color/package-lock.json
-/tag-color/yarn.lock
-/tag-color-maker/node_modules/
-/tag-color-maker/package-lock.json
-/tag-color-maker/yarn.lock
+/*/node_modules/
+/*/package-lock.json
+/*/yarn.lock
+/*/pnpm-lock.yaml
 
 # Add Git-tracked local test/runtime files here when they should exist in the
 # repository but must never be synced to production.
