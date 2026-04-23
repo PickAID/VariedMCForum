@@ -11,6 +11,31 @@ on:
         description: Branch to push synced production plugin sources to
         required: true
         default: sync/production-plugins
+  workflow_call:
+    inputs:
+      base_branch:
+        description: Base branch to sync against
+        required: false
+        type: string
+        default: main
+      target_branch:
+        description: Branch to push synced production plugin sources to
+        required: false
+        type: string
+        default: sync/production-plugins
+    secrets:
+      PROD_HOST:
+        required: true
+      PROD_PORT:
+        required: true
+      PROD_USER:
+        required: true
+      PROD_NODEBB_PATH:
+        required: true
+      PROD_SSH_PRIVATE_KEY:
+        required: true
+      PROD_KNOWN_HOSTS:
+        required: true
 
 defaults:
   run:
@@ -33,7 +58,6 @@ jobs:
       PROD_NODEBB_PATH: ${{ secrets.PROD_NODEBB_PATH }}
       BASE_BRANCH: ${{ inputs.base_branch }}
       TARGET_BRANCH: ${{ inputs.target_branch }}
-      PLUGIN_SYNC_DIRS: "extended-markdown-fixed markdown-toc markdown tag-color tag-color-maker"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -66,7 +90,29 @@ jobs:
           git fetch origin "${BASE_BRANCH}"
           git switch -C "${TARGET_BRANCH}" "origin/${BASE_BRANCH}"
 
-      - name: Resync whitelisted plugin source trees
+      - name: Discover production plugin source trees
+        run: |
+          mapfile -t plugin_dirs < <(
+            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "${PROD_PORT}" -i "$HOME/.ssh/id_ed25519" \
+              "${PROD_USER}@${PROD_HOST}" \
+              "cd \"${PROD_NODEBB_PATH}\" && find . -mindepth 1 -maxdepth 1 \\( -type d -o -type l \\) ! -name '.git' ! -name 'node_modules' ! -name 'public' ! -name 'backups' ! -name 'logs' -print | sed 's#^./##' | while IFS= read -r dir; do [ -f \"\$dir/plugin.json\" ] && [ -f \"\$dir/package.json\" ] && printf '%s\n' \"\$dir\"; done | sort -u"
+          )
+
+          if ((${#plugin_dirs[@]} == 0)); then
+            echo "No production plugin source trees were discovered."
+            exit 1
+          fi
+
+          {
+            printf 'PLUGIN_SYNC_DIRS<<EOF\n'
+            printf '%s\n' "${plugin_dirs[@]}"
+            printf 'EOF\n'
+          } >> "$GITHUB_ENV"
+
+          printf 'Discovered production plugin directories:\n'
+          printf '  %s\n' "${plugin_dirs[@]}"
+
+      - name: Resync production plugin source trees
         run: |
           for dir in ${PLUGIN_SYNC_DIRS}; do
             mkdir -p "$dir"
@@ -111,7 +157,11 @@ jobs:
             exit 0
           fi
 
-          git add -- ${PLUGIN_SYNC_DIRS}
+          while IFS= read -r dir; do
+            [[ -n "$dir" ]] || continue
+            git add -- "$dir"
+          done <<< "${PLUGIN_SYNC_DIRS}"
+
           if git diff --cached --quiet; then
             echo "No plugin source changes staged."
             exit 0

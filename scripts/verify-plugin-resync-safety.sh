@@ -5,10 +5,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 read_sync_dirs() {
-  local value="${PLUGIN_SYNC_DIRS:-extended-markdown-fixed markdown-toc markdown tag-color tag-color-maker}"
-  # shellcheck disable=SC2206
-  local dirs=( $value )
-  printf '%s\n' "${dirs[@]}"
+  local value="${PLUGIN_SYNC_DIRS:-}"
+
+  if [[ -n "$value" ]]; then
+    # shellcheck disable=SC2206
+    local dirs=( $value )
+    printf '%s\n' "${dirs[@]}"
+    return 0
+  fi
+
+  find "$ROOT_DIR" -mindepth 1 -maxdepth 1 -type d -print \
+    | while IFS= read -r dir; do
+        [[ -f "$dir/plugin.json" && -f "$dir/package.json" ]] || continue
+        printf '%s\n' "${dir#"$ROOT_DIR"/}"
+      done \
+    | sort -u
 }
 
 is_allowed_path() {
@@ -71,7 +82,7 @@ main() {
     [[ -n "$path" ]] || continue
 
     if ! is_allowed_path "$path"; then
-      violations+=("changed path outside plugin sync whitelist: $path")
+      violations+=("changed path outside plugin sync set: $path")
       continue
     fi
 
