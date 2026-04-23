@@ -149,15 +149,35 @@ docs/superpowers/
 /backups/
 /backups/**
 
-# local-only runtime files must never be committed
-/config.local.json
-/docker-compose.local-mongo.yml
-/scripts/local-dev.sh
-/scripts/local-mongo.sh
-/scripts/local-nodebb.sh
-/docs/LOCAL_TESTING.md
-
 # local NodeBB markdown mirror
 !docs/nodebb/
 !docs/nodebb/*.md
 !docs/nodebb/**/*.md
+
+# shared local NodeBB test/runtime files:
+# keep them versioned in GitHub so other developers can reproduce the local test setup.
+# production sync is blocked by .deployignore instead of .gitignore.
+!/package.json
+!/package-lock.json
+!/app.js
+!/nodebb
+!/nodebb.bat
+!/loader.js
+!/require-main.js
+!/install
+!/install/
+!/install/**
+!/Gruntfile.js
+!/types
+!/types/
+!/types/**
+!/webpack.common.js
+!/webpack.dev.js
+!/webpack.installer.js
+!/webpack.prod.js
+!/config.local.json
+!/docker-compose.local-mongo.yml
+!/scripts/local-dev.sh
+!/scripts/local-mongo.sh
+!/scripts/local-nodebb.sh
+!/docs/LOCAL_TESTING.md

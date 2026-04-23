@@ -16,13 +16,16 @@ is_forbidden_tracked_path() {
     backups|backups/*|public/uploads|public/uploads/*|node_modules|node_modules/*|build|build/*|logs|logs/*)
       return 0
       ;;
-    app.js|nodebb|nodebb.bat|loader.js|require-main.js|Gruntfile.js|webpack.common.js|webpack.dev.js|webpack.installer.js|webpack.prod.js)
+    extended-markdown-fixed/node_modules|extended-markdown-fixed/node_modules/*)
       return 0
       ;;
-    install|install/*|types|types/*)
+    markdown-toc/node_modules|markdown-toc/node_modules/*)
       return 0
       ;;
-    config.local.json|docker-compose.local-mongo.yml|scripts/local-dev.sh|scripts/local-mongo.sh|scripts/local-nodebb.sh|docs/LOCAL_TESTING.md)
+    tag-color/node_modules|tag-color/node_modules/*)
+      return 0
+      ;;
+    tag-color-maker/node_modules|tag-color-maker/node_modules/*)
       return 0
       ;;
   esac

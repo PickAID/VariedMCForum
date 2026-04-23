@@ -1,0 +1,123 @@
+name: Resync production plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: Base branch to sync against
+        required: true
+        default: main
+      target_branch:
+        description: Branch to push synced production plugin sources to
+        required: true
+        default: sync/production-plugins
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
+
+concurrency:
+  group: production-plugin-resync
+  cancel-in-progress: true
+
+jobs:
+  resync:
+    runs-on: ubuntu-latest
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_PORT: ${{ secrets.PROD_PORT }}
+      PROD_USER: ${{ secrets.PROD_USER }}
+      PROD_NODEBB_PATH: ${{ secrets.PROD_NODEBB_PATH }}
+      BASE_BRANCH: ${{ inputs.base_branch }}
+      TARGET_BRANCH: ${{ inputs.target_branch }}
+      PLUGIN_SYNC_DIRS: "extended-markdown-fixed markdown-toc markdown tag-color tag-color-maker"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+
+      - name: Validate resync secrets
+        env:
+          PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          PROD_KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+        run: |
+          : "${PROD_HOST:?missing PROD_HOST secret}"
+          : "${PROD_PORT:?missing PROD_PORT secret}"
+          : "${PROD_USER:?missing PROD_USER secret}"
+          : "${PROD_NODEBB_PATH:?missing PROD_NODEBB_PATH secret}"
+          : "${PROD_SSH_PRIVATE_KEY:?missing PROD_SSH_PRIVATE_KEY secret}"
+          : "${PROD_KNOWN_HOSTS:?missing PROD_KNOWN_HOSTS secret}"
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "${{ secrets.PROD_SSH_PRIVATE_KEY }}" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "${{ secrets.PROD_KNOWN_HOSTS }}" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Prepare sync branch
+        run: |
+          git fetch origin "${BASE_BRANCH}"
+          git switch -C "${TARGET_BRANCH}" "origin/${BASE_BRANCH}"
+
+      - name: Resync whitelisted plugin source trees
+        run: |
+          for dir in ${PLUGIN_SYNC_DIRS}; do
+            mkdir -p "$dir"
+            rsync -az --delete \
+              --exclude '.git/' \
+              --exclude 'node_modules/' \
+              --exclude '.env' \
+              --exclude '.env.*' \
+              --exclude 'config.json' \
+              --exclude 'config.local.json' \
+              --exclude 'logs/' \
+              --exclude 'backups/' \
+              --exclude 'public/uploads/' \
+              --exclude '*.pem' \
+              --exclude '*.key' \
+              --exclude '*.crt' \
+              --exclude '*.p12' \
+              --exclude '*.pfx' \
+              --exclude '*.archive' \
+              --exclude '*.archive.gz' \
+              --exclude '*.tar' \
+              --exclude '*.tar.gz' \
+              --exclude '*.tgz' \
+              --exclude '*.zip' \
+              --exclude '*.7z' \
+              --exclude '*.db' \
+              --exclude '*.sqlite' \
+              --exclude '*.sqlite3' \
+              -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p ${PROD_PORT} -i $HOME/.ssh/id_ed25519" \
+              "${PROD_USER}@${PROD_HOST}:${PROD_NODEBB_PATH}/${dir}/" "${dir}/"
+          done
+
+      - name: Verify resync safety
+        run: |
+          chmod +x ./scripts/verify-plugin-resync-safety.sh
+          ./scripts/verify-plugin-resync-safety.sh
+
+      - name: Commit and push synced plugin changes
+        run: |
+          if git diff --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+            echo "No plugin source changes detected."
+            exit 0
+          fi
+
+          git add -- ${PLUGIN_SYNC_DIRS}
+          if git diff --cached --quiet; then
+            echo "No plugin source changes staged."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: resync production plugin sources"
+          git push --force-with-lease origin "HEAD:${TARGET_BRANCH}"
