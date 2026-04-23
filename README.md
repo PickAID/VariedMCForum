@@ -40,6 +40,12 @@ This uses [docker-compose.local-mongo.yml](/Users/gedwen/Documents/programing/Gi
 ./scripts/local-dev.sh
 ```
 
+If you want the local environment to mirror the shared production extension list and enabled state first:
+
+```bash
+npm run plugin-state:sync
+```
+
 4. Open:
 
 ```text
@@ -79,6 +85,8 @@ docker compose -f docker-compose.local-mongo.yml down
 - [config.local.json](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/config.local.json) is the shared local runtime config.
 - [scripts/local-nodebb.sh](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/scripts/local-nodebb.sh) always runs `./nodebb --config config.local.json`.
 - [scripts/local-dev.sh](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/scripts/local-dev.sh) ensures MongoDB is up, builds assets, then starts NodeBB in dev mode.
+- [state/production-nodebb-extensions.json](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/state/production-nodebb-extensions.json) is the shared production extension snapshot committed by GitHub Actions.
+- [scripts/sync-nodebb-extension-state.mjs](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/scripts/sync-nodebb-extension-state.mjs) is the cross-platform helper that syncs local extension dependencies and `plugins:active` state from that snapshot.
 
 Useful commands:
 
@@ -86,6 +94,8 @@ Useful commands:
 ./scripts/local-nodebb.sh build
 ./scripts/local-nodebb.sh dev
 ./scripts/local-nodebb.sh stop
+npm run plugin-state:plan
+npm run plugin-state:sync
 ```
 
 ## Local Data Restore

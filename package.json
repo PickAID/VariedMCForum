@@ -11,6 +11,8 @@
     "main": "app.js",
     "scripts": {
         "start": "node loader.js",
+        "plugin-state:plan": "node scripts/sync-nodebb-extension-state.mjs plan",
+        "plugin-state:sync": "node scripts/sync-nodebb-extension-state.mjs sync --build",
         "lint": "eslint --cache ./nodebb .",
         "test": "nyc --reporter=html --reporter=text-summary mocha",
         "coverage": "nyc report --reporter=text-lcov > ./coverage/lcov.info",

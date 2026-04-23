@@ -1,0 +1,13 @@
+{
+    "schemaVersion": 1,
+    "capturedAt": null,
+    "runtime": {
+        "nodebbVersion": null,
+        "nodeVersion": null,
+        "database": null
+    },
+    "activeExtensions": [],
+    "localSourceDirs": [],
+    "extensions": [],
+    "warnings": []
+}

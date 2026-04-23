@@ -8,6 +8,8 @@ This repository can run as a self-contained local NodeBB test instance.
 - `scripts/local-mongo.sh`: manage the local MongoDB service with `LOCAL_MONGO_MODE=brew` or `LOCAL_MONGO_MODE=docker`
 - `scripts/local-nodebb.sh`: run NodeBB with `config.local.json`
 - `scripts/local-dev.sh`: one-command local bootstrap, build, and dev start
+- `state/production-nodebb-extensions.json`: shared production extension list and enabled-state snapshot
+- `scripts/sync-nodebb-extension-state.mjs`: cross-platform helper to sync local extension dependencies and `plugins:active` state from that snapshot
 - `docker-compose.local-mongo.yml`: local Docker Compose MongoDB service definition
 
 ## Start The Local Test Environment
@@ -49,6 +51,12 @@ docker compose -f docker-compose.local-mongo.yml ps
 ./scripts/local-dev.sh
 ```
 
+If you want the local forum to mirror the shared production extension list and enabled state first:
+
+```bash
+npm run plugin-state:sync
+```
+
 4. Open:
 
 ```text
@@ -73,6 +81,18 @@ Stop the local NodeBB process:
 
 ```bash
 ./scripts/local-nodebb.sh stop
+```
+
+Show extension drift from the shared production snapshot:
+
+```bash
+npm run plugin-state:plan
+```
+
+Sync local extension dependencies and enabled state from the shared production snapshot:
+
+```bash
+npm run plugin-state:sync
 ```
 
 Check local MongoDB:

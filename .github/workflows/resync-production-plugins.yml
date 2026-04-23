@@ -1,4 +1,4 @@
-name: Resync production plugins
+name: Sync production extension state
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: production-plugin-resync
+  group: production-extension-state-sync
   cancel-in-progress: true
 
 jobs:
@@ -70,86 +70,280 @@ jobs:
           git fetch origin "${BASE_BRANCH}"
           git switch -C "${TARGET_BRANCH}" "origin/${BASE_BRANCH}"
 
-      - name: Discover production plugin source trees
+      - name: Capture production extension state
         run: |
-          mapfile -t plugin_dirs < <(
-            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "${PROD_PORT}" -i "$HOME/.ssh/id_ed25519" \
-              "${PROD_USER}@${PROD_HOST}" \
-              "cd \"${PROD_NODEBB_PATH}\" && find . -mindepth 1 -maxdepth 1 \\( -type d -o -type l \\) ! -name '.git' ! -name 'node_modules' ! -name 'public' ! -name 'backups' ! -name 'logs' -print | sed 's#^./##' | while IFS= read -r dir; do [ -f \"\$dir/plugin.json\" ] && [ -f \"\$dir/package.json\" ] && printf '%s\n' \"\$dir\"; done | sort -u"
-          )
+          mkdir -p state
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "${PROD_PORT}" -i "$HOME/.ssh/id_ed25519" \
+            "${PROD_USER}@${PROD_HOST}" "cd \"${PROD_NODEBB_PATH}\" && node -" <<'NODE' > state/production-nodebb-extensions.json
+          const fs = require('fs');
+          const path = require('path');
+          const { MongoClient } = require('mongodb');
 
-          if ((${#plugin_dirs[@]} == 0)); then
-            echo "No production plugin source trees were discovered."
-            exit 1
-          fi
+          const extensionPattern = /^(?:@[\w-]+\/)?nodebb-(plugin|theme|widget|rewards)-[\w-]+$/;
 
-          {
-            printf 'PLUGIN_SYNC_DIRS<<EOF\n'
-            printf '%s\n' "${plugin_dirs[@]}"
-            printf 'EOF\n'
-          } >> "$GITHUB_ENV"
+          function classifyExtension(name) {
+            const match = name.match(/nodebb-(plugin|theme|widget|rewards)-/);
+            return match ? match[1] : 'unknown';
+          }
 
-          printf 'Discovered production plugin directories:\n'
-          printf '  %s\n' "${plugin_dirs[@]}"
+          function readJson(filePath) {
+            return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          }
 
-      - name: Resync production plugin source trees
+          function packagePathFor(root, packageName) {
+            if (packageName.startsWith('@')) {
+              const [scope, scopedName] = packageName.split('/');
+              return path.join(root, 'node_modules', scope, scopedName, 'package.json');
+            }
+            return path.join(root, 'node_modules', packageName, 'package.json');
+          }
+
+          function resolveMongoUri(config) {
+            if (config.mongo && typeof config.mongo.uri === 'string' && config.mongo.uri) {
+              return config.mongo.uri;
+            }
+
+            const mongo = config.mongo || {};
+            const host = mongo.host || '127.0.0.1';
+            const port = mongo.port || 27017;
+            const database = mongo.database;
+
+            if (!database) {
+              throw new Error('config.json missing mongo.database');
+            }
+
+            let auth = '';
+            if (mongo.username) {
+              auth = encodeURIComponent(mongo.username);
+              if (mongo.password) {
+                auth += `:${encodeURIComponent(mongo.password)}`;
+              }
+              auth += '@';
+            }
+
+            const params = new URLSearchParams();
+            if (mongo.authSource) {
+              params.set('authSource', mongo.authSource);
+            }
+
+            return `mongodb://${auth}${host}:${port}/${database}${params.toString() ? `?${params.toString()}` : ''}`;
+          }
+
+          function resolveMongoDatabaseName(config, mongoUri) {
+            const parsed = new URL(mongoUri);
+            const pathName = parsed.pathname.replace(/^\/+/, '');
+            return pathName || (config.mongo && config.mongo.database) || 'nodebb';
+          }
+
+          function collectDeclaredExtensions(pkg) {
+            return Object.entries(pkg.dependencies || {})
+              .filter(([name]) => extensionPattern.test(name))
+              .map(([name, spec]) => ({
+                name,
+                kind: classifyExtension(name),
+                declaredSpec: spec,
+              }))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          }
+
+          function collectInstalledExtensions(root) {
+            const results = [];
+            const nodeModulesDir = path.join(root, 'node_modules');
+
+            if (!fs.existsSync(nodeModulesDir)) {
+              return results;
+            }
+
+            for (const entry of fs.readdirSync(nodeModulesDir, { withFileTypes: true })) {
+              if (entry.name.startsWith('@')) {
+                const scopeDir = path.join(nodeModulesDir, entry.name);
+                for (const scopedEntry of fs.readdirSync(scopeDir, { withFileTypes: true })) {
+                  const packageName = `${entry.name}/${scopedEntry.name}`;
+                  if (!extensionPattern.test(packageName)) {
+                    continue;
+                  }
+
+                  const packageJsonPath = packagePathFor(root, packageName);
+                  const packageJson = fs.existsSync(packageJsonPath) ? readJson(packageJsonPath) : null;
+                  results.push({
+                    name: packageName,
+                    kind: classifyExtension(packageName),
+                    installedVersion: packageJson && packageJson.version ? packageJson.version : null,
+                  });
+                }
+                continue;
+              }
+
+              if (!extensionPattern.test(entry.name)) {
+                continue;
+              }
+
+              const packageJsonPath = packagePathFor(root, entry.name);
+              const packageJson = fs.existsSync(packageJsonPath) ? readJson(packageJsonPath) : null;
+              results.push({
+                name: entry.name,
+                kind: classifyExtension(entry.name),
+                installedVersion: packageJson && packageJson.version ? packageJson.version : null,
+              });
+            }
+
+            return results.sort((a, b) => a.name.localeCompare(b.name));
+          }
+
+          function collectLocalSourceDirs(root) {
+            return fs.readdirSync(root, { withFileTypes: true })
+              .filter(entry => entry.isDirectory())
+              .map((entry) => {
+                const dirPath = path.join(root, entry.name);
+                const pluginJsonPath = path.join(dirPath, 'plugin.json');
+                const packageJsonPath = path.join(dirPath, 'package.json');
+                if (!fs.existsSync(pluginJsonPath) || !fs.existsSync(packageJsonPath)) {
+                  return null;
+                }
+
+                const pkg = readJson(packageJsonPath);
+                return {
+                  dir: entry.name,
+                  name: pkg.name || null,
+                };
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.dir.localeCompare(b.dir));
+          }
+
+          function collectWarnings(declaredExtensions, root, localSourceDirs) {
+            const warnings = [];
+            const localSourceDirByName = new Map(localSourceDirs.map(item => [item.name, item.dir]));
+
+            for (const extension of declaredExtensions) {
+              if (!String(extension.declaredSpec).startsWith('file:')) {
+                continue;
+              }
+
+              const target = extension.declaredSpec.slice(5);
+              const resolvedTarget = path.resolve(root, target);
+              const issues = [];
+              let localPackageName = null;
+
+              if (!fs.existsSync(resolvedTarget)) {
+                issues.push('missing target directory');
+              } else {
+                const packageJsonPath = path.join(resolvedTarget, 'package.json');
+                const pluginJsonPath = path.join(resolvedTarget, 'plugin.json');
+                if (!fs.existsSync(packageJsonPath)) {
+                  issues.push('missing package.json');
+                } else {
+                  localPackageName = readJson(packageJsonPath).name || null;
+                }
+                if (!fs.existsSync(pluginJsonPath)) {
+                  issues.push('missing plugin.json');
+                }
+              }
+
+              if (issues.length) {
+                warnings.push({
+                  type: 'file-dependency-integrity',
+                  name: extension.name,
+                  declaredSpec: extension.declaredSpec,
+                  target,
+                  localSourceDir: localSourceDirByName.get(extension.name) || null,
+                  localPackageName,
+                  issues,
+                });
+              }
+            }
+
+            return warnings;
+          }
+
+          async function collectActiveExtensions(config) {
+            const mongoUri = resolveMongoUri(config);
+            const dbName = resolveMongoDatabaseName(config, mongoUri);
+            const client = new MongoClient(mongoUri);
+
+            try {
+              await client.connect();
+              return await client.db(dbName).collection('objects')
+                .find({ _key: 'plugins:active' }, { projection: { _id: 0, value: 1, score: 1 } })
+                .sort({ score: 1, value: 1 })
+                .toArray();
+            } finally {
+              await client.close();
+            }
+          }
+
+          (async () => {
+            const root = process.cwd();
+            const pkg = readJson(path.join(root, 'package.json'));
+            const config = readJson(path.join(root, 'config.json'));
+            const declaredExtensions = collectDeclaredExtensions(pkg);
+            const installedExtensions = collectInstalledExtensions(root);
+            const localSourceDirs = collectLocalSourceDirs(root);
+            const warnings = collectWarnings(declaredExtensions, root, localSourceDirs);
+            const activeExtensions = await collectActiveExtensions(config);
+
+            const declaredMap = new Map(declaredExtensions.map(item => [item.name, item]));
+            const installedMap = new Map(installedExtensions.map(item => [item.name, item]));
+            const activeMap = new Map(activeExtensions.map(item => [item.value, item.score]));
+            const localSourceMap = new Map(localSourceDirs.map(item => [item.name, item.dir]));
+            const names = Array.from(new Set([
+              ...declaredMap.keys(),
+              ...installedMap.keys(),
+              ...activeMap.keys(),
+            ])).sort((a, b) => a.localeCompare(b));
+
+            const extensions = names.map((name) => ({
+              name,
+              kind: classifyExtension(name),
+              declared: declaredMap.has(name),
+              declaredSpec: declaredMap.has(name) ? declaredMap.get(name).declaredSpec : null,
+              installed: installedMap.has(name),
+              installedVersion: installedMap.has(name) ? installedMap.get(name).installedVersion : null,
+              active: activeMap.has(name),
+              activeOrder: activeMap.has(name) ? activeMap.get(name) : null,
+              localSourceDir: localSourceMap.get(name) || null,
+            }));
+
+            const output = {
+              schemaVersion: 1,
+              capturedAt: new Date().toISOString(),
+              runtime: {
+                nodebbVersion: pkg.version,
+                nodeVersion: process.version,
+                database: config.database,
+              },
+              activeExtensions: activeExtensions.map(item => item.value),
+              localSourceDirs,
+              extensions,
+              warnings,
+            };
+
+            process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+          })().catch((err) => {
+            console.error(err.stack || String(err));
+            process.exit(1);
+          });
+          NODE
+
+      - name: Validate extension state snapshot
         run: |
-          for dir in ${PLUGIN_SYNC_DIRS}; do
-            mkdir -p "$dir"
-            rsync -az --delete \
-              --exclude '.git/' \
-              --exclude 'node_modules/' \
-              --exclude 'package-lock.json' \
-              --exclude 'yarn.lock' \
-              --exclude 'pnpm-lock.yaml' \
-              --exclude '.env' \
-              --exclude '.env.*' \
-              --exclude 'config.json' \
-              --exclude 'config.local.json' \
-              --exclude 'logs/' \
-              --exclude 'backups/' \
-              --exclude 'public/uploads/' \
-              --exclude '*.pem' \
-              --exclude '*.key' \
-              --exclude '*.crt' \
-              --exclude '*.p12' \
-              --exclude '*.pfx' \
-              --exclude '*.archive' \
-              --exclude '*.archive.gz' \
-              --exclude '*.tar' \
-              --exclude '*.tar.gz' \
-              --exclude '*.tgz' \
-              --exclude '*.zip' \
-              --exclude '*.7z' \
-              --exclude '*.db' \
-              --exclude '*.sqlite' \
-              --exclude '*.sqlite3' \
-              -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p ${PROD_PORT} -i $HOME/.ssh/id_ed25519" \
-              "${PROD_USER}@${PROD_HOST}:${PROD_NODEBB_PATH}/${dir}/" "${dir}/"
-          done
+          node ./scripts/sync-nodebb-extension-state.mjs validate-state
+          bash ./scripts/verify-production-extension-state-sync.sh
 
-      - name: Verify resync safety
-        run: |
-          bash ./scripts/verify-plugin-resync-safety.sh
-
-      - name: Commit and push synced plugin changes
+      - name: Commit and push synced extension state
         run: |
           if git diff --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
-            echo "No plugin source changes detected."
+            echo "No extension state changes detected."
             exit 0
           fi
 
-          while IFS= read -r dir; do
-            [[ -n "$dir" ]] || continue
-            git add -f -- "$dir"
-          done <<< "${PLUGIN_SYNC_DIRS}"
-
+          git add state/production-nodebb-extensions.json
           if git diff --cached --quiet; then
-            echo "No plugin source changes staged."
+            echo "No extension state changes staged."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: sync production plugin sources [skip deploy]"
+          git commit -m "chore: sync production extension state [skip deploy]"
           git push origin "HEAD:${TARGET_BRANCH}"

@@ -33,7 +33,10 @@ build/
 /scripts/local-nodebb.sh
 /scripts/local-dev.sh
 /scripts/update-nodebb-docs.sh
+/scripts/sync-nodebb-extension-state.mjs
+/scripts/verify-production-extension-state-sync.sh
 /docs/LOCAL_TESTING.md
+/state/production-nodebb-extensions.json
 /*/node_modules/
 /*/package-lock.json
 /*/yarn.lock
