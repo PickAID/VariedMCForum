@@ -1,6 +1,8 @@
 .git/
 .github/
 node_modules/
+README.md
+package.json
 package-lock.json
 yarn.lock
 config.json

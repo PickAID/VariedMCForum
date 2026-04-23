@@ -175,6 +175,7 @@ docs/superpowers/
 !/webpack.dev.js
 !/webpack.installer.js
 !/webpack.prod.js
+!/README.md
 !/config.local.json
 !/docker-compose.local-mongo.yml
 !/scripts/local-dev.sh
