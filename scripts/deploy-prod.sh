@@ -16,7 +16,7 @@ SYSTEMCTL_BIN="${SYSTEMCTL_BIN:-systemctl}"
 NPM_INSTALL_MAX_ATTEMPTS="${NPM_INSTALL_MAX_ATTEMPTS:-3}"
 NPM_INSTALL_RETRY_DELAY_SECONDS="${NPM_INSTALL_RETRY_DELAY_SECONDS:-5}"
 NPM_INSTALL_REGISTRY="${NPM_INSTALL_REGISTRY:-https://registry.npmmirror.com/}"
-BACKUP_ROOT="${BACKUP_ROOT:-$NODEBB_PATH/backups/deploy}"
+BACKUP_ROOT="${BACKUP_ROOT:-}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
 MANAGED_PLUGINS_FILE=""
 
@@ -33,6 +33,36 @@ require_command() {
     echo "required command not found: $command_name" >&2
     return 1
   fi
+}
+
+resolve_home_dir() {
+  local home_dir="${HOME:-}"
+
+  if [[ -n "$home_dir" ]]; then
+    printf '%s\n' "$home_dir"
+    return 0
+  fi
+
+  home_dir="$(node -p 'require("os").homedir()' 2>/dev/null || true)"
+  if [[ -n "$home_dir" ]]; then
+    printf '%s\n' "$home_dir"
+    return 0
+  fi
+
+  echo "unable to determine deployment user home directory" >&2
+  return 1
+}
+
+resolve_backup_root() {
+  local home_dir
+
+  if [[ -n "$BACKUP_ROOT" ]]; then
+    printf '%s\n' "$BACKUP_ROOT"
+    return 0
+  fi
+
+  home_dir="$(resolve_home_dir)" || return 1
+  printf '%s\n' "$home_dir/backups/$(basename "$NODEBB_PATH")/deploy"
 }
 
 read_nodebb_database() {
@@ -98,12 +128,14 @@ read_mongo_uri() {
 
 backup_production_data() {
   local timestamp
+  local backup_root
   local backup_dir
   local database_type
   local mongo_uri
 
+  backup_root="$(resolve_backup_root)" || return 1
   timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  backup_dir="${BACKUP_ROOT}/${timestamp}"
+  backup_dir="${backup_root}/${timestamp}"
 
   mkdir -p "$backup_dir"
 
@@ -130,7 +162,7 @@ backup_production_data() {
   esac
 
   if [[ "$BACKUP_RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
-    find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +"$BACKUP_RETENTION_DAYS" -exec rm -rf {} +
+    find "$backup_root" -mindepth 1 -maxdepth 1 -type d -mtime +"$BACKUP_RETENTION_DAYS" -exec rm -rf {} +
   fi
 }
 
