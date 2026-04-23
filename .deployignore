@@ -32,6 +32,7 @@ build/
 /scripts/local-mongo.sh
 /scripts/local-nodebb.sh
 /scripts/local-dev.sh
+/scripts/update-nodebb-docs.sh
 /docs/LOCAL_TESTING.md
 /extended-markdown-fixed/node_modules/
 /extended-markdown-fixed/package-lock.json
