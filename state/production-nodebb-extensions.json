@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-24T05:51:00.000Z",
+  "capturedAt": "2026-04-24T13:10:44.925Z",
   "runtime": {
-    "nodebbVersion": "4.4.1",
+    "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
     "database": "mongo"
   },
@@ -70,18 +70,18 @@
       "declared": true,
       "declaredSpec": "^2.2.6",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.2.10",
       "active": true,
-      "activeOrder": 18,
+      "activeOrder": 24,
       "localSourceDir": null
     },
     {
       "name": "nodebb-plugin-2factor",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "7.5.10",
+      "declaredSpec": "7.6.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "7.6.1",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -92,9 +92,9 @@
       "declared": true,
       "declaredSpec": "^2.0.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.0.1",
       "active": true,
-      "activeOrder": 27,
+      "activeOrder": 33,
       "localSourceDir": null
     },
     {
@@ -103,7 +103,7 @@
       "declared": true,
       "declaredSpec": "^0.4.8",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.4.8",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -114,9 +114,9 @@
       "declared": true,
       "declaredSpec": "^4.0.5",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.0.5",
       "active": true,
-      "activeOrder": 29,
+      "activeOrder": 34,
       "localSourceDir": null
     },
     {
@@ -125,9 +125,9 @@
       "declared": true,
       "declaredSpec": "^0.4.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.4.1",
       "active": true,
-      "activeOrder": 7,
+      "activeOrder": 9,
       "localSourceDir": null
     },
     {
@@ -136,7 +136,7 @@
       "declared": true,
       "declaredSpec": "^4.1.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -147,9 +147,9 @@
       "declared": true,
       "declaredSpec": "^2.0.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.0.0",
       "active": true,
-      "activeOrder": 9,
+      "activeOrder": 13,
       "localSourceDir": null
     },
     {
@@ -158,7 +158,7 @@
       "declared": true,
       "declaredSpec": "^1.0.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.1",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -167,9 +167,9 @@
       "name": "nodebb-plugin-composer-default",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "10.2.50",
+      "declaredSpec": "10.3.28",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "10.3.28",
       "active": true,
       "activeOrder": 0,
       "localSourceDir": null
@@ -180,9 +180,9 @@
       "declared": true,
       "declaredSpec": "^0.2.3",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.2.3",
       "active": true,
-      "activeOrder": 17,
+      "activeOrder": 23,
       "localSourceDir": null
     },
     {
@@ -191,9 +191,9 @@
       "declared": true,
       "declaredSpec": "^2.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.1.1",
       "active": true,
-      "activeOrder": 10,
+      "activeOrder": 14,
       "localSourceDir": null
     },
     {
@@ -202,18 +202,18 @@
       "declared": true,
       "declaredSpec": "^4.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.1",
       "active": true,
-      "activeOrder": 15,
+      "activeOrder": 22,
       "localSourceDir": null
     },
     {
       "name": "nodebb-plugin-dbsearch",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "6.2.16",
+      "declaredSpec": "6.4.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "6.4.1",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -222,9 +222,9 @@
       "name": "nodebb-plugin-emoji",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "6.0.2",
+      "declaredSpec": "6.0.6",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "6.0.6",
       "active": true,
       "activeOrder": 6,
       "localSourceDir": null
@@ -235,9 +235,9 @@
       "declared": true,
       "declaredSpec": "4.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.1",
       "active": true,
-      "activeOrder": 28,
+      "activeOrder": 33,
       "localSourceDir": null
     },
     {
@@ -246,9 +246,9 @@
       "declared": true,
       "declaredSpec": "^4.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.1",
       "active": true,
-      "activeOrder": 32,
+      "activeOrder": 35,
       "localSourceDir": null
     },
     {
@@ -257,9 +257,20 @@
       "declared": true,
       "declaredSpec": "^4.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.1",
       "active": true,
-      "activeOrder": 30,
+      "activeOrder": 34,
+      "localSourceDir": null
+    },
+    {
+      "name": "nodebb-plugin-emoji-extended",
+      "kind": "plugin",
+      "declared": true,
+      "declaredSpec": "1.1.1+1238",
+      "installed": true,
+      "installedVersion": "1.1.1+1238",
+      "active": false,
+      "activeOrder": null,
       "localSourceDir": null
     },
     {
@@ -268,9 +279,9 @@
       "declared": true,
       "declaredSpec": "^4.1.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.1.1",
       "active": true,
-      "activeOrder": 35,
+      "activeOrder": 36,
       "localSourceDir": null
     },
     {
@@ -279,9 +290,9 @@
       "declared": true,
       "declaredSpec": "^0.1.11",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.1.11",
       "active": true,
-      "activeOrder": 36,
+      "activeOrder": 37,
       "localSourceDir": null
     },
     {
@@ -290,7 +301,7 @@
       "declared": true,
       "declaredSpec": "file:extended-markdown-fixed",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -301,9 +312,9 @@
       "declared": true,
       "declaredSpec": "file:extended-markdown-fixed",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": true,
-      "activeOrder": 24,
+      "activeOrder": 31,
       "localSourceDir": "extended-markdown-fixed"
     },
     {
@@ -312,9 +323,9 @@
       "declared": true,
       "declaredSpec": "^1.0.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.1",
       "active": true,
-      "activeOrder": 11,
+      "activeOrder": 16,
       "localSourceDir": null
     },
     {
@@ -323,9 +334,9 @@
       "declared": true,
       "declaredSpec": "^0.11.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.11.0",
       "active": true,
-      "activeOrder": 22,
+      "activeOrder": 28,
       "localSourceDir": null
     },
     {
@@ -334,9 +345,9 @@
       "declared": true,
       "declaredSpec": "^3.1.32",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "3.1.37",
       "active": true,
-      "activeOrder": 19,
+      "activeOrder": 25,
       "localSourceDir": null
     },
     {
@@ -345,9 +356,9 @@
       "declared": true,
       "declaredSpec": "^1.1.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.1.0",
       "active": true,
-      "activeOrder": 16,
+      "activeOrder": 22,
       "localSourceDir": null
     },
     {
@@ -356,7 +367,7 @@
       "declared": true,
       "declaredSpec": "^0.0.2",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.0.2",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -367,7 +378,7 @@
       "declared": true,
       "declaredSpec": "^0.0.3",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.0.3",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -378,7 +389,7 @@
       "declared": true,
       "declaredSpec": "^0.0.4",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.0.4",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -389,7 +400,7 @@
       "declared": true,
       "declaredSpec": "^0.2.5",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.2.5",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -400,9 +411,9 @@
       "declared": true,
       "declaredSpec": "^0.9.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.9.1",
       "active": true,
-      "activeOrder": 25,
+      "activeOrder": 32,
       "localSourceDir": null
     },
     {
@@ -411,20 +422,20 @@
       "declared": true,
       "declaredSpec": "^4.0.3",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.0.4",
       "active": true,
-      "activeOrder": 23,
+      "activeOrder": 29,
       "localSourceDir": null
     },
     {
       "name": "nodebb-plugin-link-preview",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "^2.1.3",
+      "declaredSpec": "2.2.3",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.2.3",
       "active": true,
-      "activeOrder": 20,
+      "activeOrder": 26,
       "localSourceDir": null
     },
     {
@@ -433,7 +444,7 @@
       "declared": true,
       "declaredSpec": "github:ferumdev/nodebb-plugin-magic-button",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.4",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -442,11 +453,11 @@
       "name": "nodebb-plugin-markdown",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "^13.2.1",
+      "declaredSpec": "13.2.4",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "13.2.4",
       "active": true,
-      "activeOrder": 33,
+      "activeOrder": 35,
       "localSourceDir": null
     },
     {
@@ -455,21 +466,10 @@
       "declared": true,
       "declaredSpec": "file:markdown-toc",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": true,
-      "activeOrder": 31,
+      "activeOrder": 34,
       "localSourceDir": "markdown-toc"
-    },
-    {
-      "name": "nodebb-plugin-markdown-variedmc-version",
-      "kind": "plugin",
-      "declared": true,
-      "declaredSpec": "file:markdown",
-      "installed": true,
-      "installedVersion": null,
-      "active": false,
-      "activeOrder": null,
-      "localSourceDir": null
     },
     {
       "name": "nodebb-plugin-meilisearch",
@@ -477,18 +477,18 @@
       "declared": true,
       "declaredSpec": "^0.7.4",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.7.6",
       "active": true,
-      "activeOrder": 21,
+      "activeOrder": 27,
       "localSourceDir": null
     },
     {
       "name": "nodebb-plugin-mentions",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "4.7.6",
+      "declaredSpec": "4.8.18",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "4.8.18",
       "active": true,
       "activeOrder": 2,
       "localSourceDir": null
@@ -499,9 +499,9 @@
       "declared": true,
       "declaredSpec": "^0.3.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.3.1",
       "active": true,
-      "activeOrder": 26,
+      "activeOrder": 32,
       "localSourceDir": null
     },
     {
@@ -510,7 +510,7 @@
       "declared": true,
       "declaredSpec": "^7.0.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "7.0.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -521,7 +521,7 @@
       "declared": true,
       "declaredSpec": "^6.0.0",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "6.0.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -532,9 +532,9 @@
       "declared": true,
       "declaredSpec": "^3.2.5",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "3.2.9",
       "active": true,
-      "activeOrder": 13,
+      "activeOrder": 18,
       "localSourceDir": null
     },
     {
@@ -543,9 +543,9 @@
       "declared": true,
       "declaredSpec": "^1.2.10",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.3.0",
       "active": true,
-      "activeOrder": 12,
+      "activeOrder": 17,
       "localSourceDir": null
     },
     {
@@ -554,9 +554,20 @@
       "declared": true,
       "declaredSpec": "^3.3.3",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "3.3.19",
       "active": true,
-      "activeOrder": 8,
+      "activeOrder": 11,
+      "localSourceDir": null
+    },
+    {
+      "name": "nodebb-plugin-soundpack-default",
+      "kind": "plugin",
+      "declared": true,
+      "declaredSpec": "0.1.6",
+      "installed": true,
+      "installedVersion": "0.1.6",
+      "active": false,
+      "activeOrder": null,
       "localSourceDir": null
     },
     {
@@ -565,9 +576,9 @@
       "declared": true,
       "declaredSpec": "2.3.2",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.3.2",
       "active": true,
-      "activeOrder": 14,
+      "activeOrder": 19,
       "localSourceDir": null
     },
     {
@@ -576,7 +587,7 @@
       "declared": true,
       "declaredSpec": "^1.5.1",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.5.2",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -587,7 +598,7 @@
       "declared": true,
       "declaredSpec": "file:tag-color-maker",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -598,7 +609,7 @@
       "declared": true,
       "declaredSpec": "file:tag-color-maker",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": false,
       "activeOrder": null,
       "localSourceDir": "tag-color-maker"
@@ -609,18 +620,18 @@
       "declared": true,
       "declaredSpec": "file:tag-color",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.0",
       "active": true,
-      "activeOrder": 34,
+      "activeOrder": 35,
       "localSourceDir": "tag-color"
     },
     {
       "name": "nodebb-plugin-web-push",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "0.7.4",
+      "declaredSpec": "0.7.7",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "0.7.7",
       "active": true,
       "activeOrder": 3,
       "localSourceDir": null
@@ -631,7 +642,7 @@
       "declared": true,
       "declaredSpec": "1.0.2",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "1.0.2",
       "active": true,
       "activeOrder": 5,
       "localSourceDir": null
@@ -640,20 +651,20 @@
       "name": "nodebb-theme-harmony",
       "kind": "theme",
       "declared": true,
-      "declaredSpec": "2.1.13",
+      "declaredSpec": "2.2.63",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.2.63",
       "active": true,
-      "activeOrder": 1,
+      "activeOrder": 0,
       "localSourceDir": null
     },
     {
       "name": "nodebb-theme-lavender",
       "kind": "theme",
       "declared": true,
-      "declaredSpec": "7.1.19",
+      "declaredSpec": "7.1.21",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "7.1.21",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -662,9 +673,9 @@
       "name": "nodebb-theme-peace",
       "kind": "theme",
       "declared": true,
-      "declaredSpec": "2.2.43",
+      "declaredSpec": "2.2.58",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "2.2.58",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -673,9 +684,20 @@
       "name": "nodebb-theme-persona",
       "kind": "theme",
       "declared": true,
-      "declaredSpec": "14.1.12",
+      "declaredSpec": "14.2.35",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "14.2.35",
+      "active": false,
+      "activeOrder": null,
+      "localSourceDir": null
+    },
+    {
+      "name": "nodebb-theme-vanilla",
+      "kind": "theme",
+      "declared": true,
+      "declaredSpec": "5.1.56",
+      "installed": true,
+      "installedVersion": "5.1.56",
       "active": false,
       "activeOrder": null,
       "localSourceDir": null
@@ -684,26 +706,13 @@
       "name": "nodebb-widget-essentials",
       "kind": "widget",
       "declared": true,
-      "declaredSpec": "7.0.38",
+      "declaredSpec": "7.0.43",
       "installed": true,
-      "installedVersion": null,
+      "installedVersion": "7.0.43",
       "active": true,
       "activeOrder": 4,
       "localSourceDir": null
     }
   ],
-  "warnings": [
-    {
-      "type": "file-dependency-integrity",
-      "name": "nodebb-plugin-markdown-variedmc-version",
-      "declaredSpec": "file:markdown",
-      "target": "markdown",
-      "localSourceDir": null,
-      "localPackageName": null,
-      "issues": [
-        "missing package.json",
-        "missing plugin.json"
-      ]
-    }
-  ]
+  "warnings": []
 }
