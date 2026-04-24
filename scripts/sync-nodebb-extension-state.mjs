@@ -8,8 +8,6 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const nconf = require('nconf');
-const prestart = require('../src/prestart');
 const { pluginNamePattern } = require('../src/constants');
 
 const __filename = fileURLToPath(import.meta.url);
@@ -398,6 +396,8 @@ async function packageExistsInNodeModules(packageName) {
 }
 
 function ensureNconfStores() {
+	const nconf = require('nconf');
+
 	if (!nconf.stores.argv) {
 		nconf.argv();
 	}
@@ -409,6 +409,7 @@ function ensureNconfStores() {
 }
 
 async function withNodebbDatabase(configPath, callback) {
+	const prestart = require('../src/prestart');
 	ensureNconfStores();
 	prestart.loadConfig(configPath);
 	const db = require('../src/database');
