@@ -1,44 +1,34 @@
+# Git metadata and repository-only docs
 .git/
 .github/
+/.deployignore
+/.gitignore
+/README.md
+/docs/
+
+# Runtime-local config, generated assets, and data
 node_modules/
-README.md
 config.json
 logs/
 pidfile
 public/uploads/
 build/
 /backups/
-/docs/
-/.deployignore
-/.gitignore
 /config.local.json
 /docker-compose.local-mongo.yml
+/state/production-nodebb-extensions.json
+/state/local-testing-state.json
+
+# Local-only helper scripts that stay in GitHub for developer use
 /scripts/local-mongo.mjs
 /scripts/local-nodebb.mjs
-/scripts/local-testing-state.mjs
 /scripts/verify-local-runtime.mjs
-/state/local-testing-state.example.json
-/state/local-testing-state.json
 /scripts/update-nodebb-docs.sh
 /scripts/sync-nodebb-extension-state.mjs
 /scripts/verify-production-extension-state-sync.sh
-/docs/LOCAL_TESTING.md
-/state/production-nodebb-extensions.json
+
+# Managed plugin/theme install artifacts must never deploy
 /*/node_modules/
 /*/package-lock.json
 /*/yarn.lock
 /*/pnpm-lock.yaml
-
-# Add Git-tracked local test/runtime files here when they should exist in the
-# repository but must never be synced to production.
-#
-# Do not list NodeBB core runtime, package, build, or install files here.
-# Those must sync to production for core upgrades to work.
-/config.local.json
-/docker-compose.local-mongo.yml
-/scripts/local-mongo.mjs
-/scripts/local-nodebb.mjs
-/scripts/local-testing-state.mjs
-/scripts/verify-local-runtime.mjs
-/state/local-testing-state.example.json
-/state/local-testing-state.json

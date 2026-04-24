@@ -2,14 +2,14 @@
 
 This repository can run as a self-contained local NodeBB test instance.
 
+For the repo boundary and deploy model, see [README.md](../README.md).
+
 ## Local Files
 
 - `config.local.json`: shared local runtime config used by the NodeBB CLI
 - `scripts/local-mongo.mjs`: Node-based local MongoDB runtime manager
 - `scripts/local-nodebb.mjs`: Node-based local NodeBB bootstrap and runner
-- `scripts/local-testing-state.mjs`: Node-based loader for private local plugins and local settings/object overlays
 - `state/production-nodebb-extensions.json`: shared production extension list and enabled-state snapshot
-- `state/local-testing-state.example.json`: template for the ignored local-only testing overlay file
 - `scripts/sync-nodebb-extension-state.mjs`: cross-platform helper to sync local extension dependencies and `plugins:active` state from that snapshot
 - `docker-compose.local-mongo.yml`: local Docker Compose MongoDB service definition
 
@@ -21,15 +21,7 @@ This repository can run as a self-contained local NodeBB test instance.
 npm install
 ```
 
-2. If you need private local-only plugins or local-only settings/object overrides, create:
-
-[state/local-testing-state.json](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/state/local-testing-state.example.json)
-
-```bash
-nano state/local-testing-state.json
-```
-
-Use [state/local-testing-state.example.json](/Users/gedwen/Documents/programing/GitHub/VariedMCForum/state/local-testing-state.example.json) as the template. The real `state/local-testing-state.json` file is ignored by Git and excluded from production sync.
+2. Restore the production MongoDB backup when you want the local forum to mirror production ACP state, plugin state, and plugin data.
 
 3. Start the local test server.
 
@@ -41,8 +33,6 @@ This command automatically:
 
 - ensures local MongoDB is reachable
 - syncs the shared production extension state
-- installs private local-only plugins from `state/local-testing-state.json` when present
-- applies local settings/object overlays from that file
 - builds assets
 - launches NodeBB in dev mode
 
@@ -92,22 +82,22 @@ Run the NodeBB upgrade flow against the shared local config:
 npm run local:upgrade
 ```
 
-Check the private local-only overlay plan:
-
-```bash
-npm run local:state:plan
-```
-
-Apply the private local-only overlay immediately:
-
-```bash
-npm run local:state:sync
-```
-
 Show extension drift from the shared production snapshot:
 
 ```bash
 npm run plugin-state:plan
+```
+
+Install the declared plugin/theme dependencies from the shared production snapshot:
+
+```bash
+npm run plugin-state:install
+```
+
+Apply only the enabled/disabled plugin state from the shared production snapshot:
+
+```bash
+npm run plugin-state:apply
 ```
 
 Sync local extension dependencies and enabled state from the shared production snapshot only:
@@ -168,15 +158,24 @@ npm run local:dev
 
 If you need the local forum to match the original site's visual state more closely, also restore the `public/uploads/` directory from your internal backup source. NodeBB stores uploaded assets such as logos, favicons, carousel images, and other file-backed resources there. Database restore alone does not bring those files back.
 
+Recommended development flow:
+
+1. Restore the latest production MongoDB backup to local MongoDB.
+2. Restore `public/uploads/` if you need real assets.
+3. Run `npm run local:prepare` to ensure local MongoDB is up and the repo's plugin dependencies plus `plugins:active` state match the shared production snapshot.
+4. Run `npm run local:dev` and test your source/plugin changes locally.
+5. Push source changes to `main` when ready so production deploy receives only code and managed plugin source trees.
+
 ## Notes
 
 - Local backup files under `backups/` are intentionally ignored by Git.
 - `public/uploads/` is also ignored by Git and excluded from production sync.
-- Shared local runtime files such as `config.local.json`, `docker-compose.local-mongo.yml`, `scripts/local-*.mjs`, and `state/local-testing-state.example.json` are intended to stay in GitHub for developer use, but are blocked from production sync by `.deployignore`.
-- The real `state/local-testing-state.json` file is private local state. Keep private plugin paths and local-only overrides there.
+- Shared local runtime files such as `config.local.json`, `docker-compose.local-mongo.yml`, and `scripts/local-*.mjs` are intended to stay in GitHub for developer use, but are blocked from production sync by `.deployignore`.
 - Cross-platform daily usage should prefer `npm run local:*`. On macOS/Linux, `./nodebb --config config.local.json <command>` is the direct equivalent. On Windows, use `npm run local:*`, `node .\\nodebb --config config.local.json <command>`, or `nodebb.bat --config config.local.json <command>`.
 - Admin custom CSS/JS/HTML is stored in the database, but files referenced by that code may still live under `public/uploads/`.
 - The local startup flow always uses `config.local.json`, not the production config.
 - The Node-based Mongo helper auto-detects the runtime. On macOS it uses Homebrew MongoDB when installed, otherwise it uses Docker when available. Set `LOCAL_MONGO_MODE=docker` or `LOCAL_MONGO_MODE=brew` to force a mode.
 - The Docker Compose MongoDB service intentionally runs without auth so it matches `config.local.json`.
 - If `nodebb-plugin-web-push` is enabled, startup on plain `http://localhost:4567` may log a VAPID subject warning because web push expects an `https:` or `mailto:` subject URL. The local forum can still finish startup and be used normally.
+
+Last reviewed: `2026-04-24`

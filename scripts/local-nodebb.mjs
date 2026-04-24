@@ -15,7 +15,7 @@ function printUsage() {
 	console.log(`Usage: node scripts/local-nodebb.mjs <command> [options] [-- extra args]
 
 Commands:
-  prepare  Ensure local Mongo is running, sync shared production plugin state, and apply local-only plugin/settings overlays
+  prepare  Ensure local Mongo is running and sync shared production plugin state
   build    Prepare the local environment and run NodeBB build
   dev      Prepare the local environment, build assets, then run NodeBB dev
   start    Prepare the local environment, build assets, then run NodeBB start
@@ -103,7 +103,6 @@ async function runChecked(command, args) {
 async function prepareEnvironment(configPath) {
 	await runChecked(path.join(rootDir, 'scripts', 'local-mongo.mjs'), ['ensure-running', '--config', configPath]);
 	await runChecked(path.join(rootDir, 'scripts', 'sync-nodebb-extension-state.mjs'), ['sync', '--config', configPath]);
-	await runChecked(path.join(rootDir, 'scripts', 'local-testing-state.mjs'), ['sync', '--config', configPath]);
 }
 
 async function runNodebb(configPath, nodebbCommand, extraArgs) {

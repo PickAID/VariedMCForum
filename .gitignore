@@ -169,10 +169,8 @@ docs/superpowers/
 !/docker-compose.local-mongo.yml
 !/scripts/local-mongo.mjs
 !/scripts/local-nodebb.mjs
-!/scripts/local-testing-state.mjs
 !/scripts/verify-local-runtime.mjs
 !/docs/LOCAL_TESTING.md
-!/state/local-testing-state.example.json
 
-# local-only private plugin/testing overlay
+# obsolete local-only private file, keep ignored so it never leaks
 /state/local-testing-state.json

@@ -94,10 +94,10 @@ is_forbidden_deploy_path() {
     .deployignore|.gitignore|config.json|config.local.json|docker-compose.local-mongo.yml)
       return 0
       ;;
-    scripts/local-mongo.mjs|scripts/local-nodebb.mjs|scripts/local-testing-state.mjs|scripts/verify-local-runtime.mjs|scripts/update-nodebb-docs.sh|scripts/sync-nodebb-extension-state.mjs|scripts/verify-production-extension-state-sync.sh)
+    scripts/local-mongo.mjs|scripts/local-nodebb.mjs|scripts/verify-local-runtime.mjs|scripts/update-nodebb-docs.sh|scripts/sync-nodebb-extension-state.mjs|scripts/verify-production-extension-state-sync.sh)
       return 0
       ;;
-    state/production-nodebb-extensions.json|state/local-testing-state.example.json|state/local-testing-state.json)
+    state/production-nodebb-extensions.json|state/local-testing-state.json)
       return 0
       ;;
   esac
