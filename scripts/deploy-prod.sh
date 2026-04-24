@@ -292,7 +292,7 @@ main() {
   sudo "$SYSTEMCTL_BIN" stop "$NODEBB_SERVICE"
 
   deploy_log "Running NodeBB upgrade"
-  ./nodebb upgrade
+  ./nodebb upgrade -mis
 
   deploy_log "Building NodeBB"
   ./nodebb build
