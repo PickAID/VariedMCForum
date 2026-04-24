@@ -9,11 +9,11 @@ const meta = require('../meta');
 const batch = require('../batch');
 const categories = require('../categories');
 const user = require('../user');
-const topics = require('../topics');
 const utils = require('../utils');
 const TTLCache = require('../cache/ttl');
 
 const failedWebfingerCache = TTLCache({
+	name: 'ap-failed-webfinger-cache',
 	max: 5000,
 	ttl: 1000 * 60 * 10, // 10 minutes
 });
@@ -21,6 +21,11 @@ const failedWebfingerCache = TTLCache({
 const activitypub = module.parent.exports;
 
 const Actors = module.exports;
+Actors._followerCache = TTLCache({
+	name: 'ap-follower-cache',
+	max: 5000,
+	ttl: 1000 * 60 * 60, // 1 hour
+});
 
 Actors.qualify = async (ids, options = {}) => {
 	/**
@@ -44,6 +49,9 @@ Actors.qualify = async (ids, options = {}) => {
 
 	// Filter out uids if passed in
 	ids = ids.filter(id => !utils.isNumber(id));
+
+	// Filter out constants
+	ids = ids.filter(id => !activitypub._constants.acceptablePublicAddresses.includes(id));
 
 	// Translate webfinger handles to uris
 	ids = (await Promise.all(ids.map(async (id) => {
@@ -126,13 +134,13 @@ Actors.assert = async (ids, options = {}) => {
 		try {
 			activitypub.helpers.log(`[activitypub/actors] Processing ${id}`);
 			const actor = (typeof id === 'object' && id.hasOwnProperty('id')) ? id : await activitypub.get('uid', 0, id, { cache: process.env.CI === 'true' });
-
 			// webfinger backreference check
 			const { hostname: domain } = new URL(id);
 			const { actorUri: canonicalId } = await activitypub.helpers.query(`${actor.preferredUsername}@${domain}`);
 			if (id !== canonicalId) {
 				return null;
 			}
+
 
 			let typeOk = false;
 			if (Array.isArray(actor.type)) {
@@ -166,7 +174,6 @@ Actors.assert = async (ids, options = {}) => {
 				// no action required
 				activitypub.helpers.log(`[activitypub/actor.assert] Unable to retrieve follower counts for ${actor.id}`);
 			}
-
 			// Save url for backreference
 			const url = Array.isArray(actor.url) ? actor.url.shift() : actor.url;
 			if (url && url !== actor.id) {
@@ -351,7 +358,7 @@ Actors.assertGroup = async (ids, options = {}) => {
 	}));
 	groups = groups.filter(Boolean); // remove unresolvable actors
 
-	// Build userData object for storage
+	// Build categoryData object for storage
 	const categoryObjs = (await activitypub.mocks.category(groups)).filter(Boolean);
 	const now = Date.now();
 
@@ -400,62 +407,39 @@ Actors.assertGroup = async (ids, options = {}) => {
 		db.deleteObjectFields('handle:cid', queries.handleRemove),
 	]);
 
+	// Privilege mask
+	const [masksAdd, masksRemove] = categoryObjs.reduce(([add, remove], category) => {
+		(category?._activitypub?.postingRestrictedToMods ? add : remove).push(`cid:${category.cid}:privilegeMask`);
+		return [add, remove];
+	}, [[], []]);
+
 	await Promise.all([
 		db.setObjectBulk(bulkSet),
 		db.sortedSetAdd('usersRemote:lastCrawled', groups.map(() => now), groups.map(p => p.id)),
 		db.sortedSetAddBulk(queries.searchAdd),
 		db.setObject('handle:cid', queries.handleAdd),
-		_migratePersonToGroup(categoryObjs),
+		db.setsAdd(masksAdd, 'topics:create'),
+		db.setsRemove(masksRemove, 'topics:create'),
 	]);
 
 	return categoryObjs;
 };
 
-async function _migratePersonToGroup(categoryObjs) {
-	// 4.0.0-4.1.x asserted as:Group as users. This moves relevant stuff over and deletes the now-duplicate user.
-	let ids = categoryObjs.map(category => category.cid);
-	const slugs = categoryObjs.map(category => category.slug);
-	const isUser = await db.isObjectFields('handle:uid', slugs);
-	ids = ids.filter((id, idx) => isUser[idx]);
-	if (!ids.length) {
-		return;
+Actors.getFollowers = async (id) => {
+	/**
+	 * Returns followers by local or remote id. Pass in a...
+	 *  - Remote id: returns local uids/cids that follow
+	 *  - Local id: returns remote uids that follow
+	 */
+	let response = Actors._followerCache.get(id);
+	if (response) {
+		return response;
 	}
 
-	await Promise.all(ids.map(async (id) => {
-		const shares = await db.getSortedSetMembers(`uid:${id}:shares`);
-		let cids = await topics.getTopicsFields(shares, ['cid']);
-		cids = cids.map(o => o.cid);
-		await Promise.all(shares.map(async (share, idx) => {
-			const cid = cids[idx];
-			if (cid === -1) {
-				await topics.tools.move(share, {
-					cid: id,
-					uid: 'system',
-				});
-			}
-		}));
-
-		const followers = await db.getSortedSetMembersWithScores(`followersRemote:${id}`);
-		await db.sortedSetAdd(
-			`cid:${id}:uid:watch:state`,
-			followers.map(() => categories.watchStates.tracking),
-			followers.map(({ value }) => value),
-		);
-		await user.deleteAccount(id);
-	}));
-	await categories.onTopicsMoved(ids);
-}
-
-Actors.getLocalFollowers = async (id) => {
-	// Returns local uids and cids that follow a remote actor (by id)
-	const response = {
+	response = {
 		uids: new Set(),
 		cids: new Set(),
 	};
-
-	if (!activitypub.helpers.isUri(id)) {
-		return response;
-	}
 
 	const [isUser, isCategory] = await Promise.all([
 		user.exists(id),
@@ -466,19 +450,29 @@ Actors.getLocalFollowers = async (id) => {
 		const members = await db.getSortedSetMembers(`followersRemote:${id}`);
 
 		members.forEach((id) => {
-			if (utils.isNumber(id)) {
-				response.uids.add(parseInt(id, 10));
-			} else if (id.startsWith('cid|') && utils.isNumber(id.slice(4))) {
+			if (id.startsWith('cid|') && utils.isNumber(id.slice(4))) {
 				response.cids.add(parseInt(id.slice(4), 10));
+			} else {
+				response.uids.add(utils.isNumber(id) ? parseInt(id, 10) : id);
 			}
 		});
 	} else if (isCategory) {
+		// Internally, users are different, they follow via watch state instead
+		// Possibly refactor to store in followersRemote:${id} too??
 		const members = await db.getSortedSetRangeByScore(`cid:${id}:uid:watch:state`, 0, -1, categories.watchStates.tracking, categories.watchStates.watching);
 		members.forEach((uid) => {
 			response.uids.add(uid);
 		});
+
+		const cids = await db.getSortedSetMembers(`followersRemote:${id}`);
+		cids.forEach((id) => {
+			if (id.startsWith('cid|') && utils.isNumber(id.slice(4))) {
+				response.cids.add(parseInt(id.slice(4), 10));
+			}
+		});
 	}
 
+	Actors._followerCache.set(id, response);
 	return response;
 };
 
@@ -608,6 +602,7 @@ Actors.prune = async () => {
 	let deletionCountNonExisting = 0;
 	let notDeletedDueToLocalContent = 0;
 	const preservedIds = [];
+
 	await batch.processArray(ids, async (ids) => {
 		const exists = await Promise.all([
 			db.exists(ids.map(id => `userRemote:${id}`)),
@@ -654,7 +649,10 @@ Actors.prune = async () => {
 					await user.deleteAccount(uid);
 					deletionCount += 1;
 				} catch (err) {
-					winston.error(err.stack);
+					winston.error(`Failed to delete user with uid ${uid}: ${err.stack}`);
+					if (err.message === '[[error:no-user]]') {
+						missing.add(uid);
+					}
 				}
 			} else {
 				notDeletedDueToLocalContent += 1;
@@ -681,13 +679,17 @@ Actors.prune = async () => {
 		}));
 
 		deletionCountNonExisting += missing.size;
-		await db.sortedSetRemove('usersRemote:lastCrawled', Array.from(missing));
+		if (missing.size) {
+			await db.sortedSetRemove('usersRemote:lastCrawled', Array.from(missing));
+			winston.info(`[actors/prune] Cleaned up ${missing.size} remote users that were not found in the database.`);
+		}
+
 		// update timestamp in usersRemote:lastCrawled so we don't try to delete users
 		// with content over and over
 		const now = Date.now();
 		await db.sortedSetAdd('usersRemote:lastCrawled', preservedIds.map(() => now), preservedIds);
 	}, {
-		batch: 50,
+		batch: 10,
 		interval: 1000,
 	});
 

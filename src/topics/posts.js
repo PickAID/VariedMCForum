@@ -14,7 +14,7 @@ const plugins = require('../plugins');
 const utils = require('../utils');
 const privileges = require('../privileges');
 
-const backlinkRegex = new RegExp(`(?:${nconf.get('url').replace('/', '\\/')}|\b|\\s)\\/topic\\/(\\d+)(?:\\/\\w+)?`, 'g');
+const backlinkRegex = new RegExp(`(?:${nconf.get('url').replace('/', '\\/')}|\b|\\s)\\/topic\\/([a-fA-F0-9-]+)(?=\\/|$|\\s)`, 'g');
 
 module.exports = function (Topics) {
 	Topics.onNewPostMade = async function (postData) {
@@ -209,7 +209,7 @@ module.exports = function (Topics) {
 				parentPost.content = foundPost.content;
 				return;
 			}
-			parentPost = await posts.parsePost(parentPost);
+			await posts.parsePost(parentPost);
 		}));
 
 		const parents = {};
@@ -227,7 +227,7 @@ module.exports = function (Topics) {
 		});
 
 		postData.forEach((post) => {
-			if (parents[post.toPid]) {
+			if (parents[post.toPid] && parents[post.toPid].content) {
 				post.parent = parents[post.toPid];
 			}
 		});
@@ -252,7 +252,7 @@ module.exports = function (Topics) {
 	};
 
 	Topics.getLatestUndeletedReply = async function (tid) {
-		let isDeleted = false;
+		let isDeleted;
 		let index = 0;
 		do {
 			/* eslint-disable no-await-in-loop */
@@ -312,12 +312,21 @@ module.exports = function (Topics) {
 	};
 
 	Topics.increasePostCount = async function (tid) {
-		incrementFieldAndUpdateSortedSet(tid, 'postcount', 1, 'topics:posts');
+		await incrementFieldAndUpdateSortedSet(tid, 'postcount', 1, 'topics:posts');
 	};
 
 	Topics.decreasePostCount = async function (tid) {
-		incrementFieldAndUpdateSortedSet(tid, 'postcount', -1, 'topics:posts');
+		await incrementFieldAndUpdateSortedSet(tid, 'postcount', -1, 'topics:posts');
 	};
+
+	async function incrementFieldAndUpdateSortedSet(tid, field, by, set) {
+		const cid = await Topics.getTopicField(tid, 'cid');
+		const value = await db.incrObjectFieldBy(`topic:${tid}`, field, by);
+		const isRemoteCid = !utils.isNumber(cid) || cid === -1;
+		if (!isRemoteCid) {
+			await db.sortedSetAdd(set, value, tid);
+		}
+	}
 
 	Topics.increaseViewCount = async function (req, tid) {
 		const allow = req.uid > 0 || (meta.config.guestsIncrementTopicViews && req.uid === 0);
@@ -327,16 +336,15 @@ module.exports = function (Topics) {
 			const interval = meta.config.incrementTopicViewsInterval * 60000;
 			if (!req.session.tids_viewed[tid] || req.session.tids_viewed[tid] < now - interval) {
 				const cid = await Topics.getTopicField(tid, 'cid');
-				incrementFieldAndUpdateSortedSet(tid, 'viewcount', 1, ['topics:views', `cid:${cid}:tids:views`]);
+				const isRemoteCid = !utils.isNumber(cid) || cid === -1;
+				const value = await db.incrObjectFieldBy(`topic:${tid}`, 'viewcount', 1);
+				await db.sortedSetsAdd(
+					isRemoteCid ? [`cid:${cid}:tids:views`] : ['topics:views', `cid:${cid}:tids:views`], value, tid
+				);
 				req.session.tids_viewed[tid] = now;
 			}
 		}
 	};
-
-	async function incrementFieldAndUpdateSortedSet(tid, field, by, set) {
-		const value = await db.incrObjectFieldBy(`topic:${tid}`, field, by);
-		await db[Array.isArray(set) ? 'sortedSetsAdd' : 'sortedSetAdd'](set, value, tid);
-	}
 
 	Topics.getTitleByPid = async function (pid) {
 		return await Topics.getTopicFieldByPid('title', pid);
@@ -439,29 +447,27 @@ module.exports = function (Topics) {
 			throw new Error('[[error:invalid-data]]');
 		}
 
-
-		let { content } = postData;
+		let { pid, uid, content } = postData;
 		// ignore lines that start with `>`
-		content = content.split('\n').filter(line => !line.trim().startsWith('>')).join('\n');
+		content = (content || '').split('\n').filter(line => !line.trim().startsWith('>')).join('\n');
 		// Scan post content for topic links
 		const matches = [...content.matchAll(backlinkRegex)];
-		if (!matches) {
-			return 0;
-		}
 
-		const { pid, uid, tid } = postData;
-		let add = _.uniq(matches.map(match => match[1]).map(tid => parseInt(tid, 10)));
+		let add = _.uniq(matches.map(match => match[1]));
 
-		const now = Date.now();
-		const topicsExist = await Topics.exists(add);
-		const current = (await db.getSortedSetMembers(`pid:${pid}:backlinks`)).map(tid => parseInt(tid, 10));
+		const [topicsExist, current] = await Promise.all([
+			Topics.exists(add),
+			db.getSortedSetMembers(`pid:${pid}:backlinks`),
+		]);
 		const remove = current.filter(tid => !add.includes(tid));
-		add = add.filter((_tid, idx) => topicsExist[idx] && !current.includes(_tid) && tid !== _tid);
+		const postTid = String(postData.tid);
+		add = add.filter((_tid, idx) => topicsExist[idx] && !current.includes(_tid) && postTid !== _tid);
 
 		// Remove old backlinks
 		await db.sortedSetRemove(`pid:${pid}:backlinks`, remove);
 
 		// Add new backlinks
+		const now = Date.now();
 		await db.sortedSetAdd(`pid:${pid}:backlinks`, add.map(() => now), add);
 		await Promise.all(add.map(async (tid) => {
 			await Topics.events.log(tid, {
@@ -471,6 +477,6 @@ module.exports = function (Topics) {
 			});
 		}));
 
-		return add.length + (current - remove);
+		return add.length + (current.length - remove.length);
 	};
 };

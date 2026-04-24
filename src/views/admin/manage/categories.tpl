@@ -8,7 +8,16 @@
 
 			<!-- IMPORT admin/partials/category/selector-dropdown-right.tpl -->
 
-			<button data-action="create" class="btn btn-primary btn-sm btn btn-primary btn-sm fw-semibold ff-secondary text-center text-nowrap">[[admin/manage/categories:add-category]]</button>
+			<div class="dropdown" role="group">
+				<button class="btn btn-primary btn-sm btn btn-primary btn-sm fw-semibold ff-secondary text-center text-nowrap dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+					[[admin/manage/categories:add-category]]
+					<i class="fa fa-caret-down"></i>
+				</button>
+				<ul class="dropdown-menu dropdown-menu-end p-1">
+					<li><a class="dropdown-item rounded-1" href="#" data-action="create">[[admin/manage/categories:add-local-category]]</a></li>
+					<li><a class="dropdown-item rounded-1" href="#" data-action="add">[[admin/manage/categories:add-remote-category]]</a></li>
+				</ul>
+			</div>
 		</div>
 	</div>
 	<div class="text-sm {{{if !breadcrumbs.length }}}hidden{{{ end }}}"><!-- IMPORT admin/partials/breadcrumbs.tpl --></div>

@@ -23,6 +23,7 @@ module.exports = function (app, name, middleware, controllers) {
 
 	helpers.setupAdminPageRoute(app, `/${name}/manage/users`, middlewares, controllers.admin.users.index);
 	helpers.setupAdminPageRoute(app, `/${name}/manage/users/custom-fields`, middlewares, controllers.admin.users.customFields);
+	helpers.setupAdminPageRoute(app, `/${name}/manage/users/custom-reasons`, middlewares, controllers.admin.users.banReasons);
 	helpers.setupAdminPageRoute(app, `/${name}/manage/registration`, middlewares, controllers.admin.users.registrationQueue);
 
 	helpers.setupAdminPageRoute(app, `/${name}/manage/admins-mods`, middlewares, controllers.admin.adminsMods.get);
@@ -46,10 +47,16 @@ module.exports = function (app, name, middleware, controllers) {
 	helpers.setupAdminPageRoute(app, `/${name}/settings/pagination`, middlewares, controllers.admin.settings.pagination);
 	helpers.setupAdminPageRoute(app, `/${name}/settings/notifications`, middlewares, controllers.admin.settings.notifications);
 	helpers.setupAdminPageRoute(app, `/${name}/settings/api`, middlewares, controllers.admin.settings.api);
-	helpers.setupAdminPageRoute(app, `/${name}/settings/activitypub`, middlewares, controllers.admin.settings.activitypub);
 	helpers.setupAdminPageRoute(app, `/${name}/settings/cookies`, middlewares, controllers.admin.settings.cookies);
 	helpers.setupAdminPageRoute(app, `/${name}/settings/web-crawler`, middlewares, controllers.admin.settings.webCrawler);
 	helpers.setupAdminPageRoute(app, `/${name}/settings/advanced`, middlewares, controllers.admin.settings.advanced);
+
+	helpers.setupAdminPageRoute(app, `/${name}/federation/general`, middlewares, controllers.admin.federation.general);
+	helpers.setupAdminPageRoute(app, `/${name}/federation/content`, middlewares, controllers.admin.federation.content);
+	helpers.setupAdminPageRoute(app, `/${name}/federation/rules`, middlewares, controllers.admin.federation.rules);
+	helpers.setupAdminPageRoute(app, `/${name}/federation/relays`, middlewares, controllers.admin.federation.relays);
+	helpers.setupAdminPageRoute(app, `/${name}/federation/pruning`, middlewares, controllers.admin.federation.pruning);
+	helpers.setupAdminPageRoute(app, `/${name}/federation/safety`, middlewares, controllers.admin.federation.safety);
 
 	helpers.setupAdminPageRoute(app, `/${name}/appearance/themes`, middlewares, controllers.admin.appearance.themes);
 	helpers.setupAdminPageRoute(app, `/${name}/appearance/skins`, middlewares, controllers.admin.appearance.skins);
@@ -67,6 +74,7 @@ module.exports = function (app, name, middleware, controllers) {
 	helpers.setupAdminPageRoute(app, `/${name}/advanced/errors`, middlewares, controllers.admin.errors.get);
 	helpers.setupAdminPageRoute(app, `/${name}/advanced/errors/export`, middlewares, controllers.admin.errors.export);
 	helpers.setupAdminPageRoute(app, `/${name}/advanced/cache`, middlewares, controllers.admin.cache.get);
+	helpers.setupAdminPageRoute(app, `/${name}/advanced/jobs`, middlewares, controllers.admin.jobs.get);
 
 	helpers.setupAdminPageRoute(app, `/${name}/development/logger`, middlewares, controllers.admin.logger.get);
 	helpers.setupAdminPageRoute(app, `/${name}/development/info`, middlewares, controllers.admin.info.get);
@@ -81,16 +89,24 @@ function apiRoutes(router, name, middleware, controllers) {
 	router.get(`/api/${name}/groups/:groupname/csv`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.groups.getCSV));
 	router.get(`/api/${name}/analytics`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.dashboard.getAnalytics));
 	router.get(`/api/${name}/advanced/cache/dump`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.cache.dump));
+	router.post(`/api/${name}/manage/categories`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.categories.addRemote));
+	router.post(`/api/${name}/manage/categories/:cid/name`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.categories.renameRemote));
+	router.delete(`/api/${name}/manage/categories/:cid`, middleware.ensureLoggedIn, helpers.tryRoute(controllers.admin.categories.removeRemote));
 
-	const multipart = require('connect-multiparty');
-	const multipartMiddleware = multipart();
+	const upload = require('../middleware/multer');
 
-	const middlewares = [multipartMiddleware, middleware.validateFiles, middleware.applyCSRF, middleware.ensureLoggedIn];
+	const middlewares = [
+		upload.array('files[]', 20),
+		middleware.validateFiles,
+		middleware.applyCSRF,
+		middleware.ensureLoggedIn,
+	];
 
 	router.post(`/api/${name}/category/uploadpicture`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadCategoryPicture));
 	router.post(`/api/${name}/uploadfavicon`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadFavicon));
 	router.post(`/api/${name}/uploadTouchIcon`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadTouchIcon));
 	router.post(`/api/${name}/uploadMaskableIcon`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadMaskableIcon));
+	router.post(`/api/${name}/uploadScreenshot`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadScreenshot));
 	router.post(`/api/${name}/uploadlogo`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadLogo));
 	router.post(`/api/${name}/uploadOgImage`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadOgImage));
 	router.post(`/api/${name}/upload/file`, middlewares, helpers.tryRoute(controllers.admin.uploads.uploadFile));

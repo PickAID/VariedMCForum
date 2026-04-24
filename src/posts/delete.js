@@ -34,6 +34,7 @@ module.exports = function (Posts) {
 		await Promise.all([
 			topics.updateLastPostTimeFromLastPid(postData.tid),
 			topics.updateTeaser(postData.tid),
+			isDeleting ? activitypub.notes.delete(pid) : null,
 			isDeleting ?
 				db.sortedSetRemove(`cid:${topicData.cid}:pids`, pid) :
 				db.sortedSetAdd(`cid:${topicData.cid}:pids`, postData.timestamp, pid),
@@ -78,7 +79,9 @@ module.exports = function (Posts) {
 			deleteFromGroups(pids),
 			deleteDiffs(pids),
 			deleteFromUploads(pids),
-			db.sortedSetsRemove(['posts:pid', 'posts:votes', 'posts:flagged'], pids),
+			db.sortedSetsRemove([
+				'posts:pid', 'posts:votes', 'posts:flagged', 'postsRemote:pid',
+			], pids),
 			Posts.attachments.empty(pids),
 			activitypub.notes.delete(pids),
 			db.deleteAll(pids.map(pid => `pid:${pid}:editors`)),
@@ -105,9 +108,12 @@ module.exports = function (Posts) {
 		const localCount = postData.filter(p => utils.isNumber(p.pid)).length;
 		const incrObjectBulk = [['global', { postCount: -localCount }]];
 
-		const postsByCategory = _.groupBy(postData, p => parseInt(p.cid, 10));
+		const postsByCategory = _.groupBy(postData, p => String(p.cid));
 		for (const [cid, posts] of Object.entries(postsByCategory)) {
-			incrObjectBulk.push([`category:${cid}`, { post_count: -posts.length }]);
+			incrObjectBulk.push([
+				utils.isNumber(cid) ? `category:${cid}` : `categoryRemote:${cid}`,
+				{ post_count: -posts.length },
+			]);
 		}
 
 		const postsByTopic = _.groupBy(postData, p => String(p.tid));
@@ -121,14 +127,17 @@ module.exports = function (Posts) {
 			if (posts.length && posts[0]) {
 				const topicData = posts[0].topic;
 				const newPostCount = topicData.postcount - posts.length;
-				topicPostCountTasks.push(['topics:posts', newPostCount, tid]);
+				const isRemoteCid = !utils.isNumber(topicData.cid) || topicData.cid === -1;
+				if (!isRemoteCid) {
+					topicPostCountTasks.push(['topics:posts', newPostCount, tid]);
+				}
 				if (!topicData.pinned) {
 					zsetIncrBulk.push([`cid:${topicData.cid}:tids:posts`, -posts.length, tid]);
 				}
 			}
 			topicTasks.push(topics.updateTeaser(tid));
 			topicTasks.push(topics.updateLastPostTimeFromLastPid(tid));
-			const postsByUid = _.groupBy(posts, p => parseInt(p.uid, 10));
+			const postsByUid = _.groupBy(posts, p => String(p.uid));
 			for (const [uid, uidPosts] of Object.entries(postsByUid)) {
 				zsetIncrBulk.push([`tid:${tid}:posters`, -uidPosts.length, uid]);
 			}
@@ -196,20 +205,15 @@ module.exports = function (Posts) {
 	}
 
 	async function deleteFromReplies(postData) {
-		const arrayOfReplyPids = await db.getSortedSetsMembers(postData.map(p => `pid:${p.pid}:replies`));
-		const allReplyPids = _.flatten(arrayOfReplyPids);
-		const promises = [
-			db.deleteObjectFields(
-				allReplyPids.map(pid => `post:${pid}`), ['toPid']
-			),
-			db.deleteAll(postData.map(p => `pid:${p.pid}:replies`)),
-		];
+		// Any replies to deleted posts will retain toPid reference (gh#13527)
+		await db.deleteAll(postData.map(p => `pid:${p.pid}:replies`));
 
-		const postsWithParents = postData.filter(p => parseInt(p.toPid, 10));
+		// Remove post(s) from parents' replies zsets
+		const postsWithParents = postData.filter(p => p.toPid);
 		const bulkRemove = postsWithParents.map(p => [`pid:${p.toPid}:replies`, p.pid]);
-		promises.push(db.sortedSetRemoveBulk(bulkRemove));
-		await Promise.all(promises);
+		await db.sortedSetRemoveBulk(bulkRemove);
 
+		// Recalculate reply count
 		const parentPids = _.uniq(postsWithParents.map(p => p.toPid));
 		const counts = await db.sortedSetsCard(parentPids.map(pid => `pid:${pid}:replies`));
 		await db.setObjectBulk(parentPids.map((pid, index) => [`post:${pid}`, { replies: counts[index] }]));

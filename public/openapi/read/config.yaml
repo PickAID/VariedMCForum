@@ -87,6 +87,8 @@ get:
                 type: number
               maximumFileSize:
                 type: number
+              convertPastedImageTo:
+                type: string
               theme:id:
                 type: string
               theme:src:
@@ -182,4 +184,6 @@ get:
                 type: object
                 properties:
                   probe:
+                    type: number
+                  worldDefaultCid:
                     type: number

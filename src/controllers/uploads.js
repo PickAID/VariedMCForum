@@ -18,7 +18,7 @@ const uploadsController = module.exports;
 uploadsController.upload = async function (req, res, filesIterator) {
 	let files;
 	try {
-		files = req.files.files;
+		files = req.files;
 	} catch (e) {
 		return helpers.formatApiResponse(400, res);
 	}
@@ -26,9 +26,6 @@ uploadsController.upload = async function (req, res, filesIterator) {
 	// These checks added because of odd behaviour by request: https://github.com/request/request/issues/2445
 	if (!Array.isArray(files)) {
 		return helpers.formatApiResponse(500, res, new Error('[[error:invalid-file]]'));
-	}
-	if (Array.isArray(files[0])) {
-		files = files[0];
 	}
 
 	try {
@@ -64,7 +61,7 @@ async function uploadAsImage(req, uploadedFile) {
 		throw new Error('[[error:no-privileges]]');
 	}
 	await image.checkDimensions(uploadedFile.path);
-	await image.stripEXIF(uploadedFile.path);
+	await image.stripEXIF({ path: uploadedFile.path, type: uploadedFile.type });
 
 	if (plugins.hooks.hasListeners('filter:uploadImage')) {
 		return await plugins.hooks.fire('filter:uploadImage', {
@@ -78,12 +75,12 @@ async function uploadAsImage(req, uploadedFile) {
 	let fileObj = await uploadsController.uploadFile(req.uid, uploadedFile);
 	// sharp can't save svgs skip resize for them
 	const isSVG = uploadedFile.type === 'image/svg+xml';
-	if (isSVG || meta.config.resizeImageWidth === 0 || meta.config.resizeImageWidthThreshold === 0) {
-		return fileObj;
+	const resizeDisabled = meta.config.resizeImageWidth === 0 || meta.config.resizeImageWidthThreshold === 0;
+	if (!isSVG && !resizeDisabled) {
+		fileObj = await resizeImage({ ...fileObj, type: uploadedFile.type });
 	}
 
-	fileObj = await resizeImage(fileObj);
-	return { url: fileObj.url };
+	return { url: fileObj.url, name: fileObj.name };
 }
 
 async function uploadAsFile(req, uploadedFile) {
@@ -110,6 +107,7 @@ async function resizeImage(fileObj) {
 
 	await image.resizeImage({
 		path: fileObj.path,
+		type: fileObj.type,
 		target: meta.config.resizeImageKeepOriginal ?
 			file.appendToFileName(fileObj.path, '-resized') :
 			fileObj.path,
@@ -126,7 +124,7 @@ async function resizeImage(fileObj) {
 
 uploadsController.uploadThumb = async function (req, res) {
 	if (!meta.config.allowTopicsThumbnail) {
-		deleteTempFiles(req.files.files);
+		deleteTempFiles(req.files);
 		return helpers.formatApiResponse(503, res, new Error('[[error:topic-thumbnails-are-disabled]]'));
 	}
 
@@ -140,6 +138,7 @@ uploadsController.uploadThumb = async function (req, res) {
 		if (dimensions.width > parseInt(meta.config.topicThumbSize, 10)) {
 			await image.resizeImage({
 				path: uploadedFile.path,
+				type: uploadedFile.type,
 				width: meta.config.topicThumbSize,
 			});
 		}
@@ -151,7 +150,11 @@ uploadsController.uploadThumb = async function (req, res) {
 			});
 		}
 
-		return await uploadsController.uploadFile(req.uid, uploadedFile);
+		const storedFile = await uploadsController.uploadFile(req.uid, uploadedFile);
+		return {
+			url: storedFile.url,
+			name: storedFile.name,
+		};
 	});
 };
 
@@ -196,12 +199,18 @@ async function saveFileToLocal(uid, folder, uploadedFile) {
 	};
 
 	await user.associateUpload(uid, upload.url.replace(`${nconf.get('upload_url')}`, ''));
-	const data = await plugins.hooks.fire('filter:uploadStored', { uid: uid, uploadedFile: uploadedFile, storedFile: storedFile });
+	const data = await plugins.hooks.fire('filter:uploadStored', {
+		uid,
+		uploadedFile,
+		storedFile,
+	});
 	return data.storedFile;
 }
 
 function deleteTempFiles(files) {
-	files.forEach(fileObj => file.delete(fileObj.path));
+	if (Array.isArray(files)) {
+		files.forEach(fileObj => file.delete(fileObj.path));
+	}
 }
 
 require('../promisify')(uploadsController, ['upload', 'uploadPost', 'uploadThumb']);

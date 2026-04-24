@@ -167,7 +167,12 @@ docs/superpowers/
 !/README.md
 !/config.local.json
 !/docker-compose.local-mongo.yml
-!/scripts/local-dev.sh
-!/scripts/local-mongo.sh
-!/scripts/local-nodebb.sh
+!/scripts/local-mongo.mjs
+!/scripts/local-nodebb.mjs
+!/scripts/local-testing-state.mjs
+!/scripts/verify-local-runtime.mjs
 !/docs/LOCAL_TESTING.md
+!/state/local-testing-state.example.json
+
+# local-only private plugin/testing overlay
+/state/local-testing-state.json

@@ -35,6 +35,7 @@ Topics.thumbs = require('./thumbs');
 require('./bookmarks')(Topics);
 require('./merge')(Topics);
 Topics.events = require('./events');
+Topics.crossposts = require('./crossposts');
 
 Topics.exists = async function (tids) {
 	return await db.exists(
@@ -100,7 +101,7 @@ Topics.getTopicsByTids = async function (tids, options) {
 			loadShowfullnameSettings(),
 			categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'backgroundImage', 'imageClass', 'bgColor', 'color', 'disabled']),
 			loadGuestHandles(),
-			Topics.thumbs.load(topics),
+			Topics.thumbs.load(topics, options),
 		]);
 
 		users.forEach((userObj, idx) => {

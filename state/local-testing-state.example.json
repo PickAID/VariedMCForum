@@ -1,0 +1,22 @@
+{
+    "schemaVersion": 1,
+    "extensions": [
+        {
+            "name": "nodebb-plugin-private-example",
+            "path": "../private/nodebb-plugin-private-example"
+        }
+    ],
+    "activeExtensions": [
+        "nodebb-plugin-private-example"
+    ],
+    "settings": {
+        "private-example": {
+            "enabled": "on"
+        }
+    },
+    "objects": {
+        "config": {
+            "private-example:enabled": "1"
+        }
+    }
+}

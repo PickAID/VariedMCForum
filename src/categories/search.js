@@ -5,14 +5,15 @@ const _ = require('lodash');
 const privileges = require('../privileges');
 const activitypub = require('../activitypub');
 const plugins = require('../plugins');
-const utils = require('../utils');
 const db = require('../database');
+const utils = require('../utils');
 
 module.exports = function (Categories) {
 	Categories.search = async function (data) {
 		const query = data.query || '';
 		const page = data.page || 1;
 		const uid = data.uid || 0;
+		const localOnly = data.localOnly || false;
 		const paginate = data.hasOwnProperty('paginate') ? data.paginate : true;
 
 		const startTime = process.hrtime();
@@ -22,6 +23,9 @@ module.exports = function (Categories) {
 		}
 
 		let cids = await findCids(query, data.hardCap);
+		if (localOnly) {
+			cids = cids.filter(cid => utils.isNumber(cid));
+		}
 
 		const result = await plugins.hooks.fire('filter:categories.search', {
 			data: data,
@@ -44,7 +48,8 @@ module.exports = function (Categories) {
 
 		const childrenCids = await getChildrenCids(cids, uid);
 		const uniqCids = _.uniq(cids.concat(childrenCids));
-		const categoryData = await Categories.getCategories(uniqCids);
+		let categoryData = await Categories.getCategories(uniqCids);
+		categoryData = categoryData.filter(Boolean);
 
 		Categories.getTree(categoryData, 0);
 		await Categories.getRecentTopicReplies(categoryData, uid, data.qs);
@@ -64,7 +69,7 @@ module.exports = function (Categories) {
 			return c1.order - c2.order;
 		});
 		searchResult.timing = (process.elapsedTimeSince(startTime) / 1000).toFixed(2);
-		searchResult.categories = categoryData.filter(c => cids.includes(c.cid));
+		searchResult.categories = categoryData.filter(c => cids.includes(String(c.cid)));
 		return searchResult;
 	};
 
@@ -72,21 +77,24 @@ module.exports = function (Categories) {
 		if (!query || String(query).length < 2) {
 			return [];
 		}
+		const searchQuery = String(query).toLowerCase();
 		const data = await db.getSortedSetScan({
 			key: 'categories:name',
-			match: `*${String(query).toLowerCase()}*`,
+			match: `*${searchQuery}*`,
 			limit: hardCap || 500,
 		});
-		return data.map((data) => {
-			const split = data.split(':');
-			split.shift();
-			const cid = split.join(':');
-			return utils.isNumber(cid) ? parseInt(cid, 10) : cid;
-		});
+		const searchInDomain = searchQuery.includes('@');
+		return data.reduce((acc, match) => {
+			const [name, ...cidParts] = match.split(':');
+			if (searchInDomain ? name.includes(searchQuery) : name.split('@')[0].includes(searchQuery)) {
+				acc.push(cidParts.join(':'));
+			}
+			return acc;
+		}, []);
 	}
 
 	async function getChildrenCids(cids, uid) {
-		const childrenCids = await Promise.all(cids.map(cid => Categories.getChildrenCids(cid)));
+		const childrenCids = await Promise.all(cids.map(Categories.getChildrenCids));
 		return await privileges.categories.filterCids('find', _.flatten(childrenCids), uid);
 	}
 };

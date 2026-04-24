@@ -3,6 +3,7 @@
 
 const _ = require('lodash');
 const winston = require('winston');
+const tokenizer = require('sbd');
 
 const db = require('../database');
 const utils = require('../utils');
@@ -41,12 +42,22 @@ module.exports = function (Topics) {
 			topicData.tags = data.tags.join(',');
 		}
 
+		if (Array.isArray(data.thumbs) && data.thumbs.length) {
+			const thumbs = Topics.thumbs.filterThumbs(data.thumbs);
+			topicData.thumbs = JSON.stringify(thumbs);
+			topicData.numThumbs = thumbs.length;
+		}
+
+		if (data.generatedTitle && utils.isNumber(data.generatedTitle)) {
+			topicData.generatedTitle = data.generatedTitle;
+		}
+
 		const result = await plugins.hooks.fire('filter:topic.create', { topic: topicData, data: data });
 		topicData = result.topic;
 		await db.setObject(`topic:${topicData.tid}`, topicData);
 
 		const timestampedSortedSetKeys = [
-			'topics:tid',
+			utils.isNumber(tid) ? 'topics:tid' : 'topicsRemote:tid',
 			`cid:${topicData.cid}:tids`,
 			`cid:${topicData.cid}:tids:create`,
 			`cid:${topicData.cid}:uid:${topicData.uid}:tids`,
@@ -83,17 +94,26 @@ module.exports = function (Topics) {
 	Topics.post = async function (data) {
 		data = await plugins.hooks.fire('filter:topic.post', data);
 		const { uid } = data;
+		const remoteUid = activitypub.helpers.isUri(uid);
 
 		const [categoryExists, canCreate, canTag, isAdmin] = await Promise.all([
 			parseInt(data.cid, 10) > 0 ? categories.exists(data.cid) : true,
-			privileges.categories.can('topics:create', data.cid, uid),
-			privileges.categories.can('topics:tag', data.cid, uid),
+			privileges.categories.can('topics:create', utils.isNumber(data.cid) ? data.cid : -1, remoteUid ? -2 : uid),
+			privileges.categories.can('topics:tag', utils.isNumber(data.cid) ? data.cid : -1, remoteUid ? -2 : uid),
 			privileges.users.isAdministrator(uid),
 		]);
 
-		data.title = String(data.title).trim();
 		data.tags = data.tags || [];
 		data.content = String(data.content || '').trimEnd();
+
+		if (data.title) {
+			data.title = String(data.title).trim();
+		} else {
+			const sentences = tokenizer.sentences(data.content, { sanitize: true, newline_boundaries: true });
+			data.title = sentences.shift();
+			data.generatedTitle = 1;
+		}
+
 		if (!isAdmin) {
 			Topics.checkTitle(data.title);
 		}
@@ -147,14 +167,15 @@ module.exports = function (Topics) {
 		topicData.index = 0;
 		postData.index = 0;
 
-		if (topicData.scheduled) {
-			await Topics.delete(tid);
+		if (data.deleted || topicData.scheduled) {
+			await Topics.delete(tid, uid);
+			topicData.deleted = true;
 		}
 
 		analytics.increment(['topics', `topics:byCid:${topicData.cid}`]);
 		plugins.hooks.fire('action:topic.post', { topic: topicData, post: postData, data: data });
 
-		if (!topicData.scheduled) {
+		if (!topicData.scheduled && !topicData.deleted) {
 			setImmediate(async () => {
 				try {
 					if (utils.isNumber(uid)) {
@@ -239,16 +260,19 @@ module.exports = function (Topics) {
 		return postData;
 	};
 
-	async function onNewPost({ pid, tid, uid: postOwner }, { uid, handle }) {
+	async function onNewPost({ pid, tid, content, uid: postOwner }, { uid, handle }) {
 		const [[postData], [userInfo]] = await Promise.all([
-			posts.getPostSummaryByPids([pid], uid, {}),
+			posts.getPostSummaryByPids([pid], uid, { extraFields: ['attachments'] }),
 			posts.getUserInfoForPosts([postOwner], uid),
 		]);
 		await Promise.all([
 			Topics.addParentPosts([postData], uid),
-			Topics.syncBacklinks(postData),
+			Topics.syncBacklinks({ ...postData, content }),
 			Topics.markAsRead([tid], uid),
 		]);
+		if (utils.isNumber(postOwner) && postData.category.cid === -1) {
+			activitypub.notes.syncUserInboxes(tid, uid);
+		}
 
 		// Returned data is a superset of post summary data
 		postData.user = userInfo;

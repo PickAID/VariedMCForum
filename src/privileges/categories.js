@@ -23,6 +23,7 @@ const _privilegeMap = new Map([
 	['topics:read', { label: '[[admin/manage/privileges:access-topics]]', type: 'viewing' }],
 	['topics:create', { label: '[[admin/manage/privileges:create-topics]]', type: 'posting' }],
 	['topics:reply', { label: '[[admin/manage/privileges:reply-to-topics]]', type: 'posting' }],
+	['topics:crosspost', { label: '[[admin/manage/privileges:crosspost-topics]]', type: 'posting' }],
 	['topics:schedule', { label: '[[admin/manage/privileges:schedule-topics]]', type: 'posting' }],
 	['topics:tag', { label: '[[admin/manage/privileges:tag-topics]]', type: 'posting' }],
 	['posts:edit', { label: '[[admin/manage/privileges:edit-posts]]', type: 'posting' }],
@@ -96,14 +97,16 @@ privsCategories.get = async function (cid, uid) {
 		'topics:tag', 'read', 'posts:view_deleted',
 	];
 
-	const [userPrivileges, isAdministrator, isModerator] = await Promise.all([
+	let [userPrivileges, isAdministrator, isModerator] = await Promise.all([
 		helpers.isAllowedTo(privs, uid, cid),
 		user.isAdministrator(uid),
 		user.isModerator(uid, cid),
 	]);
 
-	const combined = userPrivileges.map(allowed => allowed || isAdministrator);
-	const privData = _.zipObject(privs, combined);
+	if (utils.isNumber(cid)) {
+		userPrivileges = userPrivileges.map(allowed => allowed || isAdministrator);
+	}
+	const privData = _.zipObject(privs, userPrivileges);
 	const isAdminOrMod = isAdministrator || isModerator;
 
 	return await plugins.hooks.fire('filter:privileges.categories.get', {

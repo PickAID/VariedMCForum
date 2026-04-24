@@ -5,6 +5,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TMP_VERIFY_DIR=""
 MANAGED_PLUGIN_DIRS=()
+REQUIRED_CORE_DEPLOY_PATHS=(
+  app.js
+  loader.js
+  nodebb
+  nodebb.bat
+  package.json
+  package-lock.json
+  install/package.json
+  webpack.common.js
+  webpack.prod.js
+)
 
 cleanup_tmpdir() {
   if [[ -n "${TMP_VERIFY_DIR:-}" && -d "${TMP_VERIFY_DIR}" ]]; then
@@ -80,13 +91,13 @@ is_forbidden_deploy_path() {
     docs|docs/*|backups|backups/*|public/uploads|public/uploads/*|build|build/*|logs|logs/*)
       return 0
       ;;
-    app.js|nodebb|nodebb.bat|loader.js|require-main.js|Gruntfile.js|webpack.common.js|webpack.dev.js|webpack.installer.js|webpack.prod.js)
+    .deployignore|.gitignore|config.json|config.local.json|docker-compose.local-mongo.yml)
       return 0
       ;;
-    install|install/*|types|types/*)
+    scripts/local-mongo.mjs|scripts/local-nodebb.mjs|scripts/local-testing-state.mjs|scripts/verify-local-runtime.mjs|scripts/update-nodebb-docs.sh|scripts/sync-nodebb-extension-state.mjs|scripts/verify-production-extension-state-sync.sh)
       return 0
       ;;
-    config.json|config.local.json|docker-compose.local-mongo.yml|scripts/local-dev.sh|scripts/local-mongo.sh|scripts/local-nodebb.sh)
+    state/production-nodebb-extensions.json|state/local-testing-state.example.json|state/local-testing-state.json)
       return 0
       ;;
   esac
@@ -101,8 +112,11 @@ is_forbidden_deploy_path() {
 main() {
   local tracked_path
   local deploy_path
+  local required_path
+  local deploy_manifest_file
   local tracked_violations=()
   local deploy_violations=()
+  local missing_required_deploy_paths=()
 
   cd "${ROOT_DIR}"
   load_managed_plugin_dirs
@@ -121,6 +135,9 @@ main() {
 
   TMP_VERIFY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/verify-sync-safety.XXXXXX")"
   trap cleanup_tmpdir EXIT
+  deploy_manifest_file="${TMP_VERIFY_DIR}/deploy-manifest.txt"
+
+  rsync -an --delete --exclude-from='.deployignore' --out-format='%n' ./ "${TMP_VERIFY_DIR}/" > "${deploy_manifest_file}"
 
   while IFS= read -r deploy_path; do
     deploy_path="${deploy_path#./}"
@@ -131,11 +148,25 @@ main() {
     if is_forbidden_deploy_path "${deploy_path}"; then
       deploy_violations+=("${deploy_path}")
     fi
-  done < <(rsync -an --delete --exclude-from='.deployignore' --out-format='%n' ./ "${TMP_VERIFY_DIR}/")
+  done < "${deploy_manifest_file}"
 
   if ((${#deploy_violations[@]} > 0)); then
     printf 'Deployment payload still contains forbidden local or sensitive paths:\n' >&2
     printf '  %s\n' "${deploy_violations[@]}" >&2
+    return 1
+  fi
+
+  for required_path in "${REQUIRED_CORE_DEPLOY_PATHS[@]}"; do
+    [[ -e "${ROOT_DIR}/${required_path}" ]] || continue
+
+    if ! grep -Fxq "${required_path}" "${deploy_manifest_file}"; then
+      missing_required_deploy_paths+=("${required_path}")
+    fi
+  done
+
+  if ((${#missing_required_deploy_paths[@]} > 0)); then
+    printf 'Deployment payload is unexpectedly missing required NodeBB core files:\n' >&2
+    printf '  %s\n' "${missing_required_deploy_paths[@]}" >&2
     return 1
   fi
 

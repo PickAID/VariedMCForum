@@ -12,6 +12,7 @@ set_defaults() {
   export SETUP="${SETUP:-}"
   export PACKAGE_MANAGER="${PACKAGE_MANAGER:-npm}"
   export OVERRIDE_UPDATE_LOCK="${OVERRIDE_UPDATE_LOCK:-false}"
+  export NODEBB_ADDITIONAL_PLUGINS="${NODEBB_ADDITIONAL_PLUGINS:-}"
 }
 
 # Function to check if a directory exists and is writable
@@ -69,7 +70,7 @@ copy_or_link_files() {
   ln -fs "$dest_dir/$lock_file" "$src_dir/$lock_file"
 }
 
-# Function to install dependencies using pnpm
+# Function to install dependencies using npm/yarn/pnpm
 install_dependencies() {
   case "$PACKAGE_MANAGER" in
     yarn) yarn install || {
@@ -103,7 +104,7 @@ build_forum() {
   local config="$1"
   local start_build="$2"
   local package_hash=$(md5sum install/package.json | head -c 32)
-  if [ "$package_hash" = "$(cat $CONFIG_DIR/install_hash.md5 || true)" ]; then
+  if [ "$package_hash" != "$(cat $CONFIG_DIR/install_hash.md5 || true)" ]; then
       echo "package.json was updated. Upgrading..."
       /usr/src/app/nodebb upgrade --config="$config" || {
           echo "Failed to build NodeBB. Exiting..."
@@ -172,6 +173,43 @@ debug_log() {
   echo "DEBUG: $message"
 }
 
+install_additional_plugins() {
+  if [[ -n ${NODEBB_ADDITIONAL_PLUGINS} ]]; then
+    # Create a local array to work with
+    local plugins_to_install=()
+
+    # check if NODEBB_ADDITIONAL_PLUGINS is an array or a space-separated string
+    if [[ "$(declare -p NODEBB_ADDITIONAL_PLUGINS 2>/dev/null)" == "declare -a"* ]]; then
+      plugins_to_install=("${NODEBB_ADDITIONAL_PLUGINS[@]}")
+    else
+      plugins_to_install=(${NODEBB_ADDITIONAL_PLUGINS})
+    fi
+
+    export START_BUILD="true"
+    for plugin in "${plugins_to_install[@]}"; do
+      echo "Installing additional plugin ${plugin}..."
+      case "$PACKAGE_MANAGER" in
+        yarn) yarn add "${plugin}" || {
+          echo "Failed to install plugin ${plugin} with yarn"
+          exit 1
+        } ;;
+        npm) npm install "${plugin}" || {
+          echo "Failed to install plugin ${plugin} with npm"
+          exit 1
+        } ;;
+        pnpm) pnpm add "${plugin}" || {
+          echo "Failed to install plugin ${plugin} with pnpm"
+          exit 1
+        } ;;
+        *)
+          echo "Unknown package manager: $PACKAGE_MANAGER"
+          exit 1
+          ;;
+      esac
+    done
+  fi
+}
+
 # Main function
 main() {
   set_defaults
@@ -182,12 +220,14 @@ main() {
   debug_log "PACKAGE_MANAGER: $PACKAGE_MANAGER"
   debug_log "CONFIG location: $CONFIG"
   debug_log "START_BUILD: $START_BUILD"
+  debug_log "NODEBB_ADDITIONAL_PLUGINS: ${NODEBB_ADDITIONAL_PLUGINS}"
 
   if [ -n "$SETUP" ]; then
     start_setup_session "$CONFIG"
   fi
 
   if [ -f "$CONFIG" ]; then
+    install_additional_plugins
     start_forum "$CONFIG" "$START_BUILD"
   else
     start_installation_session "$NODEBB_INIT_VERB" "$CONFIG"

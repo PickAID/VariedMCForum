@@ -11,7 +11,6 @@ const posts = require('../posts');
 const notifications = require('../notifications');
 const categories = require('../categories');
 const privileges = require('../privileges');
-const meta = require('../meta');
 const utils = require('../utils');
 const plugins = require('../plugins');
 
@@ -48,8 +47,9 @@ module.exports = function (Topics) {
 	};
 
 	Topics.unreadCutoff = async function (uid) {
-		const cutoff = Date.now() - (meta.config.unreadCutoff * 86400000);
-		const data = await plugins.hooks.fire('filter:topics.unreadCutoff', { uid: uid, cutoff: cutoff });
+		const { unreadCutoff } = await user.getSettings(uid);
+		const cutoff = Date.now() - (unreadCutoff * 86400000);
+		const data = await plugins.hooks.fire('filter:topics.unreadCutoff', { uid, cutoff });
 		return parseInt(data.cutoff, 10);
 	};
 
@@ -141,8 +141,8 @@ module.exports = function (Topics) {
 		});
 
 		tids = await privileges.topics.filterTids('topics:read', tids, params.uid);
-		const topicData = (await Topics.getTopicsFields(tids, ['tid', 'cid', 'uid', 'postcount', 'deleted', 'scheduled', 'tags']))
-			.filter(t => t.scheduled || !t.deleted);
+		const topicData = (await Topics.getTopicsFields(tids, ['tid', 'cid', 'uid', 'postcount', 'deleted', 'tags']))
+			.filter(t => !t.deleted);
 		const topicCids = _.uniq(topicData.map(topic => topic.cid)).filter(Boolean);
 
 		const categoryWatchState = await categories.getWatchState(topicCids, params.uid);
@@ -290,7 +290,7 @@ module.exports = function (Topics) {
 	};
 
 	Topics.markAsRead = async function (tids, uid) {
-		if (!Array.isArray(tids) || !tids.length) {
+		if (!Array.isArray(tids) || !tids.length || !utils.isNumber(uid)) {
 			return false;
 		}
 
@@ -326,7 +326,7 @@ module.exports = function (Topics) {
 
 	Topics.markAllRead = async function (uid) {
 		const tids = await Topics.getUnreadTids({ uid });
-		Topics.markTopicNotificationsRead(tids, uid);
+		await Topics.markTopicNotificationsRead(tids, uid);
 		await Topics.markAsRead(tids, uid);
 		await db.delete(`uid:${uid}:tids_unread`);
 	};
@@ -336,8 +336,10 @@ module.exports = function (Topics) {
 			return;
 		}
 		const nids = await user.notifications.getUnreadByField(uid, 'tid', tids);
-		await notifications.markReadMultiple(nids, uid);
-		user.notifications.pushCount(uid);
+		if (nids.length) {
+			await notifications.markReadMultiple(nids, uid);
+			await user.notifications.pushCount(uid);
+		}
 	};
 
 	Topics.markCategoryUnreadForAll = async function (/* tid */) {
@@ -351,8 +353,23 @@ module.exports = function (Topics) {
 		if (!(parseInt(uid, 10) > 0)) {
 			return tids.map(() => false);
 		}
-		const [topicScores, userScores, tids_unread, blockedUids] = await Promise.all([
+
+		// Remote tids do not get slotted into topics:recent; separate calculation follows
+		async function getRemoteTopicScores(tids) {
+			let cids = await Topics.getTopicsFields(tids, ['cid']);
+			cids = cids.map(({ cid }) => cid);
+			return await Promise.all(tids.map(async (tid, idx) => {
+				const cid = cids[idx];
+				if (utils.isNumber(tid) || !cid) {
+					return null;
+				}
+				return await db.sortedSetScore(`cid:${cid}:tids`, tid);
+			}));
+		}
+
+		const [topicScores, remoteTopicScores, userScores, tids_unread, blockedUids] = await Promise.all([
 			db.sortedSetScores('topics:recent', tids),
+			getRemoteTopicScores(tids),
 			db.sortedSetScores(`uid:${uid}:tids_read`, tids),
 			db.sortedSetScores(`uid:${uid}:tids_unread`, tids),
 			user.blocks.list(uid),
@@ -361,7 +378,7 @@ module.exports = function (Topics) {
 		const cutoff = await Topics.unreadCutoff(uid);
 		const result = tids.map((tid, index) => {
 			const read = !tids_unread[index] &&
-				(topicScores[index] < cutoff ||
+				((topicScores[index] || remoteTopicScores[index]) < cutoff ||
 				!!(userScores[index] && userScores[index] >= topicScores[index]));
 			return { tid: tid, read: read, index: index };
 		});

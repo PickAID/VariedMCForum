@@ -60,15 +60,15 @@ module.exports = function (Categories) {
 			return await updateOrder(cid, value);
 		}
 
-		await db.setObjectField(`category:${cid}`, key, value);
+		await db.setObjectField(`${utils.isNumber(cid) ? 'category' : 'categoryRemote'}:${cid}`, key, value);
 		if (key === 'description') {
 			await Categories.parseDescription(cid, value);
 		}
 	}
 
 	async function updateParent(cid, newParent) {
-		newParent = parseInt(newParent, 10) || 0;
-		if (parseInt(cid, 10) === newParent) {
+		newParent = String(newParent || 0);
+		if (String(cid) === newParent) {
 			throw new Error('[[error:cant-set-self-as-parent]]');
 		}
 		const childrenCids = await Categories.getChildrenCids(cid);
@@ -76,21 +76,18 @@ module.exports = function (Categories) {
 			throw new Error('[[error:cant-set-child-as-parent]]');
 		}
 		const categoryData = await Categories.getCategoryFields(cid, ['parentCid', 'order']);
-		const oldParent = categoryData.parentCid;
+		const oldParent = String(categoryData.parentCid);
 		if (oldParent === newParent) {
 			return;
 		}
 		await Promise.all([
 			db.sortedSetRemove(`cid:${oldParent}:children`, cid),
 			db.sortedSetAdd(`cid:${newParent}:children`, categoryData.order, cid),
-			db.setObjectField(`category:${cid}`, 'parentCid', newParent),
+			db.setObjectField(`${utils.isNumber(cid) ? 'category' : 'categoryRemote'}:${cid}`, 'parentCid', newParent),
 		]);
-
-		cache.del([
-			`cid:${oldParent}:children`,
-			`cid:${newParent}:children`,
-			`cid:${oldParent}:children:all`,
-			`cid:${newParent}:children:all`,
+		await Promise.all([
+			Categories.clearParentCategoryCache(oldParent),
+			Categories.clearParentCategoryCache(newParent),
 		]);
 	}
 
@@ -104,8 +101,12 @@ module.exports = function (Categories) {
 	}
 
 	async function updateOrder(cid, order) {
-		const parentCid = await Categories.getCategoryField(cid, 'parentCid');
-		await db.sortedSetsAdd('categories:cid', order, cid);
+		const parentCid = (await Categories.getCategoryField(cid, 'parentCid')) || 0;
+		const isLocal = utils.isNumber(cid);
+
+		if (isLocal) {
+			await db.sortedSetsAdd('categories:cid', order, cid);
+		}
 
 		const childrenCids = await db.getSortedSetRange(
 			`cid:${parentCid}:children`, 0, -1
@@ -128,13 +129,11 @@ module.exports = function (Categories) {
 		);
 
 		await db.setObjectBulk(
-			childrenCids.map((cid, index) => [`category:${cid}`, { order: index + 1 }])
+			childrenCids.map((cid, index) => [`${utils.isNumber(cid) ? 'category' : 'categoryRemote'}:${cid}`, { order: index + 1 }])
 		);
-
+		await Categories.clearParentCategoryCache(parentCid);
 		cache.del([
 			'categories:cid',
-			`cid:${parentCid}:children`,
-			`cid:${parentCid}:children:all`,
 		]);
 	}
 
@@ -161,9 +160,9 @@ module.exports = function (Categories) {
 			throw new Error('[[error:category.handle-taken]]');
 		}
 
+		await db.sortedSetRemove('categoryhandle:cid', existing);
 		await Promise.all([
 			db.setObjectField(`category:${cid}`, 'handle', handle),
-			db.sortedSetRemove('categoryhandle:cid', existing),
 			db.sortedSetAdd('categoryhandle:cid', cid, handle),
 		]);
 	}

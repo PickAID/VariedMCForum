@@ -171,22 +171,53 @@ function summarizeWarnings(state) {
 	console.log('Snapshot warnings:');
 	state.warnings.forEach((warning) => {
 		const issues = Array.isArray(warning.issues) && warning.issues.length ? ` (${warning.issues.join(', ')})` : '';
-		console.log(`- ${warning.name}: ${warning.type}${issues}`);
+		const activeNote = state.activeExtensions.includes(warning.name) ? '' : ' [inactive; skipped during dependency sync]';
+		console.log(`- ${warning.name}: ${warning.type}${issues}${activeNote}`);
 	});
 	console.log('');
 }
 
-function getDesiredDeclaredExtensions(state) {
+function getSkippedDeclaredExtensions(state) {
+	const active = new Set(state.activeExtensions);
+
+	return new Set(
+		state.warnings
+			.filter((warning) => (
+				warning &&
+				warning.type === 'file-dependency-integrity' &&
+				typeof warning.name === 'string' &&
+				!active.has(warning.name)
+			))
+			.map(warning => warning.name)
+	);
+}
+
+function getInstallDefaultExtensionDependencies(defaultPkg) {
+	return getCurrentExtensionDependencies(defaultPkg);
+}
+
+function getDesiredDeclaredExtensions(state, defaultPkg) {
+	const skipped = getSkippedDeclaredExtensions(state);
+	const defaultDependencies = getInstallDefaultExtensionDependencies(defaultPkg);
+
 	return normalizeExtensionOrder(
 		state.extensions
-			.filter(item => item.declared && typeof item.declaredSpec === 'string' && item.declaredSpec)
+			.filter(item => (
+				item.declared &&
+				typeof item.declaredSpec === 'string' &&
+				item.declaredSpec &&
+				!skipped.has(item.name)
+			))
 			.map(item => item.name)
 	).map((name) => {
 		const item = state.extensions.find(extension => extension.name === name);
+		const installDefaultSpec = defaultDependencies[item.name] || null;
 		return {
 			name,
 			kind: item.kind || classifyExtension(name),
-			declaredSpec: item.declaredSpec,
+			declaredSpec: installDefaultSpec || item.declaredSpec,
+			snapshotDeclaredSpec: item.declaredSpec,
+			installDefaultSpec,
 			localSourceDir: item.localSourceDir || null,
 		};
 	});
@@ -208,8 +239,8 @@ function sortObjectKeys(input) {
 	);
 }
 
-function createDependencyPlan(state, pkg, { prune }) {
-	const desiredDeclared = getDesiredDeclaredExtensions(state);
+function createDependencyPlan(state, pkg, defaultPkg, { prune }) {
+	const desiredDeclared = getDesiredDeclaredExtensions(state, defaultPkg);
 	const currentDependencies = getCurrentExtensionDependencies(pkg);
 	const desiredMap = new Map(desiredDeclared.map(item => [item.name, item]));
 
@@ -220,6 +251,8 @@ function createDependencyPlan(state, pkg, { prune }) {
 			kind: item.kind,
 			currentSpec: currentDependencies[item.name] || null,
 			desiredSpec: item.declaredSpec,
+			snapshotSpec: item.snapshotDeclaredSpec,
+			installDefaultSpec: item.installDefaultSpec,
 			localSourceDir: item.localSourceDir,
 		}));
 
@@ -285,7 +318,10 @@ function printDependencyPlan(plan) {
 
 	console.log('Dependency plan:');
 	plan.toAddOrUpdate.forEach((item) => {
-		console.log(`- set ${item.name} -> ${item.desiredSpec}${item.currentSpec ? ` (was ${item.currentSpec})` : ''}`);
+		const desiredDetail = item.installDefaultSpec && item.installDefaultSpec !== item.snapshotSpec ?
+			`${item.desiredSpec} (keeping install default instead of snapshot ${item.snapshotSpec})` :
+			item.desiredSpec;
+		console.log(`- set ${item.name} -> ${desiredDetail}${item.currentSpec ? ` (was ${item.currentSpec})` : ''}`);
 	});
 	plan.extraDependencies.forEach((item) => {
 		const action = plan.prune ? 'remove' : 'keep-extra';
@@ -296,7 +332,8 @@ function printDependencyPlan(plan) {
 async function applyDependencyPlan(state, statePath, { prune }) {
 	const packageJsonPath = path.join(rootDir, 'package.json');
 	const pkg = await readJson(packageJsonPath);
-	const plan = createDependencyPlan(state, pkg, { prune });
+	const defaultPkg = await readJson(path.join(rootDir, 'install', 'package.json'));
+	const plan = createDependencyPlan(state, pkg, defaultPkg, { prune });
 	printDependencyPlan(plan);
 
 	if (!plan.toAddOrUpdate.length && !(prune && plan.extraDependencies.length)) {
@@ -360,7 +397,19 @@ async function packageExistsInNodeModules(packageName) {
 	}
 }
 
+function ensureNconfStores() {
+	if (!nconf.stores.argv) {
+		nconf.argv();
+	}
+	if (!nconf.stores.env) {
+		nconf.env({
+			separator: '__',
+		});
+	}
+}
+
 async function withNodebbDatabase(configPath, callback) {
+	ensureNconfStores();
 	prestart.loadConfig(configPath);
 	const db = require('../src/database');
 
@@ -435,7 +484,8 @@ async function applyActiveState(state, configPath) {
 async function runPlan(state, configPath, { prune }) {
 	summarizeWarnings(state);
 	const packageJson = await readJson(path.join(rootDir, 'package.json'));
-	const dependencyPlan = createDependencyPlan(state, packageJson, { prune });
+	const defaultPkg = await readJson(path.join(rootDir, 'install', 'package.json'));
+	const dependencyPlan = createDependencyPlan(state, packageJson, defaultPkg, { prune });
 	printDependencyPlan(dependencyPlan);
 
 	try {

@@ -16,6 +16,8 @@ function replaceChar(c) {
 }
 const escapeChars = /[&<>"'`=]/g;
 
+const invisibleChars = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\u3164\uFEFF]/;
+
 const HTMLEntities = Object.freeze({
 	amp: '&',
 	gt: '>',
@@ -300,7 +302,9 @@ const utils = {
 		const pattern = (tags || ['']).join('|');
 		return String(str).replace(new RegExp('<(\\/)?(' + (pattern || '[^\\s>]+') + ')(\\s+[^<>]*?)?\\s*(\\/)?>', 'gi'), '');
 	},
-
+	stripBidiControls: function (input) {
+		return input.replace(/[\u202A-\u202E\u2066-\u2069]/gi, '');
+	},
 	cleanUpTag: function (tag, maxLength) {
 		if (typeof tag !== 'string' || !tag.length) {
 			return '';
@@ -308,7 +312,7 @@ const utils = {
 
 		tag = tag.trim().toLowerCase();
 		// see https://github.com/NodeBB/NodeBB/issues/4378
-		tag = tag.replace(/\u202E/gi, '');
+		tag = utils.stripBidiControls(tag);
 		tag = tag.replace(/[,/#!$^*;:{}=_`<>'"~()?|]/g, '');
 		tag = tag.slice(0, maxLength || 15).trim();
 		const matches = tag.match(/^[.-]*(.+?)[.-]*$/);
@@ -317,17 +321,32 @@ const utils = {
 		}
 		return tag;
 	},
-
+	createFieldChecker: function (fields = []) {
+		const allFields = !fields.length;
+		return function hasField(field) {
+			return allFields || fields.includes(field);
+		};
+	},
 	removePunctuation: function (str) {
 		return str.replace(/[.,-/#!$%^&*;:{}=\-_`<>'"~()?]/g, '');
 	},
 
 	isEmailValid: function (email) {
-		return typeof email === 'string' && email.length && email.indexOf('@') !== -1 && email.indexOf(',') === -1 && email.indexOf(';') === -1;
+		return typeof email === 'string' && email.length && email.includes('@') && !email.includes(',') && !email.includes(';');
 	},
 
 	isUserNameValid: function (name) {
-		return (name && name !== '' && (/^['" \-+.*[\]0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+$/.test(name)));
+		if (!name || name === '') return false;
+		if (name.trim().length === 0) return false;
+		if (invisibleChars.test(name)) return false;
+		return (/^['" \-+.*[\]0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+$/.test(name));
+	},
+
+	isSlugValid: function (slug) {
+		if (!slug || slug === '' || slug === '.' || slug === '..') return false;
+		if (slug.trim().length === 0) return false;
+		if (invisibleChars.test(slug)) return false;
+		return true;
 	},
 
 	isPasswordValid: function (password) {
@@ -570,10 +589,7 @@ const utils = {
 	params: function (options = {}) {
 		let url;
 		if (options.url && !options.url.startsWith('http')) {
-			// relative path passed in
-			options.url = options.url.replace(new RegExp(`/?${config.relative_path.slice(1)}/`, 'g'), '');
-			url = new URL(document.location);
-			url.pathname = options.url;
+			url = new URL(options.url, 'http://dummybase');
 		} else {
 			url = new URL(options.url || document.location);
 		}

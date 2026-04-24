@@ -288,6 +288,12 @@ main() {
     ensure_plugin_symlink "$NODEBB_PATH" "$plugin_dir" "$package_name"
   done < "$MANAGED_PLUGINS_FILE"
 
+  deploy_log "Stopping ${NODEBB_SERVICE}"
+  sudo "$SYSTEMCTL_BIN" stop "$NODEBB_SERVICE"
+
+  deploy_log "Running NodeBB upgrade"
+  ./nodebb upgrade
+
   deploy_log "Building NodeBB"
   ./nodebb build
 

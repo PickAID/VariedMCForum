@@ -2,9 +2,6 @@
 .github/
 node_modules/
 README.md
-package.json
-package-lock.json
-yarn.lock
 config.json
 logs/
 pidfile
@@ -14,24 +11,14 @@ build/
 /docs/
 /.deployignore
 /.gitignore
-/app.js
-/nodebb
-/nodebb.bat
-/loader.js
-/require-main.js
-/install
-/install/
-/Gruntfile.js
-/types/
-/webpack.common.js
-/webpack.dev.js
-/webpack.installer.js
-/webpack.prod.js
 /config.local.json
 /docker-compose.local-mongo.yml
-/scripts/local-mongo.sh
-/scripts/local-nodebb.sh
-/scripts/local-dev.sh
+/scripts/local-mongo.mjs
+/scripts/local-nodebb.mjs
+/scripts/local-testing-state.mjs
+/scripts/verify-local-runtime.mjs
+/state/local-testing-state.example.json
+/state/local-testing-state.json
 /scripts/update-nodebb-docs.sh
 /scripts/sync-nodebb-extension-state.mjs
 /scripts/verify-production-extension-state-sync.sh
@@ -45,23 +32,13 @@ build/
 # Add Git-tracked local test/runtime files here when they should exist in the
 # repository but must never be synced to production.
 #
-# Examples:
-/package.json
-/app.js
-/nodebb
-/nodebb.bat
-/loader.js
-/require-main.js
-/install
-/install/
-/Gruntfile.js
-/webpack.common.js
-/webpack.dev.js
-/webpack.installer.js
-/webpack.prod.js
-/types/
+# Do not list NodeBB core runtime, package, build, or install files here.
+# Those must sync to production for core upgrades to work.
 /config.local.json
 /docker-compose.local-mongo.yml
-/scripts/local-mongo.sh
-/scripts/local-nodebb.sh
-/scripts/local-dev.sh
+/scripts/local-mongo.mjs
+/scripts/local-nodebb.mjs
+/scripts/local-testing-state.mjs
+/scripts/verify-local-runtime.mjs
+/state/local-testing-state.example.json
+/state/local-testing-state.json

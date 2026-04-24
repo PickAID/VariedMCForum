@@ -17,14 +17,16 @@ module.exports = function (utils, Benchpress, relative_path) {
 		generateCategoryBackground,
 		generateChildrenCategories,
 		generateTopicClass,
+		generateGroupDisplayName,
 		membershipBtn,
 		spawnPrivilegeStates,
 		localeToHTML,
-		renderTopicImage,
 		renderDigestAvatar,
 		userAgentIcons,
 		buildAvatar,
 		increment,
+		lessthan,
+		greaterthan,
 		generateWroteReplied,
 		generateRepliedTo,
 		generateWrote,
@@ -33,7 +35,9 @@ module.exports = function (utils, Benchpress, relative_path) {
 		shouldHideReplyContainer,
 		humanReadableNumber,
 		formattedNumber,
+		isNumber,
 		txEscape,
+		uploadBasename,
 		generatePlaceholderWave,
 		register,
 		__escape: identity,
@@ -73,10 +77,12 @@ module.exports = function (utils, Benchpress, relative_path) {
 	}
 
 	function buildLinkTag(tag) {
-		const attributes = ['link', 'rel', 'as', 'type', 'href', 'sizes', 'title', 'crossorigin'];
-		const [link, rel, as, type, href, sizes, title, crossorigin] = attributes.map(attr => (tag[attr] ? `${attr}="${tag[attr]}" ` : ''));
+		const attributes = [
+			'link', 'rel', 'as', 'type', 'href', 'hreflang', 'sizes', 'title', 'crossorigin',
+		];
+		const [link, rel, as, type, href, hreflang, sizes, title, crossorigin] = attributes.map(attr => (tag[attr] ? `${attr}="${tag[attr]}" ` : ''));
 
-		return '<link ' + link + rel + as + type + sizes + title + href + crossorigin + '/>\n\t';
+		return '<link ' + link + rel + as + type + sizes + title + href + hreflang + crossorigin + '/>\n\t';
 	}
 
 	function stringify(obj) {
@@ -107,7 +113,7 @@ module.exports = function (utils, Benchpress, relative_path) {
 		}
 
 		const href = tag === 'a' ? `href="${relative_path}/category/${category.slug}"` : '';
-		return `<${tag} ${href} class="badge px-1 text-truncate text-decoration-none ${className}" style="color: ${category.color};background-color: ${category.bgColor};border-color: ${category.bgColor}!important; max-width: 70vw;">
+		return `<${tag} component="topic/category" ${href} class="badge px-1 text-truncate text-decoration-none ${className}" style="color: ${category.color};background-color: ${category.bgColor};border-color: ${category.bgColor}!important; max-width: 70vw;">
 			${category.icon && category.icon !== 'fa-nbb-none' ? `<i class="fa fa-fw ${category.icon}"></i>` : ''}
 			${category.name}
 		</${tag}>`;
@@ -162,18 +168,22 @@ module.exports = function (utils, Benchpress, relative_path) {
 		return fields.filter(field => !!topic[field]).join(' ');
 	}
 
+	function generateGroupDisplayName(group) {
+		return group.system ? group.displayName.replace(/-/g, ' ') : group.displayName;
+	}
+
 	// Groups helpers
 	function membershipBtn(groupObj, btnClass = '') {
 		if (groupObj.isMember && groupObj.name !== 'administrators') {
-			return `<button class="btn btn-danger ${btnClass}" data-action="leave" data-group="${groupObj.displayName}" ${(groupObj.disableLeave ? ' disabled' : '')}><i class="fa fa-times"></i> [[groups:membership.leave-group]]</button>`;
+			return `<button class="btn btn-danger text-nowrap ${btnClass}" data-action="leave" data-group="${groupObj.displayName}" ${(groupObj.disableLeave ? ' disabled' : '')}><i class="fa fa-times"></i> [[groups:membership.leave-group]]</button>`;
 		}
 
 		if (groupObj.isPending && groupObj.name !== 'administrators') {
-			return `<button class="btn btn-warning disabled ${btnClass}"><i class="fa fa-clock-o"></i> [[groups:membership.invitation-pending]]</button>`;
+			return `<button class="btn btn-warning text-nowrap disabled ${btnClass}"><i class="fa fa-clock-o"></i> [[groups:membership.invitation-pending]]</button>`;
 		} else if (groupObj.isInvited) {
-			return `<button class="btn btn-warning" data-action="rejectInvite" data-group="${groupObj.displayName}">[[groups:membership.reject]]</button><button class="btn btn-success" data-action="acceptInvite" data-group="${groupObj.name}"><i class="fa fa-plus"></i> [[groups:membership.accept-invitation]]</button>`;
+			return `<button class="btn btn-warning text-nowrap" data-action="rejectInvite" data-group="${groupObj.displayName}">[[groups:membership.reject]]</button><button class="btn btn-success" data-action="acceptInvite" data-group="${groupObj.name}"><i class="fa fa-plus"></i> [[groups:membership.accept-invitation]]</button>`;
 		} else if (!groupObj.disableJoinRequests && groupObj.name !== 'administrators') {
-			return `<button class="btn btn-success ${btnClass}" data-action="join" data-group="${groupObj.displayName}"><i class="fa fa-plus"></i> [[groups:membership.join-group]]</button>`;
+			return `<button class="btn btn-success text-nowrap ${btnClass}" data-action="join" data-group="${groupObj.displayName}"><i class="fa fa-plus"></i> [[groups:membership.join-group]]</button>`;
 		}
 		return '';
 	}
@@ -214,13 +224,6 @@ module.exports = function (utils, Benchpress, relative_path) {
 	function localeToHTML(locale, fallback) {
 		locale = locale || fallback || 'en-GB';
 		return locale.replace('_', '-');
-	}
-
-	function renderTopicImage(topicObj) {
-		if (topicObj.thumb) {
-			return '<img src="' + topicObj.thumb + '" class="img-circle user-img" title="' + topicObj.user.displayname + '" />';
-		}
-		return '<img component="user/picture" data-uid="' + topicObj.user.uid + '" src="' + topicObj.user.picture + '" class="user-img" title="' + topicObj.user.displayname + '" />';
 	}
 
 	function renderDigestAvatar(block) {
@@ -327,6 +330,14 @@ module.exports = function (utils, Benchpress, relative_path) {
 		return String(value + parseInt(inc, 10));
 	}
 
+	function lessthan(a, b) {
+		return parseInt(a, 10) < parseInt(b, 10);
+	}
+
+	function greaterthan(a, b) {
+		return parseInt(a, 10) > parseInt(b, 10);
+	}
+
 	function generateWroteReplied(post, timeagoCutoff) {
 		if (post.toPid) {
 			return generateRepliedTo(post, timeagoCutoff);
@@ -360,11 +371,7 @@ module.exports = function (utils, Benchpress, relative_path) {
 	}
 
 	function shouldHideReplyContainer(post) {
-		if (post.replies.count <= 0 || post.replies.hasSingleImmediateReply) {
-			return true;
-		}
-
-		return false;
+		return post.replies.count <= 0 || post.replies.hasSingleImmediateReply;
 	}
 
 	function humanReadableNumber(number, toFixed = 1) {
@@ -375,8 +382,18 @@ module.exports = function (utils, Benchpress, relative_path) {
 		return utils.addCommas(number);
 	}
 
+	function isNumber(value) {
+		return utils.isNumber(value);
+	}
+
 	function txEscape(text) {
 		return String(text).replace(/%/g, '&#37;').replace(/,/g, '&#44;');
+	}
+
+	function uploadBasename(str, sep = '/') {
+		const hasTimestampPrefix = /^\d+-/;
+		const name = str.substr(str.lastIndexOf(sep) + 1);
+		return hasTimestampPrefix.test(name) ? name.slice(14) : name;
 	}
 
 	function generatePlaceholderWave(items) {

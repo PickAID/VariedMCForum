@@ -5,7 +5,6 @@ const process = require('process');
 const nconf = require('nconf');
 const winston = require('winston');
 const validator = require('validator');
-// const cheerio = require('cheerio');
 const crypto = require('crypto');
 
 const meta = require('../meta');
@@ -21,6 +20,7 @@ const activitypub = require('.');
 
 const webfingerRegex = /^(@|acct:)?[\w-.]+@.+$/;
 const webfingerCache = ttl({
+	name: 'ap-webfinger-cache',
 	max: 5000,
 	ttl: 1000 * 60 * 60 * 24, // 24 hours
 });
@@ -44,9 +44,9 @@ Helpers.log = (message) => {
 	if (!message) {
 		return _lastLog;
 	}
-
 	_lastLog = message;
 	if (process.env.NODE_ENV === 'development') {
+
 		winston.verbose(message);
 	}
 };
@@ -65,10 +65,18 @@ Helpers.isUri = (value) => {
 	});
 };
 
-Helpers.assertAccept = accept => (accept && accept.split(',').some((value) => {
-	const parts = value.split(';').map(v => v.trim());
-	return activitypub._constants.acceptableTypes.includes(value || parts[0]);
-}));
+Helpers.assertAccept = (accept) => {
+	if (!accept) {
+		return false;
+	}
+
+	const normalized = accept
+		.split(',')
+		.map(s => s.trim().replace(/\s*;\s*/g, ';')) // spec allows spaces around semi-colon
+		.join(',');
+
+	return activitypub._constants.acceptableTypes.some(type => normalized.includes(type));
+};
 
 Helpers.isWebfinger = (value) => {
 	// N.B. returns normalized handle, so truthy check!
@@ -112,6 +120,7 @@ Helpers.query = async (id) => {
 			headers: {
 				accept: 'application/jrd+json',
 			},
+			timeout: 5000,
 		}));
 	} catch (e) {
 		return false;
@@ -128,9 +137,12 @@ Helpers.query = async (id) => {
 		({ href: actorUri } = actorUri);
 	}
 
-	const { subject, publicKey } = body;
+	let { subject, publicKey } = body;
+	// Fix missing scheme
+	if (!subject.startsWith('acct:') && !subject.startsWith('did:')) {
+		subject = `acct:${subject}`;
+	}
 	const payload = { subject, username, hostname, actorUri, publicKey };
-
 	const claimedId = new URL(subject).pathname;
 	webfingerCache.set(claimedId, payload);
 	if (claimedId !== id) {
@@ -192,6 +204,9 @@ Helpers.resolveLocalId = async (input) => {
 
 				case 'message':
 					return { type: 'message', id: value, ...activityData };
+
+				case 'actor':
+					return { type: 'application', id: null };
 			}
 
 			return { type: null, id: null, ...activityData };
@@ -217,7 +232,7 @@ Helpers.resolveActor = (type, id) => {
 
 		case 'category':
 		case 'cid': {
-			return `${nconf.get('url')}/category/${id}`;
+			return `${nconf.get('url')}${id > 0 ? `/category/${id}` : '/actor'}`;
 		}
 
 		default:
@@ -458,7 +473,7 @@ Helpers.generateCollection = async ({ set, method, count, page, perPage, url }) 
 	} else if (set) {
 		method = method.bind(null, set);
 	}
-	count = count || await db.sortedSetCard(set);
+	count = count ?? await db.sortedSetCard(set);
 	const pageCount = Math.max(1, Math.ceil(count / perPage));
 	let items = [];
 	let paginate = true;
@@ -468,6 +483,7 @@ Helpers.generateCollection = async ({ set, method, count, page, perPage, url }) 
 		paginate = false;
 	}
 
+	page = parseInt(page, 10) || undefined;
 	if (page) {
 		const invalidPagination = page < 1 || page > pageCount;
 		if (invalidPagination) {
@@ -517,4 +533,64 @@ Helpers.generateDigest = (set) => {
 			const result = a.map((x, i) => x ^ b[i]);
 			return result.toString('hex');
 		});
+};
+
+Helpers.addressed = (id, activity) => {
+	// Returns Boolean for if id is found in addressing fields (to, cc, etc.)
+	if (!id || !activity || typeof activity !== 'object') {
+		return false;
+	}
+
+	const combined = new Set([
+		...(activity.to || []),
+		...(activity.cc || []),
+		...(activity.bto || []),
+		...(activity.bcc || []),
+		...(activity.audience || []),
+	]);
+
+	return combined.has(id);
+};
+
+Helpers.renderEmoji = (text, tags, strip = false) => {
+	if (!text || !tags) {
+		return text;
+	}
+
+	tags = Array.isArray(tags) ? tags : [tags];
+	let result = text;
+
+	const parsed = new Set();
+	tags.forEach((tag) => {
+		const isEmoji = tag.type === 'Emoji';
+		const hasUrl = tag.icon && tag.icon.url;
+		const isImage = !tag.icon?.mediaType || tag.icon.mediaType.startsWith('image/');
+
+		if (isEmoji && (strip || (hasUrl && isImage))) {
+			let { name } = tag;
+			if (parsed.has(name)) {
+				return;
+			}
+
+			if (!name.startsWith(':')) {
+				name = `:${name}`;
+			}
+			if (!name.endsWith(':')) {
+				name = `${name}:`;
+			}
+
+			const imgTag = strip ?
+				'' :
+				`<img class="not-responsive emoji" src="${tag.icon.url}" title="${name}" />`;
+
+			let index = result.indexOf(name);
+			while (index !== -1) {
+				result = result.substring(0, index) + imgTag + result.substring(index + name.length);
+				index = result.indexOf(name, index + imgTag.length);
+			}
+			parsed.add(name);
+		}
+	});
+
+	return result;
 };

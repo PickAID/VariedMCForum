@@ -58,7 +58,7 @@ Categories.getCategoryById = async function (data) {
 		Categories.getTopicCount(data),
 		Categories.getWatchState([data.cid], data.uid),
 		getChildrenTree(category, data.uid),
-		!utils.isNumber(data.cid) ? activitypub.actors.getLocalFollowers(data.cid) : null,
+		!utils.isNumber(data.cid) ? activitypub.actors.getFollowers(data.cid) : null,
 	];
 
 	if (category.parentCid) {
@@ -85,6 +85,9 @@ Categories.getCategoryById = async function (data) {
 };
 
 Categories.getCidByHandle = async function (handle) {
+	if (!handle) {
+		return null;
+	}
 	let cid = await db.sortedSetScore('categoryhandle:cid', handle);
 	if (!cid) {
 		// remote cids
@@ -101,7 +104,6 @@ Categories.getAllCidsFromSet = async function (key) {
 	}
 
 	cids = await db.getSortedSetRange(key, 0, -1);
-	cids = cids.map(cid => parseInt(cid, 10));
 	cache.set(key, cids);
 	return cids.slice();
 };
@@ -258,14 +260,13 @@ Categories.getChildren = async function (cids, uid) {
 async function getChildrenTree(category, uid) {
 	let childrenCids = await Categories.getChildrenCids(category.cid);
 	childrenCids = await privileges.categories.filterCids('find', childrenCids, uid);
-	childrenCids = childrenCids.filter(cid => parseInt(category.cid, 10) !== parseInt(cid, 10));
+	childrenCids = childrenCids.filter(cid => String(category.cid) !== String(cid));
 	if (!childrenCids.length) {
 		category.children = [];
 		return;
 	}
 	let childrenData = await Categories.getCategoriesData(childrenCids);
 	childrenData = childrenData.filter(Boolean);
-	childrenCids = childrenData.map(child => child.cid);
 	Categories.getTree([category].concat(childrenData), category.parentCid);
 }
 
@@ -274,11 +275,11 @@ Categories.getChildrenTree = getChildrenTree;
 Categories.getParentCids = async function (currentCid) {
 	let cid = currentCid;
 	const parents = [];
-	while (parseInt(cid, 10)) {
+	while (utils.isNumber(cid) ? parseInt(cid, 10) : cid) {
 		// eslint-disable-next-line
 		cid = await Categories.getCategoryField(cid, 'parentCid');
 		if (cid) {
-			parents.unshift(cid);
+			parents.unshift(String(cid));
 		}
 	}
 	return parents;
@@ -289,12 +290,12 @@ Categories.getChildrenCids = async function (rootCid) {
 	async function recursive(keys) {
 		let childrenCids = await db.getSortedSetRange(keys, 0, -1);
 
-		childrenCids = childrenCids.filter(cid => !allCids.includes(parseInt(cid, 10)));
+		childrenCids = childrenCids.filter(cid => !allCids.includes(cid));
 		if (!childrenCids.length) {
 			return;
 		}
+		allCids.push(...childrenCids);
 		keys = childrenCids.map(cid => `cid:${cid}:children`);
-		childrenCids.forEach(cid => allCids.push(parseInt(cid, 10)));
 		await recursive(keys);
 	}
 	const key = `cid:${rootCid}:children`;
@@ -329,7 +330,7 @@ Categories.flattenCategories = function (allCategories, categoryData) {
  * @param parentCid {number} start from 0 to build full tree
  */
 Categories.getTree = function (categories, parentCid) {
-	parentCid = parentCid || 0;
+	parentCid = String(parentCid || 0);
 	const cids = categories.map(category => category && category.cid);
 	const cidToCategory = {};
 	const parents = {};
@@ -350,15 +351,15 @@ Categories.getTree = function (categories, parentCid) {
 				return;
 			}
 			if (!category.hasOwnProperty('parentCid') || category.parentCid === null) {
-				category.parentCid = 0;
+				category.parentCid = '0';
 			}
-			if (category.parentCid === parentCid) {
+			if (String(category.parentCid) === parentCid) {
 				tree.push(category);
 				category.parent = parents[parentCid];
 			} else {
-				const parent = cidToCategory[category.parentCid];
+				const parent = cidToCategory[String(category.parentCid)];
 				if (parent && parent.cid !== category.cid) {
-					category.parent = parents[category.parentCid];
+					category.parent = parents[String(category.parentCid)];
 					parent.children = parent.children || [];
 					parent.children.push(category);
 				}
@@ -412,10 +413,10 @@ Categories.buildForSelectCategories = function (categories, fields, parentCid) {
 			category.children.forEach(child => recursive(child, categoriesData, `&nbsp;&nbsp;&nbsp;&nbsp;${level}`, depth + 1));
 		}
 	}
-	parentCid = parentCid || 0;
+	parentCid = String(parentCid || 0);
 	const categoriesData = [];
 
-	const rootCategories = categories.filter(category => category && category.parentCid === parentCid);
+	const rootCategories = categories.filter(category => category && String(category.parentCid) === parentCid);
 
 	rootCategories.sort((a, b) => {
 		if (a.order !== b.order) {

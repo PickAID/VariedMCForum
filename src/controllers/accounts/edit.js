@@ -35,12 +35,10 @@ editController.get = async function (req, res, next) {
 	userData.customUserFields = customUserFields;
 	userData.maximumSignatureLength = meta.config.maximumSignatureLength;
 	userData.maximumAboutMeLength = meta.config.maximumAboutMeLength;
-	userData.maximumProfileImageSize = meta.config.maximumProfileImageSize;
 	userData.allowMultipleBadges = meta.config.allowMultipleBadges === 1;
 	userData.allowAccountDelete = meta.config.allowAccountDelete === 1;
 	userData.allowAboutMe = !isSelf || !!meta.config['reputation:disabled'] || reputation >= meta.config['min:rep:aboutme'];
 	userData.allowSignature = canUseSignature && (!isSelf || !!meta.config['reputation:disabled'] || reputation >= meta.config['min:rep:signature']);
-	userData.profileImageDimension = meta.config.profileImageDimension;
 	userData.defaultAvatar = user.getDefaultAvatar();
 
 	userData.groups = _groups.filter(g => g && g.userTitleEnabled && !groups.isPrivilegeGroup(g.name) && g.name !== 'registered-users');
@@ -143,7 +141,7 @@ async function renderRoute(name, req, res) {
 }
 
 editController.uploadPicture = async function (req, res, next) {
-	const userPhoto = req.files.files[0];
+	const userPhoto = req.files[0];
 	try {
 		const updateUid = await user.getUidByUserslug(req.params.userslug);
 		const isAllowed = await privileges.users.canEdit(req.uid, updateUid);

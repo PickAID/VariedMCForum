@@ -82,7 +82,7 @@ module.exports = function (module) {
 			limit = 0;
 		}
 
-		let result = [];
+		let result;
 		async function doQuery(_key, fields, skip, limit) {
 			return await module.client.collection('objects').find({
 				...query, ...{ _key: _key },
@@ -393,13 +393,13 @@ module.exports = function (module) {
 			return [];
 		}
 		const arrayOfKeys = keys.length > 1;
-		const projection = { _id: 0, value: 1 };
+		const projection = arrayOfKeys ?
+			{ _id: 0, _key: 1, value: 1} :
+			{ _id: 0, value: 1 };
 		if (withScores) {
 			projection.score = 1;
 		}
-		if (arrayOfKeys) {
-			projection._key = 1;
-		}
+
 		const data = await module.client.collection('objects').find({
 			_key: arrayOfKeys ? { $in: keys } : keys[0],
 		}, { projection: projection })
@@ -543,7 +543,7 @@ module.exports = function (module) {
 			project.score = 1;
 		}
 
-		const match = helpers.buildMatchQuery(params.match);
+		const match = dbHelpers.globToRegex(params.match);
 		let regex;
 		try {
 			regex = new RegExp(match);

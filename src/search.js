@@ -76,7 +76,7 @@ async function searchInContent(data) {
 		}
 		return [];
 	}
-	let pids = [];
+	let pids;
 	let tids = [];
 	const inTopic = String(data.query || '').match(/^in:topic-([\d]+) /);
 	if (inTopic) {
@@ -376,9 +376,9 @@ function sortPosts(posts, data) {
 	} else {
 		posts.sort((p1, p2) => {
 			if (p1[fields[0]][fields[1]] > p2[fields[0]][fields[1]]) {
-				return direction;
-			} else if (p1[fields[0]][fields[1]] < p2[fields[0]][fields[1]]) {
 				return -direction;
+			} else if (p1[fields[0]][fields[1]] < p2[fields[0]][fields[1]]) {
+				return direction;
 			}
 			return 0;
 		});
@@ -412,8 +412,12 @@ async function getChildrenCids(data) {
 	if (!data.searchChildren) {
 		return [];
 	}
-	const childrenCids = await Promise.all(data.categories.map(cid => categories.getChildrenCids(cid)));
-	return await privileges.categories.filterCids('find', _.uniq(_.flatten(childrenCids)), data.uid);
+	const childrenCids = await Promise.all(data.categories.map(categories.getChildrenCids));
+	return await privileges.categories.filterCids(
+		'find',
+		_.uniq(_.flatten(childrenCids)),
+		data.uid
+	);
 }
 
 async function getSearchUids(data) {

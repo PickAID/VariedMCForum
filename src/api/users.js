@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs').promises;
-
+const nconf = require('nconf');
 const validator = require('validator');
 const winston = require('winston');
 
@@ -57,7 +57,7 @@ usersAPI.update = async function (caller, data) {
 		throw new Error('[[error:invalid-data]]');
 	}
 
-	const oldUserData = await user.getUserFields(data.uid, ['email', 'username']);
+	const oldUserData = await db.getObjectFields(`user:${data.uid}`, ['email', 'username']);
 	if (!oldUserData || !oldUserData.username) {
 		throw new Error('[[error:invalid-data]]');
 	}
@@ -86,14 +86,14 @@ usersAPI.update = async function (caller, data) {
 
 	await user.updateProfile(caller.uid, data);
 	const userData = await user.getUserData(data.uid);
-
-	if (userData.username !== oldUserData.username) {
+	const oldUsernameEscaped = validator.escape(String(oldUserData.username));
+	if (userData.username !== oldUsernameEscaped) {
 		await events.log({
 			type: 'username-change',
 			uid: caller.uid,
 			targetUid: data.uid,
 			ip: caller.ip,
-			oldUsername: oldUserData.username,
+			oldUsername: oldUsernameEscaped,
 			newUsername: userData.username,
 		});
 	}
@@ -132,6 +132,7 @@ usersAPI.updateSettings = async function (caller, data) {
 
 	let defaults = await user.getSettings(0);
 	defaults = {
+		unreadCutoff: defaults.unreadCutoff,
 		postsPerPage: defaults.postsPerPage,
 		topicsPerPage: defaults.topicsPerPage,
 		userLang: defaults.userLang,
@@ -615,19 +616,25 @@ usersAPI.changePicture = async (caller, data) => {
 		throw new Error('[[error:invalid-data]]');
 	}
 
-	const { type, url } = data;
-	let picture = '';
-
 	await user.checkMinReputation(caller.uid, data.uid, 'min:rep:profile-picture');
 	const canEdit = await privileges.users.canEdit(caller.uid, data.uid);
 	if (!canEdit) {
 		throw new Error('[[error:no-privileges]]');
 	}
 
+	const { type, url } = data;
+	let picture;
 	if (type === 'default') {
 		picture = '';
 	} else if (type === 'uploaded') {
-		picture = await user.getUserField(data.uid, 'uploadedpicture');
+		const cleanPath = data.picture.replace(new RegExp(`^${nconf.get('relative_path')}`), '');
+		const isUserPicture = await user.isUserUploadedPicture(data.uid, cleanPath);
+		if (isUserPicture) {
+			await user.setUserField(data.uid, 'uploadedpicture', cleanPath);
+			picture = cleanPath;
+		} else {
+			picture = '';
+		}
 	} else if (type === 'external' && url) {
 		picture = validator.escape(url);
 	} else {

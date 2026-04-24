@@ -49,6 +49,10 @@ jobs:
           printf '%s\n' "${{ secrets.PROD_KNOWN_HOSTS }}" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
+      - name: Verify local runtime safety
+        run: |
+          node ./scripts/verify-local-runtime.mjs
+
       - name: Verify sync safety
         run: |
           bash ./scripts/verify-sync-safety.sh
