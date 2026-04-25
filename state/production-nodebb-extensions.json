@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-24T13:10:44.925Z",
+  "capturedAt": "2026-04-25T19:52:47.784Z",
   "runtime": {
     "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
@@ -41,7 +41,7 @@
     "nodebb-plugin-markdown-toc",
     "nodebb-plugin-emoji-apple",
     "nodebb-plugin-markdown",
-    "nodebb-plugin-tag-controller",
+    "nodebb-plugin-tag-color-maker",
     "nodebb-plugin-emoji-one",
     "nodebb-plugin-essence-niuniu"
   ],
@@ -55,8 +55,24 @@
       "name": "nodebb-plugin-markdown-toc"
     },
     {
+      "dir": "tag-color",
+      "name": "nodebb-plugin-tag-color-maker"
+    },
+    {
+      "dir": "tag-color-maker",
+      "name": "nodebb-plugin-tag-color-editor"
+    },
+    {
       "dir": "tag-controller",
       "name": "nodebb-plugin-tag-controller"
+    },
+    {
+      "dir": "variedmc-topic-meta",
+      "name": "nodebb-plugin-variedmc-topic-meta"
+    },
+    {
+      "dir": "variedmc-ui",
+      "name": "nodebb-plugin-variedmc-ui"
     }
   ],
   "extensions": [
@@ -589,15 +605,48 @@
       "localSourceDir": null
     },
     {
+      "name": "nodebb-plugin-tag-color-maker",
+      "kind": "plugin",
+      "declared": false,
+      "declaredSpec": null,
+      "installed": false,
+      "installedVersion": null,
+      "active": true,
+      "activeOrder": 35,
+      "localSourceDir": "tag-color"
+    },
+    {
       "name": "nodebb-plugin-tag-controller",
       "kind": "plugin",
       "declared": true,
       "declaredSpec": "file:tag-controller",
       "installed": true,
-      "installedVersion": "1.0.0",
-      "active": true,
-      "activeOrder": 34,
+      "installedVersion": "0.1.0",
+      "active": false,
+      "activeOrder": null,
       "localSourceDir": "tag-controller"
+    },
+    {
+      "name": "nodebb-plugin-variedmc-topic-meta",
+      "kind": "plugin",
+      "declared": true,
+      "declaredSpec": "file:variedmc-topic-meta",
+      "installed": true,
+      "installedVersion": "0.0.1",
+      "active": false,
+      "activeOrder": null,
+      "localSourceDir": "variedmc-topic-meta"
+    },
+    {
+      "name": "nodebb-plugin-variedmc-ui",
+      "kind": "plugin",
+      "declared": true,
+      "declaredSpec": "file:variedmc-ui",
+      "installed": true,
+      "installedVersion": "0.0.1",
+      "active": false,
+      "activeOrder": null,
+      "localSourceDir": "variedmc-ui"
     },
     {
       "name": "nodebb-plugin-web-push",
