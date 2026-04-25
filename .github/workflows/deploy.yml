@@ -57,6 +57,44 @@ jobs:
         run: |
           bash ./scripts/verify-sync-safety.sh
 
+      - name: Verify remote overlay path permissions
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "${PROD_PORT}" -i "$HOME/.ssh/id_ed25519" \
+            "${PROD_USER}@${PROD_HOST}" 'bash -se' <<EOF
+          set -euo pipefail
+
+          target_root="${PROD_NODEBB_PATH}"
+          probe_paths=(
+            "${PROD_NODEBB_PATH}"
+            "${PROD_NODEBB_PATH}/src"
+            "${PROD_NODEBB_PATH}/src/views"
+            "${PROD_NODEBB_PATH}/public"
+            "${PROD_NODEBB_PATH}/types"
+          )
+
+          echo "[deploy] remote user: \$(id -un)"
+          echo "[deploy] remote groups: \$(id -Gn)"
+          echo "[deploy] checking write access under: ${PROD_NODEBB_PATH}"
+
+          for path in "\${probe_paths[@]}"; do
+            [[ -e "\$path" ]] || continue
+
+            if [[ ! -w "\$path" ]]; then
+              echo "[deploy] remote path is not writable: \$path" >&2
+              ls -ld "\$path" >&2 || true
+              stat -c '%U:%G %a %n' "\$path" >&2 || true
+              exit 1
+            fi
+          done
+
+          if [[ ! -w "\$target_root" ]]; then
+            echo "[deploy] deployment root is not writable: \$target_root" >&2
+            ls -ld "\$target_root" >&2 || true
+            stat -c '%U:%G %a %n' "\$target_root" >&2 || true
+            exit 1
+          fi
+          EOF
+
       - name: Sync repository overlay
         run: |
           rsync -az \
