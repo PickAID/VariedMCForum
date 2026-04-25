@@ -22,6 +22,7 @@ build/
 # Local-only helper scripts that stay in GitHub for developer use
 /scripts/local-mongo.mjs
 /scripts/local-nodebb.mjs
+/scripts/sync-nodebb-ui-state.mjs
 /scripts/verify-local-runtime.mjs
 /scripts/update-nodebb-docs.sh
 /scripts/sync-nodebb-extension-state.mjs

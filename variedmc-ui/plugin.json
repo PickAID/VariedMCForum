@@ -1,0 +1,40 @@
+{
+    "id": "nodebb-plugin-variedmc-ui",
+    "name": "VariedMC UI",
+    "description": "Repository-managed homepage and client UI customizations for VariedMCForum",
+    "url": "https://github.com/VariedMCForum/VariedMCForum",
+    "library": "./library.js",
+    "settingsRoute": "/admin/plugins/variedmc-ui",
+    "hooks": [
+        {
+            "hook": "static:app.load",
+            "method": "init"
+        },
+        {
+            "hook": "filter:admin.header.build",
+            "method": "addAdminNavigation"
+        },
+        {
+            "hook": "filter:widgets.getWidgets",
+            "method": "defineWidgets"
+        },
+        {
+            "hook": "filter:widget.render:variedmcHomeHero",
+            "method": "renderHomeHeroWidget"
+        }
+    ],
+    "modules": {
+        "../admin/plugins/variedmc-ui.js": "public/js/admin.js"
+    },
+    "scripts": [
+        "public/js/client.js"
+    ],
+    "acpScss": [
+        "public/scss/style.scss"
+    ],
+    "scss": [
+        "public/scss/style.scss"
+    ],
+    "templates": "templates",
+    "compatibility": "^4.0.0"
+}

@@ -118,10 +118,10 @@ node_modules
 !/markdown-toc/**
 !/extended-markdown-fixed/
 !/extended-markdown-fixed/**
-!/tag-color-maker/
-!/tag-color-maker/**
-!/tag-color/
-!/tag-color/**
+!/tag-controller/
+!/tag-controller/**
+!/variedmc-ui/
+!/variedmc-ui/**
 !/markdown/
 !/markdown/**
 

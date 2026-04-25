@@ -41,7 +41,7 @@
     "nodebb-plugin-markdown-toc",
     "nodebb-plugin-emoji-apple",
     "nodebb-plugin-markdown",
-    "nodebb-plugin-tag-color-maker",
+    "nodebb-plugin-tag-controller",
     "nodebb-plugin-emoji-one",
     "nodebb-plugin-essence-niuniu"
   ],
@@ -55,12 +55,8 @@
       "name": "nodebb-plugin-markdown-toc"
     },
     {
-      "dir": "tag-color",
-      "name": "nodebb-plugin-tag-color-maker"
-    },
-    {
-      "dir": "tag-color-maker",
-      "name": "nodebb-plugin-tag-color-editor"
+      "dir": "tag-controller",
+      "name": "nodebb-plugin-tag-controller"
     }
   ],
   "extensions": [
@@ -593,37 +589,15 @@
       "localSourceDir": null
     },
     {
-      "name": "nodebb-plugin-tag-color-collector",
+      "name": "nodebb-plugin-tag-controller",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "file:tag-color-maker",
-      "installed": true,
-      "installedVersion": "1.0.0",
-      "active": false,
-      "activeOrder": null,
-      "localSourceDir": null
-    },
-    {
-      "name": "nodebb-plugin-tag-color-editor",
-      "kind": "plugin",
-      "declared": true,
-      "declaredSpec": "file:tag-color-maker",
-      "installed": true,
-      "installedVersion": "1.0.0",
-      "active": false,
-      "activeOrder": null,
-      "localSourceDir": "tag-color-maker"
-    },
-    {
-      "name": "nodebb-plugin-tag-color-maker",
-      "kind": "plugin",
-      "declared": true,
-      "declaredSpec": "file:tag-color",
+      "declaredSpec": "file:tag-controller",
       "installed": true,
       "installedVersion": "1.0.0",
       "active": true,
-      "activeOrder": 35,
-      "localSourceDir": "tag-color"
+      "activeOrder": 34,
+      "localSourceDir": "tag-controller"
     },
     {
       "name": "nodebb-plugin-web-push",

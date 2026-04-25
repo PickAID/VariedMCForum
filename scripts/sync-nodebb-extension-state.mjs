@@ -15,6 +15,10 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const defaultStatePath = path.join(rootDir, 'state', 'production-nodebb-extensions.json');
 const defaultConfigPath = path.join(rootDir, 'config.local.json');
+const localOverlayActiveExtensions = Object.freeze([
+	'nodebb-plugin-variedmc-ui',
+	'nodebb-plugin-variedmc-topic-meta',
+]);
 
 function printUsage() {
 	console.log(`Usage: node scripts/sync-nodebb-extension-state.mjs <command> [options]
@@ -222,7 +226,17 @@ function getDesiredDeclaredExtensions(state, defaultPkg) {
 }
 
 function getDesiredActiveExtensions(state) {
-	return state.activeExtensions.filter(isExtensionName);
+	const desired = state.activeExtensions.filter(isExtensionName);
+	const desiredSet = new Set(desired);
+
+	localOverlayActiveExtensions.forEach((name) => {
+		if (!desiredSet.has(name)) {
+			desired.push(name);
+			desiredSet.add(name);
+		}
+	});
+
+	return desired;
 }
 
 function getCurrentExtensionDependencies(pkg) {

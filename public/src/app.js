@@ -352,6 +352,20 @@ if (document.readyState === 'loading') {
 	};
 
 	function registerServiceWorker() {
+		const isLocalhost = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(window.location.hostname);
+		if (isLocalhost && 'serviceWorker' in navigator) {
+			navigator.serviceWorker.getRegistrations()
+				.then(function (registrations) {
+					return Promise.all(registrations.map(function (registration) {
+						return registration.unregister();
+					}));
+				})
+				.catch(function (err) {
+					console.info('ServiceWorker unregister failed: ', err);
+				});
+			return;
+		}
+
 		// Do not register for Safari browsers
 		if (!config.useragent.isSafari && 'serviceWorker' in navigator) {
 			navigator.serviceWorker.register(config.relative_path + '/service-worker.js', { scope: config.relative_path + '/' })

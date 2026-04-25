@@ -1,7 +1,6 @@
 'use strict';
 
-const meta = require('../../meta');
-const user = require('../../user');
+const db = require('../../database');
 const topics = require('../../topics');
 const categories = require('../../categories');
 const privileges = require('../../privileges');
@@ -13,16 +12,13 @@ module.exports = function (SocketTopics) {
 			throw new Error('[[error:invalid-data]]');
 		}
 
-		const systemTags = (meta.config.systemTags || '').split(',');
-		const [tagWhitelist, isPrivileged] = await Promise.all([
+		const tag = String(data.tag || '').trim();
+		const [tagWhitelist, exists] = await Promise.all([
 			utils.isNumber(data.cid) ? categories.getTagWhitelist([data.cid]) : [],
-			user.isPrivileged(socket.uid),
+			db.isSortedSetMember('tags:topic:count', tag),
 		]);
-		return isPrivileged ||
-			(
-				!systemTags.includes(data.tag) &&
-				(!tagWhitelist[0].length || tagWhitelist[0].includes(data.tag))
-			);
+		const whitelist = Array.isArray(tagWhitelist[0]) ? tagWhitelist[0] : [];
+		return exists && (!whitelist.length || whitelist.includes(tag));
 	};
 
 	SocketTopics.canRemoveTag = async function (socket, data) {
@@ -30,9 +26,7 @@ module.exports = function (SocketTopics) {
 			throw new Error('[[error:invalid-data]]');
 		}
 
-		const systemTags = (meta.config.systemTags || '').split(',');
-		const isPrivileged = await user.isPrivileged(socket.uid);
-		return isPrivileged || !systemTags.includes(String(data.tag).trim());
+		return true;
 	};
 
 	SocketTopics.autocompleteTags = async function (socket, data) {

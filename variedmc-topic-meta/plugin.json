@@ -1,0 +1,56 @@
+{
+	"id": "nodebb-plugin-variedmc-topic-meta",
+	"name": "VariedMC Topic Meta",
+	"description": "Composer metadata rules and title mapping for VariedMCForum",
+	"url": "https://github.com/VariedMCForum/VariedMCForum",
+	"library": "./library.js",
+	"settingsRoute": "/admin/plugins/variedmc-topic-meta",
+	"hooks": [
+		{
+			"hook": "static:app.load",
+			"method": "init"
+		},
+		{
+			"hook": "filter:admin.header.build",
+			"method": "addAdminNavigation"
+		},
+		{
+			"hook": "filter:config.get",
+			"method": "appendConfig"
+		},
+		{
+			"hook": "filter:composer.push",
+			"method": "filterComposerPush"
+		},
+		{
+			"hook": "filter:topic.post",
+			"method": "filterTopicPost"
+		},
+		{
+			"hook": "filter:topic.create",
+			"method": "filterTopicCreate"
+		},
+		{
+			"hook": "filter:post.edit",
+			"method": "filterPostEdit"
+		},
+		{
+			"hook": "filter:topic.edit",
+			"method": "filterTopicEdit"
+		}
+	],
+	"modules": {
+		"../admin/plugins/variedmc-topic-meta.js": "public/js/admin.js"
+	},
+	"scripts": [
+		"public/js/client.js"
+	],
+	"acpScss": [
+		"public/scss/style.scss"
+	],
+	"scss": [
+		"public/scss/style.scss"
+	],
+	"templates": "templates",
+	"compatibility": "^4.0.0"
+}

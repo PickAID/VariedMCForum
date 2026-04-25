@@ -41,17 +41,55 @@ define('forum/topic/tag', [
 					tagClass: 'badge bg-info',
 					confirmKeys: [13, 44],
 					trimValue: true,
+					freeInput: false,
+					addOnBlur: false,
 				});
 				const input = tagsinputEl[0].$input;
 
 				const topic = topics[index];
 				topic.tags.forEach(tag => tagEl.tagsinput('add', tag.value));
 
-				tagEl.on('itemAdded', function (event) {
-					if (tagWhitelist.length && !tagWhitelist.includes(event.item)) {
-						tagEl.tagsinput('remove', event.item);
-						alerts.error('[[error:tag-not-allowed]]');
+				tagEl.on('beforeItemAdd', function (event) {
+					if (!event.item) {
+						return;
 					}
+
+					const cid = topic.cid || ajaxify.data.cid;
+					$(window).trigger('action:tag.beforeAdd', {
+						cid,
+						tagEl,
+						tag: event.item,
+						event,
+						inputAutocomplete: input,
+					});
+					if (event.cancel && input.length && input.autocomplete) {
+						input.autocomplete('close');
+					}
+				});
+
+				tagEl.on('itemAdded', function (event) {
+					if (event.options && event.options.skipAddCheck) {
+						return;
+					}
+					if (tagWhitelist.length && !tagWhitelist.includes(event.item)) {
+						tagEl.tagsinput('remove', event.item, { skipRemoveCheck: true });
+						alerts.error('[[error:tag-not-allowed]]');
+						return;
+					}
+
+					socket.emit('topics.isTagAllowed', { tag: event.item, cid: topic.cid || ajaxify.data.cid || 0 }, function (err, allowed) {
+						if (err) {
+							return alerts.error(err);
+						}
+						if (!allowed) {
+							tagEl.tagsinput('remove', event.item, { skipRemoveCheck: true });
+							alerts.error('[[error:tag-not-allowed]]');
+						}
+						if (input.length) {
+							input.autocomplete('close');
+						}
+					});
+
 					if (input.length) {
 						input.autocomplete('close');
 					}
