@@ -341,8 +341,21 @@
 	}
 
 	.popular-tags > .tag-list.row {
-		grid-template-columns: repeat(2, minmax(0, 4.9rem));
+		overflow-x: auto;
+		overflow-y: hidden;
 		justify-content: start;
+		padding-bottom: 0.35rem;
+		scrollbar-width: thin;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.popular-tags > .tag-list.row::-webkit-scrollbar {
+		height: 0.35rem;
+	}
+
+	.popular-tags > .tag-list.row::-webkit-scrollbar-thumb {
+		border-radius: 999px;
+		background-color: rgba(108, 117, 125, 0.45);
 	}
 
 	.popular-tags > .d-flex.align-items-center.gap-2 {
