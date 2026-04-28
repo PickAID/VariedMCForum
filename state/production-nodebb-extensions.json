@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-28T17:20:30.185Z",
+  "capturedAt": "2026-04-28T17:38:57.077Z",
   "runtime": {
     "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
@@ -642,7 +642,7 @@
       "declared": true,
       "declaredSpec": "file:variedmc-ui",
       "installed": true,
-      "installedVersion": "0.0.2",
+      "installedVersion": "0.0.3",
       "active": true,
       "activeOrder": 39,
       "localSourceDir": "variedmc-ui"
