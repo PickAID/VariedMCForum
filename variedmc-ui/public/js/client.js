@@ -6,6 +6,8 @@
 	function bootstrap() {
 		if (!bootstrapped) {
 			bootstrapped = true;
+			window.onHomeLoad = runPageEnhancements;
+			window.onPageLoad = runPageEnhancements;
 			window.VariedMCUiModal.init();
 			window.VariedMCUiNavigation.init();
 			window.VariedMCUiTheme.init();
