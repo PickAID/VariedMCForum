@@ -16,6 +16,7 @@ const rootDir = path.resolve(__dirname, '..');
 const defaultStatePath = path.join(rootDir, 'state', 'production-nodebb-extensions.json');
 const defaultConfigPath = path.join(rootDir, 'config.local.json');
 const localOverlayActiveExtensions = Object.freeze([
+	'nodebb-plugin-variedmc-core',
 	'nodebb-plugin-variedmc-ui',
 	'nodebb-plugin-variedmc-topic-meta',
 ]);

@@ -1,0 +1,53 @@
+.variedmc-ui-admin-page {
+    width: min(1760px, calc(100vw - 1.5rem));
+    max-width: none;
+    margin-inline: auto;
+}
+
+.variedmc-ui-admin-page .card,
+.variedmc-ui-admin-page .alert {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.85rem;
+    box-shadow: none;
+}
+
+.variedmc-ui-admin-callout {
+    padding: 0.8rem 0.95rem;
+    background: var(--bs-tertiary-bg);
+}
+
+.variedmc-ui-admin-page .card-header {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
+
+.variedmc-ui-admin-page .card-body {
+    padding: 0.95rem 1rem;
+}
+
+.variedmc-ui-admin-page .form-label,
+.variedmc-ui-admin-page .form-text {
+    font-size: 0.78rem;
+}
+
+.variedmc-ui-admin-page .form-label {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.variedmc-ui-slide-card .card-header .btn {
+    min-width: 3.25rem;
+}
+
+.variedmc-ui-slide-card [data-role="slide-preview"] {
+    display: block;
+    width: auto;
+    max-height: 12rem;
+}
+
+@media (max-width: 767.98px) {
+    .variedmc-ui-admin-page {
+        width: calc(100vw - 0.9rem);
+    }
+}

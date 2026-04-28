@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 read_sync_dirs() {
-  local value="${PLUGIN_SYNC_DIRS:-extended-markdown-fixed markdown-toc markdown tag-controller}"
+  local value="${PLUGIN_SYNC_DIRS:-extended-markdown-fixed markdown-toc markdown tag-controller variedmc-core variedmc-topic-meta variedmc-ui}"
   # shellcheck disable=SC2206
   local dirs=( $value )
   printf '%s\n' "${dirs[@]}"

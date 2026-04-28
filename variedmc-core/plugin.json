@@ -1,0 +1,14 @@
+{
+	"id": "nodebb-plugin-variedmc-core",
+	"name": "VariedMC Core",
+	"description": "Core forum behavior customizations for VariedMCForum",
+	"url": "https://github.com/VariedMCForum/VariedMCForum",
+	"library": "./library.js",
+	"hooks": [
+		{
+			"hook": "filter:categories.getPinnedTids",
+			"method": "filterCategoryPinnedTids"
+		}
+	],
+	"compatibility": "^4.0.0"
+}

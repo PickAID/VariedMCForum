@@ -1,0 +1,29 @@
+.image-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    animation: variedmc-fade-in 0.3s;
+}
+
+.image-modal-content {
+    position: relative;
+    max-width: min(92vw, 1400px);
+    max-height: 92vh;
+}
+
+.image-modal-content img {
+    display: block;
+    max-width: 100%;
+    max-height: 92vh;
+    margin: auto;
+    object-fit: contain;
+}
+
+@keyframes variedmc-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

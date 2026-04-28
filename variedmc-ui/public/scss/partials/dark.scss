@@ -1,0 +1,86 @@
+.dark-theme-fix .markdown-toc,
+.dark-theme-fix pre code {
+    filter: invert(1);
+}
+
+.dark-theme-fix .markdown-toc {
+    color: #495057;
+}
+
+.dark-theme-fix .write-container .write {
+    color: #fff !important;
+    background-color: #333 !important;
+}
+
+.dark-theme-fix .mermaid .messageText,
+.dark-theme-fix [id^="mermaid"] .messageText {
+    color: #e0e0e0;
+}
+
+.dark-theme-fix .mermaid span,
+.dark-theme-fix [id^="mermaid"] span {
+    color: #fff !important;
+}
+
+.dark-theme-fix .mermaid svg .flowchart-link,
+.dark-theme-fix [id^="mermaid"] svg .flowchart-link,
+.dark-theme-fix .mermaid svg .edgePath,
+.dark-theme-fix [id^="mermaid"] svg .edgePath,
+.dark-theme-fix .mermaid svg .edgePath path,
+.dark-theme-fix [id^="mermaid"] svg .edgePath path,
+.dark-theme-fix .mermaid svg path,
+.dark-theme-fix [id^="mermaid"] svg path,
+.dark-theme-fix .mermaid svg line,
+.dark-theme-fix [id^="mermaid"] svg line {
+    stroke: #8ab4f8 !important;
+}
+
+.dark-theme-fix .mermaid svg .arrowhead,
+.dark-theme-fix [id^="mermaid"] svg .arrowhead,
+.dark-theme-fix .mermaid svg .arrowheadPath,
+.dark-theme-fix [id^="mermaid"] svg .arrowheadPath,
+.dark-theme-fix .mermaid svg .marker,
+.dark-theme-fix [id^="mermaid"] svg .marker,
+.dark-theme-fix .mermaid svg marker path,
+.dark-theme-fix [id^="mermaid"] svg marker path {
+    fill: #8ab4f8 !important;
+    stroke: #8ab4f8 !important;
+}
+
+.dark-theme-fix .mermaid svg rect,
+.dark-theme-fix [id^="mermaid"] svg rect,
+.dark-theme-fix .mermaid svg circle,
+.dark-theme-fix [id^="mermaid"] svg circle,
+.dark-theme-fix .mermaid svg polygon,
+.dark-theme-fix [id^="mermaid"] svg polygon {
+    fill: #2d2d2d !important;
+    stroke: #5f6368 !important;
+}
+
+.dark-theme-fix .mermaid svg .edgeLabel,
+.dark-theme-fix [id^="mermaid"] svg .edgeLabel {
+    color: #e0e0e0 !important;
+    background-color: #1f1f1f !important;
+}
+
+.dark-theme-fix .mermaid svg .edgeLabel rect,
+.dark-theme-fix [id^="mermaid"] svg .edgeLabel rect {
+    fill: #1f1f1f !important;
+    stroke: #5f6368 !important;
+}
+
+.dark-theme-fix .mermaid svg text,
+.dark-theme-fix [id^="mermaid"] svg text,
+.dark-theme-fix .mermaid svg tspan,
+.dark-theme-fix [id^="mermaid"] svg tspan,
+.dark-theme-fix .mermaid svg text.actor > tspan,
+.dark-theme-fix [id^="mermaid"] svg text.actor > tspan {
+    fill: #e0e0e0 !important;
+    stroke: none !important;
+}
+
+.dark-theme-fix code.mermaid * {
+    color: inherit !important;
+    fill: inherit !important;
+    stroke: inherit !important;
+}

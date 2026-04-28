@@ -1,0 +1,160 @@
+.categories > li:hover,
+.category > ul > li:hover {
+    background-color: #f9f9f9;
+}
+
+.categories > li,
+.category > ul > li {
+    min-height: 53px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    background-color: transparent;
+}
+
+.categories > li .content h2,
+.category > ul > li .content h2 {
+    font-size: 17px;
+    line-height: 180%;
+}
+
+.categories > li .content h2 small,
+.category > ul > li .content h2 small {
+    font-size: 80%;
+}
+
+.categories > li .content .icon,
+.category > ul > li .content .icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.categories > li .category-children .icon,
+.category > ul > li .category-children .icon {
+    font-size: 0.85rem;
+}
+
+.categories > li .card,
+.category > ul > li .card {
+    font-size: 13.5px;
+}
+
+.category [component="category/topic"] {
+    padding-left: 10px;
+}
+
+[component="category/topic"]:hover {
+    background-color: rgba(200, 200, 200, 0.3) !important;
+}
+
+.category-header > p {
+    display: none;
+}
+
+.page-category [data-widget-area="header"] .variedmc-pinned-rail .recent-card-body .text-sm.text-break.line-clamp-5 {
+    display: none !important;
+}
+
+@media (max-width: 767.98px) {
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail h5 {
+        display: none;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .recent-card-container {
+        display: flex !important;
+        align-items: stretch;
+        align-self: stretch;
+        height: 100% !important;
+        min-width: 0;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .recent-card {
+        display: flex !important;
+        width: calc((100vw - 2.5rem) / 2) !important;
+        height: 100%;
+        min-height: 5.15rem;
+        margin-bottom: 0 !important;
+        border: 1px solid rgba(var(--bs-body-color-rgb), 0.07) !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .glass-layer {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 5.15rem;
+        padding: 0.7rem 0.75rem !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .recent-card-body {
+        width: 100%;
+        min-width: 0;
+        height: auto !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .recent-card-body > .d-flex,
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .teaser-content {
+        display: none !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .glass-layer > .d-flex {
+        display: flex !important;
+        width: 100%;
+        margin-top: 0.45rem !important;
+        gap: 0.35rem !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .glass-layer > .d-flex .stats {
+        display: none !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .category-item {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .category-item a {
+        max-width: 100%;
+        overflow: hidden;
+        font-size: 0.72rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .topic-title {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+        font-weight: 650;
+        line-height: 1.35;
+        white-space: normal;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .topic-title a {
+        display: -webkit-box;
+        overflow: hidden;
+        text-overflow: initial;
+        white-space: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .slick-track {
+        display: flex !important;
+        align-items: stretch;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .slick-slide {
+        display: flex !important;
+        align-self: stretch;
+        height: auto !important;
+    }
+
+    .page-category [data-widget-area="header"] .variedmc-pinned-rail .slick-slide > div {
+        display: flex;
+        align-items: stretch;
+        height: 100%;
+    }
+}

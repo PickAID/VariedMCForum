@@ -1,0 +1,29 @@
+.markdown-toc {
+    position: sticky;
+    top: var(--vui-toc-top, 0);
+    z-index: 1;
+    transition: 0.2s ease;
+}
+
+.better-toc {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.better-toc:hover {
+    top: 0;
+}
+
+.toc-title {
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+}
+
+.better-toc .toc-title {
+    margin: 0.5rem 0 0 !important;
+}
+
+.toc-content {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--bs-border-color);
+}

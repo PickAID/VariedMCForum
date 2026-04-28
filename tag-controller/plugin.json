@@ -7,7 +7,10 @@
 	"hooks": [
 		{ "hook": "static:app.load", "method": "init" },
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
-		{ "hook": "filter:config.get", "method": "appendConfig" }
+		{ "hook": "filter:config.get", "method": "appendConfig" },
+		{ "hook": "filter:topic.post", "method": "filterTopicPost" },
+		{ "hook": "filter:topic.edit", "method": "filterTopicEdit" },
+		{ "hook": "filter:tags.filter", "method": "filterTags" }
 	],
 	"modules": {
 		"../admin/plugins/tag-controller.js": "public/js/admin.js"

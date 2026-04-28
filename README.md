@@ -43,6 +43,7 @@ Production receives:
 - NodeBB runtime and core source
 - managed plugin source trees
 - deploy scripts and workflow-driven code updates
+- repository-managed UI assets from plugins such as `variedmc-ui`
 
 Production does not receive:
 
@@ -52,8 +53,10 @@ Production does not receive:
 - `backups/`
 - `public/uploads/`
 - local state snapshots used only for development workflows
+- ACP Custom CSS/SASS or Custom JS as a long-term code storage layer
 
 Those boundaries are enforced by [`.deployignore`](.deployignore) and [`scripts/verify-sync-safety.sh`](scripts/verify-sync-safety.sh).
+Put maintainable UI behavior in repository-managed plugins such as `variedmc-ui` instead of ACP Custom CSS/SASS or Custom JS.
 
 ## Prerequisites
 

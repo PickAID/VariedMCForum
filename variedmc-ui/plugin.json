@@ -27,6 +27,12 @@
         "../admin/plugins/variedmc-ui.js": "public/js/admin.js"
     },
     "scripts": [
+        "public/js/client/modal.js",
+        "public/js/client/navigation.js",
+        "public/js/client/theme.js",
+        "public/js/client/toc.js",
+        "public/js/client/homepage.js",
+        "public/js/client/pinned-topics.js",
         "public/js/client.js"
     ],
     "acpScss": [

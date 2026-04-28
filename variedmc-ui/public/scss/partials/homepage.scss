@@ -1,0 +1,235 @@
+#home_area {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 20px;
+}
+
+#carousel {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #e9ecef;
+    filter: drop-shadow(0 0 4px #ccc);
+    aspect-ratio: 16 / 9;
+    isolation: isolate;
+}
+
+.variedmc-home-carousel__viewport,
+.variedmc-home-carousel__slide {
+    position: absolute;
+    inset: 0;
+}
+
+.variedmc-home-carousel__viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.variedmc-home-carousel__slide {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 1rem;
+    color: #fff;
+    text-decoration: none;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.variedmc-home-carousel__slide::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.04) 0%, rgba(15, 23, 42, 0.26) 100%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.variedmc-home-carousel__slide.is-active {
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.variedmc-home-carousel__slide.is-active.has-overlay::after {
+    opacity: 1;
+}
+
+.variedmc-home-carousel__overlay {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-width: min(85%, 26rem);
+}
+
+.variedmc-home-carousel__title {
+    font-size: 1.05rem;
+    line-height: 1.25;
+}
+
+.variedmc-home-carousel__description {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.variedmc-home-carousel__control {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(15, 23, 42, 0.5);
+    transform: translateY(-50%);
+    transition: background-color 0.2s ease;
+}
+
+.variedmc-home-carousel__control:hover,
+.variedmc-home-carousel__control:focus {
+    color: #fff;
+    background: rgba(15, 23, 42, 0.7);
+}
+
+.variedmc-home-carousel__control--prev { left: 0.75rem; }
+.variedmc-home-carousel__control--next { right: 0.75rem; }
+
+.variedmc-home-carousel__control span {
+    font-size: 1.55rem;
+    line-height: 1;
+}
+
+.variedmc-home-carousel__dots {
+    position: absolute;
+    right: 0.85rem;
+    bottom: 0.85rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.variedmc-home-carousel__dot {
+    width: 0.65rem;
+    height: 0.65rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.56);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.variedmc-home-carousel__dot.is-active {
+    background: #fff;
+    transform: scale(1.15);
+}
+
+#recent_area {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 360px;
+    padding: 0 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+#recent_area .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 0 9px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+#recent_area .head h4 { margin-bottom: 0; }
+#recent_area .head a { cursor: pointer; }
+
+#recent_area > div:not(.head) {
+    max-height: calc(360px - 66px);
+    padding-bottom: 12px;
+    overflow: auto;
+}
+
+#recent_area.is-empty {
+    display: none;
+}
+
+#recent_topics hr { margin: 5px; }
+#recent_topics a { width: 100%; }
+
+#recent_topics .widget-topics > div {
+    flex-flow: row wrap !important;
+    justify-content: space-between;
+}
+
+#recent_topics .timeago::after {
+    content: "回复";
+}
+
+.variedmc-home-hot-tags-header h4 {
+    margin-top: 30px;
+    margin-bottom: 0;
+}
+
+.variedmc-home-categories-heading h4 {
+    margin-bottom: 0;
+}
+
+[data-widget-area="header"] .popular-tags .tag-list {
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+[data-widget-area="header"] .popular-tags .tag-list > div {
+    width: unset;
+}
+
+[data-widget-area="header"] .popular-tags .tag-list > div a {
+    background-color: #ddd;
+}
+
+@media (max-width: 1199px) {
+    #home_area { flex-direction: column; }
+    #carousel { max-width: none; }
+    #recent_area {
+        height: auto;
+        min-height: 360px;
+    }
+    #recent_area > div:not(.head) { max-height: none; }
+}
+
+@media (max-width: 767px) {
+    .variedmc-home-carousel__slide { padding: 0.8rem; }
+    .variedmc-home-carousel__overlay { max-width: calc(100% - 2.75rem); }
+    .variedmc-home-carousel__title { font-size: 0.95rem; }
+    .variedmc-home-carousel__description { font-size: 0.8rem; }
+    .variedmc-home-carousel__control {
+        width: 2rem;
+        height: 2rem;
+    }
+    .variedmc-home-carousel__control--prev { left: 0.55rem; }
+    .variedmc-home-carousel__control--next { right: 0.55rem; }
+    .variedmc-home-carousel__dots {
+        right: 0.65rem;
+        bottom: 0.65rem;
+        gap: 0.35rem;
+    }
+    #recent_area { padding: 0 16px; }
+    #recent_area .head { align-items: center; }
+}

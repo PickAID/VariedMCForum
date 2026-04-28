@@ -40,9 +40,17 @@
 		}
 	],
 	"modules": {
+		"../admin/plugins/variedmc-topic-meta/utils.js": "public/js/admin/utils.js",
+		"../admin/plugins/variedmc-topic-meta/list-editor.js": "public/js/admin/list-editor.js",
+		"../admin/plugins/variedmc-topic-meta/category-fields.js": "public/js/admin/category-fields.js",
+		"../admin/plugins/variedmc-topic-meta/category-rules.js": "public/js/admin/category-rules.js",
 		"../admin/plugins/variedmc-topic-meta.js": "public/js/admin.js"
 	},
 	"scripts": [
+		"public/js/client/styles.js",
+		"public/js/client/domain.js",
+		"public/js/client/title.js",
+		"public/js/client/composer-ui.js",
 		"public/js/client.js"
 	],
 	"acpScss": [

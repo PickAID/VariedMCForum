@@ -18,6 +18,7 @@ NPM_INSTALL_RETRY_DELAY_SECONDS="${NPM_INSTALL_RETRY_DELAY_SECONDS:-5}"
 NPM_INSTALL_REGISTRY="${NPM_INSTALL_REGISTRY:-https://registry.npmmirror.com/}"
 BACKUP_ROOT="${BACKUP_ROOT:-}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+REQUIRED_ACTIVE_PLUGINS="${REQUIRED_ACTIVE_PLUGINS:-nodebb-plugin-variedmc-core}"
 MANAGED_PLUGINS_FILE=""
 
 cleanup_managed_plugins_file() {
@@ -246,6 +247,16 @@ run_npm_install() {
   return "$status"
 }
 
+ensure_required_active_plugins() {
+  local plugin_name
+
+  for plugin_name in $REQUIRED_ACTIVE_PLUGINS; do
+    [[ -n "$plugin_name" ]] || continue
+    deploy_log "Ensuring ${plugin_name} is active"
+    ./nodebb activate "$plugin_name"
+  done
+}
+
 main() {
   local plugin_dir
   local package_name
@@ -287,6 +298,8 @@ main() {
     )
     ensure_plugin_symlink "$NODEBB_PATH" "$plugin_dir" "$package_name"
   done < "$MANAGED_PLUGINS_FILE"
+
+  ensure_required_active_plugins
 
   deploy_log "Stopping ${NODEBB_SERVICE}"
   sudo "$SYSTEMCTL_BIN" stop "$NODEBB_SERVICE"
