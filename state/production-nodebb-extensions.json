@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-28T16:21:40.798Z",
+  "capturedAt": "2026-04-28T16:52:43.706Z",
   "runtime": {
     "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
@@ -541,9 +541,9 @@
       "name": "nodebb-plugin-poll",
       "kind": "plugin",
       "declared": true,
-      "declaredSpec": "^3.2.5",
+      "declaredSpec": "^4.0.7",
       "installed": true,
-      "installedVersion": "3.2.9",
+      "installedVersion": "4.0.7",
       "active": true,
       "activeOrder": 18,
       "localSourceDir": null
