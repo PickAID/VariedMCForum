@@ -2,12 +2,8 @@
 	'use strict';
 
 	let carouselCleanup = null;
-	const defaultSlide = {
-		linkUrl: '/topic/11',
-		imageUrl: '/assets/uploads/system/carousel.webp',
-		title: '',
-		description: '',
-	};
+	let recentWidgetObserver = null;
+	const defaultSlide = { linkUrl: '/topic/11', imageUrl: '/assets/uploads/system/carousel.webp', title: '', description: '' };
 
 	function run() {
 		enhanceHomePage();
@@ -30,12 +26,30 @@
 		}
 		if (!recentWidget) {
 			recentArea.classList.add('is-empty');
+			watchRecentWidget();
 			return;
 		}
 		recentArea.classList.remove('is-empty');
+		clearRecentWidgetObserver();
 		if (recentWidget.parentElement !== recentArea) {
 			recentArea.appendChild(recentWidget);
 		}
+	}
+
+	function watchRecentWidget() {
+		if (recentWidgetObserver || !window.MutationObserver) return;
+		recentWidgetObserver = new MutationObserver(function () {
+			if (!findRecentTopicsWidget()) return;
+			clearRecentWidgetObserver();
+			run();
+		});
+		recentWidgetObserver.observe(document.body, { childList: true, subtree: true });
+	}
+
+	function clearRecentWidgetObserver() {
+		if (!recentWidgetObserver) return;
+		recentWidgetObserver.disconnect();
+		recentWidgetObserver = null;
 	}
 
 	function injectCategoriesHeading(homeArea) {

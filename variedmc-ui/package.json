@@ -1,6 +1,6 @@
 {
     "name": "nodebb-plugin-variedmc-ui",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Repository-managed UI customizations for VariedMCForum",
     "main": "library.js",
     "license": "GPL-3.0",

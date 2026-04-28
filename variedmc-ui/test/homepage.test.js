@@ -43,6 +43,28 @@ describe('VariedMC UI homepage carousel behavior', () => {
 		assert.strictEqual(carousel.querySelector('.variedmc-home-carousel__slide').getAttribute('href'), '/topic/1');
 		assert.strictEqual(carousel.querySelector('.variedmc-home-carousel__title').textContent, 'One');
 	});
+
+	it('retries recent topic placement when widgets render after the first page enhancement', async () => {
+		const dom = new JSDOM(`<!doctype html><html><body>
+			<div id="home_area">
+				<a id="carousel" href="/topic/legacy"></a>
+				<div id="recent_area"><div class="head"><h4>最新动态</h4></div></div>
+			</div>
+		</body></html>`);
+
+		loadHomepageModule(dom.window);
+		dom.window.VariedMCUiHomepage.run();
+		assert(dom.window.document.querySelector('#recent_area').classList.contains('is-empty'));
+
+		const widgetShell = dom.window.document.createElement('div');
+		widgetShell.className = 'widget-shell';
+		widgetShell.innerHTML = '<div class="widget-topics-list" data-numtopics="5"><div>recent</div></div>';
+		dom.window.document.body.appendChild(widgetShell);
+		await new Promise(resolve => dom.window.setTimeout(resolve, 0));
+
+		assert(!dom.window.document.querySelector('#recent_area').classList.contains('is-empty'));
+		assert(dom.window.document.querySelector('#recent_area .widget-topics-list[data-numtopics]'));
+	});
 });
 
 function loadHomepageModule(window) {
@@ -50,6 +72,7 @@ function loadHomepageModule(window) {
 	const context = {
 		window,
 		document: window.document,
+		MutationObserver: window.MutationObserver,
 	};
 
 	vm.createContext(context);
