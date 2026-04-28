@@ -1,6 +1,6 @@
 {
 	"name": "nodebb-plugin-tag-controller",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Repository-managed tag color controller for VariedMCForum",
 	"main": "library.js",
 	"license": "GPL-3.0",
