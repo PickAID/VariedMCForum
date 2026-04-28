@@ -7,7 +7,7 @@ self.addEventListener('install', () => {
 
 self.addEventListener('activate', (event) => {
 	// Take responsibility over existing clients from old service worker
-	event.waitUntil(self.clients.claim());
+	event.waitUntil(clearLegacyCaches().then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', function (event) {
@@ -19,11 +19,12 @@ self.addEventListener('fetch', function (event) {
 		return;
 	}
 
-	event.respondWith(caches.match(event.request).then(function (response) {
-		if (!response) {
-			return fetch(event.request);
-		}
-
-		return response;
+	event.respondWith(fetch(event.request).catch(function () {
+		return caches.match(event.request);
 	}));
 });
+
+async function clearLegacyCaches() {
+	const cacheNames = await caches.keys();
+	await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+}
