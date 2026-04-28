@@ -240,9 +240,11 @@ class SettingsNormalizer {
 			rule.options.length ||
 			Object.prototype.hasOwnProperty.call(fieldRules, selectionKey)
 		) {
+			const existing = fieldRules[selectionKey] || {};
 			fieldRules[selectionKey] = {
-				...(fieldRules[selectionKey] || {}),
+				...existing,
 				...rule,
+				enabled: existing.enabled === undefined ? rule.enabled : existing.enabled,
 			};
 		}
 	}

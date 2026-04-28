@@ -123,6 +123,43 @@ describe('VariedMC topic meta settings', () => {
 		assert.deepStrictEqual(normalized.categoryRules['5'].modules[0].fields[0].options, []);
 	});
 
+	it('does not re-enable disabled category meta fields while merging legacy fields', async () => {
+		const Settings = loadSettingsModule({
+			meta: {
+				settings: {
+					setOnEmpty: async () => {},
+					get: async () => ({}),
+					set: async () => {},
+				},
+			},
+		});
+
+		const normalized = await Settings.save({
+			defaultTitleTemplate: '{blocks} {title}',
+			versionsCatalog: ['1.20.1'],
+			loadersCatalog: ['NeoForge'],
+			categoryRules: {
+				5: {
+					scope: 'extend',
+					versionMode: 'multi',
+					requireVersions: false,
+					supportedVersions: ['1.20.1'],
+					fieldRules: {
+						versions: {
+							enabled: false,
+							mode: 'multi',
+							required: false,
+							options: ['1.20.1'],
+						},
+					},
+				},
+			},
+		});
+
+		assert.strictEqual(normalized.categoryRules['5'].fieldRules.versions.enabled, false);
+		assert(!Settings.resolveCategoryRule(normalized, 5).metaFields.some(field => field.selectionKey === 'versions'));
+	});
+
 	it('renders field-specific title template placeholders', () => {
 		const Settings = loadSettingsModule();
 		const title = Settings.buildGeneratedTitle(
