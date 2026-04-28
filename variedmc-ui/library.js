@@ -43,6 +43,31 @@ plugin.addAdminNavigation = async function (header) {
 	return header;
 };
 
+plugin.appendConfig = async function (config) {
+	config.variedmcUi = buildPublicConfig(await settings.get());
+	return config;
+};
+
+function buildPublicConfig(data) {
+	const normalized = normalizeWidgetData(data);
+
+	return {
+		slides: (data.slides || []).map(slide => ({
+			linkUrl: String(slide.linkUrl || '').trim(),
+			imageUrl: String(slide.imageUrl || '').trim(),
+			title: String(slide.title || '').trim(),
+			description: String(slide.description || '').trim(),
+		})).filter(slide => slide.imageUrl),
+		autoRotate: normalized.autoRotate,
+		autoRotateInterval: normalized.autoRotateInterval,
+		recentTitle: data.recentTitle,
+		recentLinkUrl: data.recentLinkUrl,
+		recentLinkLabel: data.recentLinkLabel,
+		tagsTitle: data.tagsTitle,
+		categoriesTitle: data.categoriesTitle,
+	};
+}
+
 function normalizeWidgetData(data = {}) {
 	const sourceSlides = Array.isArray(data.slides) && data.slides.length ? data.slides : defaultWidgetData.slides;
 	const slides = sourceSlides.map((slide, index) => normalizeSlide(slide, index)).filter(Boolean);

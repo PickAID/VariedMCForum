@@ -2,6 +2,12 @@
 	'use strict';
 
 	let carouselCleanup = null;
+	const defaultSlide = {
+		linkUrl: '/topic/11',
+		imageUrl: '/assets/uploads/system/carousel.webp',
+		title: '',
+		description: '',
+	};
 
 	function run() {
 		enhanceHomePage();
@@ -15,6 +21,7 @@
 			return;
 		}
 
+		upgradeLegacyCarousel(homeArea);
 		injectCategoriesHeading(homeArea);
 		const recentArea = document.querySelector('#recent_area');
 		const recentWidget = findRecentTopicsWidget();
@@ -63,6 +70,210 @@
 			recentTopicsList.id = 'recent_topics';
 		}
 		return recentTopicsList.parentElement;
+	}
+
+	function upgradeLegacyCarousel(homeArea) {
+		const legacyCarousel = homeArea.querySelector('#carousel:not(.variedmc-home-carousel)');
+		if (!legacyCarousel) {
+			return;
+		}
+
+		const config = getPublicConfig();
+		const slides = normalizeSlides(config.slides, legacyCarousel);
+		const carousel = buildCarousel({
+			slides,
+			autoRotate: normalizeBoolean(config.autoRotate, true),
+			autoRotateInterval: normalizeIntervalSeconds(config.autoRotateInterval, 6),
+		});
+
+		legacyCarousel.replaceWith(carousel);
+	}
+
+	function getPublicConfig() {
+		return window.config && window.config.variedmcUi && typeof window.config.variedmcUi === 'object' ?
+			window.config.variedmcUi :
+			{};
+	}
+
+	function normalizeSlides(slides, legacyCarousel) {
+		const fallbackLink = getTrimmedString(legacyCarousel.getAttribute('href')) || defaultSlide.linkUrl;
+		const normalized = Array.isArray(slides) ?
+			slides.map(slide => normalizeSlideConfig(slide, fallbackLink)).filter(Boolean) :
+			[];
+
+		if (normalized.length) {
+			return normalized;
+		}
+
+		return [{
+			...defaultSlide,
+			linkUrl: fallbackLink,
+			imageUrl: getLegacyBackgroundImage(legacyCarousel) || defaultSlide.imageUrl,
+		}];
+	}
+
+	function normalizeSlideConfig(slide, fallbackLink) {
+		if (!slide || typeof slide !== 'object') {
+			return null;
+		}
+
+		const imageUrl = getTrimmedString(slide.imageUrl || slide.src || slide.image);
+		if (!imageUrl) {
+			return null;
+		}
+
+		return {
+			linkUrl: getTrimmedString(slide.linkUrl || slide.topicUrl || slide.url || slide.href) || fallbackLink || '#',
+			imageUrl,
+			title: getTrimmedString(slide.title || slide.label || slide.alt),
+			description: getTrimmedString(slide.description || slide.caption || slide.subtitle),
+		};
+	}
+
+	function buildCarousel({ slides, autoRotate, autoRotateInterval }) {
+		const carousel = document.createElement('div');
+		carousel.id = 'carousel';
+		carousel.className = 'variedmc-home-carousel';
+		carousel.dataset.autoRotate = autoRotate ? '1' : '0';
+		carousel.dataset.autoRotateInterval = String(autoRotateInterval);
+
+		const viewport = document.createElement('div');
+		viewport.className = 'variedmc-home-carousel__viewport';
+		slides.forEach((slide, index) => viewport.appendChild(buildSlide(slide, index)));
+		carousel.appendChild(viewport);
+
+		if (slides.length > 1) {
+			carousel.appendChild(buildControl('prev-slide', 'Previous slide', '‹', 'variedmc-home-carousel__control--prev'));
+			carousel.appendChild(buildControl('next-slide', 'Next slide', '›', 'variedmc-home-carousel__control--next'));
+			carousel.appendChild(buildDots(slides));
+		}
+
+		return carousel;
+	}
+
+	function buildSlide(slide, index) {
+		const hasOverlay = !!(slide.title || slide.description);
+		const anchor = document.createElement('a');
+		anchor.className = `variedmc-home-carousel__slide${index === 0 ? ' is-active' : ''}${hasOverlay ? ' has-overlay' : ''}`;
+		anchor.href = slide.linkUrl || '#';
+		anchor.dataset.slideIndex = String(index);
+		anchor.setAttribute('aria-label', slide.title || `Carousel Slide ${index + 1}`);
+		setBackgroundImage(anchor, slide.imageUrl);
+
+		if (hasOverlay) {
+			const overlay = document.createElement('span');
+			overlay.className = 'variedmc-home-carousel__overlay';
+			if (slide.title) {
+				const title = document.createElement('strong');
+				title.className = 'variedmc-home-carousel__title';
+				title.textContent = slide.title;
+				overlay.appendChild(title);
+			}
+			if (slide.description) {
+				const description = document.createElement('span');
+				description.className = 'variedmc-home-carousel__description';
+				description.textContent = slide.description;
+				overlay.appendChild(description);
+			}
+			anchor.appendChild(overlay);
+		} else {
+			const hiddenLabel = document.createElement('span');
+			hiddenLabel.className = 'visually-hidden';
+			hiddenLabel.textContent = `Carousel Slide ${index + 1}`;
+			anchor.appendChild(hiddenLabel);
+		}
+
+		return anchor;
+	}
+
+	function buildControl(action, label, symbol, modifierClass) {
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = `variedmc-home-carousel__control ${modifierClass}`;
+		button.dataset.action = action;
+		button.setAttribute('aria-label', label);
+
+		const icon = document.createElement('span');
+		icon.setAttribute('aria-hidden', 'true');
+		icon.textContent = symbol;
+		button.appendChild(icon);
+
+		return button;
+	}
+
+	function buildDots(slides) {
+		const dots = document.createElement('div');
+		dots.className = 'variedmc-home-carousel__dots';
+		dots.setAttribute('role', 'tablist');
+		dots.setAttribute('aria-label', 'Carousel Pagination');
+
+		slides.forEach((slide, index) => {
+			const dot = document.createElement('button');
+			dot.type = 'button';
+			dot.className = `variedmc-home-carousel__dot${index === 0 ? ' is-active' : ''}`;
+			dot.dataset.slideTo = String(index);
+			dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+			dots.appendChild(dot);
+		});
+
+		return dots;
+	}
+
+	function getLegacyBackgroundImage(legacyCarousel) {
+		const inlineBackground = extractBackgroundUrl(legacyCarousel.style && legacyCarousel.style.backgroundImage);
+		if (inlineBackground) {
+			return inlineBackground;
+		}
+		if (typeof window.getComputedStyle !== 'function') {
+			return '';
+		}
+
+		return extractBackgroundUrl(window.getComputedStyle(legacyCarousel).backgroundImage);
+	}
+
+	function extractBackgroundUrl(backgroundImage) {
+		const match = String(backgroundImage || '').match(/^url\(["']?(.+?)["']?\)$/);
+		return match ? match[1] : '';
+	}
+
+	function setBackgroundImage(element, imageUrl) {
+		element.style.backgroundImage = `url("${escapeCssString(imageUrl)}")`;
+	}
+
+	function escapeCssString(value) {
+		return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\A ');
+	}
+
+	function getTrimmedString(value) {
+		return String(value || '').trim();
+	}
+
+	function normalizeBoolean(value, fallback) {
+		if (typeof value === 'boolean') {
+			return value;
+		}
+		if (typeof value === 'number') {
+			return value !== 0;
+		}
+		if (typeof value === 'string') {
+			const normalized = value.trim().toLowerCase();
+			if (['1', 'true', 'on', 'yes'].includes(normalized)) {
+				return true;
+			}
+			if (['0', 'false', 'off', 'no'].includes(normalized)) {
+				return false;
+			}
+		}
+		return fallback;
+	}
+
+	function normalizeIntervalSeconds(value, fallback) {
+		const seconds = parseInt(value, 10);
+		if (!Number.isFinite(seconds)) {
+			return fallback;
+		}
+
+		return Math.min(60, Math.max(2, seconds));
 	}
 
 	function initCarousel() {
