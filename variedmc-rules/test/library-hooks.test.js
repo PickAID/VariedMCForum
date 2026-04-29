@@ -9,6 +9,7 @@ describe('VariedMC Rules library hooks', () => {
 	let libraryPath;
 	let getSettingsCalls;
 	let dbGetSortedSetRangeCalls;
+	let postsGetPostsFieldsCalls;
 	let userAdminChecks;
 	let userModeratorChecks;
 	let mainPostIds;
@@ -20,6 +21,7 @@ describe('VariedMC Rules library hooks', () => {
 	function loadPlugin(rule = {}) {
 		getSettingsCalls = 0;
 		dbGetSortedSetRangeCalls = 0;
+		postsGetPostsFieldsCalls = 0;
 		userAdminChecks = 0;
 		userModeratorChecks = 0;
 		mainPostIds = new Set(['main-pid']);
@@ -94,10 +96,13 @@ describe('VariedMC Rules library hooks', () => {
 					getPostFields: async pid => ({
 						tid: postTids[pid],
 					}),
-					getPostsFields: async pids => pids.map(pid => ({
-						pid,
-						uid: postUids[pid],
-					})),
+					getPostsFields: async (pids) => {
+						postsGetPostsFieldsCalls += 1;
+						return pids.map(pid => ({
+							pid,
+							uid: postUids[pid],
+						}));
+					},
 				};
 			}
 			if (path === './src/topics') {
@@ -203,7 +208,7 @@ describe('VariedMC Rules library hooks', () => {
 		const payload = {
 			isDelete: true,
 			uid: 'author',
-			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: 1000 },
 		};
 
 		const result = await plugin.filterTopicDelete(payload);
@@ -214,7 +219,7 @@ describe('VariedMC Rules library hooks', () => {
 		assert.strictEqual(userModeratorChecks, 0);
 	});
 
-	it('allows admins and moderators to bypass delete request policy', async () => {
+	it('allows admins and moderators to bypass delete request policy without scanning replies', async () => {
 		const plugin = loadPlugin({
 			traceRequired: true,
 			deletePolicy: 'request-only',
@@ -225,13 +230,35 @@ describe('VariedMC Rules library hooks', () => {
 		await assert.doesNotReject(plugin.filterTopicDelete({
 			isDelete: true,
 			uid: 'admin',
-			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: 1000 },
 		}));
 		await assert.doesNotReject(plugin.filterTopicDelete({
 			isDelete: true,
 			uid: 'mod',
-			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: 1000 },
 		}));
+		assert.strictEqual(dbGetSortedSetRangeCalls, 0);
+		assert.strictEqual(postsGetPostsFieldsCalls, 0);
+	});
+
+	it('rejects request-only and locked author deletes without scanning replies', async () => {
+		for (const deletePolicy of ['request-only', 'locked']) {
+			const plugin = loadPlugin({
+				traceRequired: true,
+				deletePolicy,
+			});
+
+			await assert.rejects(
+				plugin.filterTopicDelete({
+					isDelete: true,
+					uid: 'author',
+					topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: 1000 },
+				}),
+				/error:variedmc-rules-delete-request-required/
+			);
+		}
+		assert.strictEqual(dbGetSortedSetRangeCalls, 0);
+		assert.strictEqual(postsGetPostsFieldsCalls, 0);
 	});
 
 	it('rejects author delete after non-author replies require a request', async () => {
@@ -247,7 +274,7 @@ describe('VariedMC Rules library hooks', () => {
 			plugin.filterTopicDelete({
 				isDelete: true,
 				uid: 'author',
-				topicData: { tid: 55, cid: 5, uid: 'author', timestamp: Date.now() },
+				topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: Date.now() },
 			}),
 			/error:variedmc-rules-delete-request-required/
 		);
@@ -264,12 +291,33 @@ describe('VariedMC Rules library hooks', () => {
 		const payload = {
 			isDelete: true,
 			uid: 'author',
-			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: Date.now() },
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: Date.now() },
 		};
 
 		const result = await plugin.filterTopicDelete(payload);
 
 		assert.strictEqual(result, payload);
 		assert.strictEqual(payload.canDelete, undefined);
+	});
+
+	it('ignores mainPid and missing uid data when counting non-author replies', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-after-grace',
+			deleteGraceHours: 0.5,
+		});
+		topicPostIds[55] = ['topic-main-pid', 'missing-reply-pid', 'own-reply-pid'];
+		postUids['topic-main-pid'] = 'stale-other-user';
+		postUids['own-reply-pid'] = 'author';
+		const payload = {
+			isDelete: true,
+			uid: 'author',
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: Date.now() },
+		};
+
+		const result = await plugin.filterTopicDelete(payload);
+
+		assert.strictEqual(result, payload);
+		assert.strictEqual(postsGetPostsFieldsCalls, 1);
 	});
 });

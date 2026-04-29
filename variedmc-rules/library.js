@@ -94,9 +94,21 @@ plugin.filterTopicDelete = async function (payload) {
 	const context = {
 		uid: payload.uid,
 		now: Date.now(),
-		nonAuthorReplyCount: await getNonAuthorReplyCount(payload.topicData),
-		isAdminOrMod: await isAdminOrMod(payload.topicData.cid, payload.uid),
+		nonAuthorReplyCount: 0,
+		isAdminOrMod: false,
 	};
+	if (!rule.traceRequired || rule.deletePolicy === 'normal' || !DeletePolicy.isAuthor(payload.topicData, payload.uid)) {
+		return payload;
+	}
+	context.isAdminOrMod = await isAdminOrMod(payload.topicData.cid, payload.uid);
+	if (DeletePolicy.requiresRequest(rule, payload.topicData, context)) {
+		payload.canDelete = false;
+		throw new Error('[[error:variedmc-rules-delete-request-required]]');
+	}
+	if (context.isAdminOrMod || rule.deletePolicy !== 'request-after-grace') {
+		return payload;
+	}
+	context.nonAuthorReplyCount = await getNonAuthorReplyCount(payload.topicData);
 	if (DeletePolicy.requiresRequest(rule, payload.topicData, context)) {
 		payload.canDelete = false;
 		throw new Error('[[error:variedmc-rules-delete-request-required]]');
@@ -128,11 +140,12 @@ plugin.filterTopicEventsInit = async function (payload) {
 
 async function getNonAuthorReplyCount(topicData) {
 	const pids = await db.getSortedSetRange(`tid:${topicData.tid}:posts`, 0, -1);
-	if (pids.length <= 1) {
+	const replyPids = pids.filter(pid => String(pid) !== String(topicData.mainPid));
+	if (!replyPids.length) {
 		return 0;
 	}
-	const postsData = await posts.getPostsFields(pids, ['pid', 'uid']);
-	return postsData.filter(post => post && String(post.uid) !== String(topicData.uid)).length;
+	const postsData = await posts.getPostsFields(replyPids, ['pid', 'uid']);
+	return postsData.filter(post => post && post.uid != null && String(post.uid) !== String(topicData.uid)).length;
 }
 
 async function isAdminOrMod(cid, uid) {
