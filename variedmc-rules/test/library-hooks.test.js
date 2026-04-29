@@ -8,9 +8,20 @@ describe('VariedMC Rules library hooks', () => {
 	let settingsPath;
 	let libraryPath;
 	let getSettingsCalls;
+	let mainPostIds;
+	let postTids;
+	let topicCids;
 
 	function loadPlugin(rule = {}) {
 		getSettingsCalls = 0;
+		mainPostIds = new Set(['main-pid']);
+		postTids = {
+			'main-pid': 'topic-id',
+			'reply-pid': 'topic-id',
+		};
+		topicCids = {
+			'topic-id': 5,
+		};
 		settingsStub = {
 			getSettings: async () => {
 				getSettingsCalls += 1;
@@ -55,10 +66,19 @@ describe('VariedMC Rules library hooks', () => {
 				};
 			}
 			if (path === './src/posts') {
-				return {};
+				return {
+					isMain: async pid => mainPostIds.has(pid),
+					getPostFields: async pid => ({
+						tid: postTids[pid],
+					}),
+				};
 			}
 			if (path === './src/topics') {
-				return {};
+				return {
+					getTopicFields: async tid => ({
+						cid: topicCids[tid],
+					}),
+				};
 			}
 			return originalMainRequire.call(require.main, path);
 		};
@@ -94,5 +114,44 @@ describe('VariedMC Rules library hooks', () => {
 			plugin.filterTopicPost({ cid: 5, uid: 'user', content: '' }),
 			/error:variedmc-rules-content-too-short/
 		);
+	});
+
+	it('rejects short main-post edits for users without a bypass', async () => {
+		const plugin = loadPlugin();
+
+		await assert.rejects(
+			plugin.filterPostEdit({
+				uid: 'user',
+				data: { pid: 'main-pid', content: '' },
+			}),
+			/error:variedmc-rules-content-too-short/
+		);
+	});
+
+	it('skips content length checks for non-main post edits', async () => {
+		const plugin = loadPlugin();
+		mainPostIds = new Set();
+		const payload = {
+			uid: 'user',
+			data: { pid: 'reply-pid', content: '' },
+		};
+
+		const result = await plugin.filterPostEdit(payload);
+
+		assert.strictEqual(result, payload);
+		assert.strictEqual(getSettingsCalls, 0);
+	});
+
+	it('allows admins and bypass-enabled moderators to edit main posts short', async () => {
+		const plugin = loadPlugin();
+
+		await assert.doesNotReject(plugin.filterPostEdit({
+			uid: 'admin',
+			data: { pid: 'main-pid', content: '' },
+		}));
+		await assert.doesNotReject(plugin.filterPostEdit({
+			uid: 'mod',
+			data: { pid: 'main-pid', content: '' },
+		}));
 	});
 });

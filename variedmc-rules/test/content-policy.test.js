@@ -14,6 +14,20 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(text, '');
 	});
 
+	it('does not count repeated linked reference images as topic content', () => {
+		const text = [
+			'[![hidden alt][img]][link]',
+			'[![other hidden alt][img]][link]',
+			'[img]: https://example.com/a.png',
+			'[link]: https://example.com',
+		].join('\n');
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+		assert.throws(() => ContentPolicy.assertTopicContent(text, {
+			minimumTopicContentLength: 1,
+		}), /error:variedmc-rules-content-too-short/);
+	});
+
 	it('does not count zero-width characters or blank HTML entities as meaningful text', () => {
 		const text = ContentPolicy.toMeaningfulText('&nbsp;&#160;&#xA0;&ZeroWidthSpace;\u200b\u200c\u200d\ufeff');
 		assert.strictEqual(text, '');
