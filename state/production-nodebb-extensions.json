@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-28T18:37:21.720Z",
+  "capturedAt": "2026-04-29T01:34:13.879Z",
   "runtime": {
     "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
@@ -620,7 +620,7 @@
       "declared": true,
       "declaredSpec": "file:variedmc-core",
       "installed": true,
-      "installedVersion": "0.0.1",
+      "installedVersion": "0.0.2",
       "active": true,
       "activeOrder": 39,
       "localSourceDir": "variedmc-core"
