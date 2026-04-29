@@ -13,6 +13,7 @@ const settings = require('./lib/settings');
 const sockets = require('./lib/sockets');
 const ContentPolicy = require('./lib/domain/content-policy');
 const DeletePolicy = require('./lib/domain/delete-policy');
+const trustMarks = require('./lib/domain/trust-mark-service');
 
 const plugin = module.exports;
 
@@ -144,7 +145,9 @@ plugin.filterThreadTools = async function (payload) {
 	}
 	return payload;
 };
-plugin.filterModifyUserInfo = async userData => userData;
+plugin.filterModifyUserInfo = async function (userData) {
+	return await trustMarks.injectBadge(userData);
+};
 
 plugin.filterTopicEventsInit = async function (payload) {
 	payload.types['variedmc-delete-requested'] = {

@@ -34,3 +34,8 @@
 		flex-direction: column;
 	}
 }
+
+.badge[href*="/groups/variedmc-untrusted"] {
+	order: -100;
+	letter-spacing: .01em;
+}
