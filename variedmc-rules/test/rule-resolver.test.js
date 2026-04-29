@@ -104,4 +104,24 @@ describe('VariedMC Rules resolver', () => {
 		assert.strictEqual(rule.enabled, false);
 		assert.strictEqual(rule.traceRequired, false);
 	});
+
+	it('allows child override after disabled parent', () => {
+		const settings = RuleNormalizer.normalize({
+			globalRule: { enabled: true, traceRequired: false, deletePolicy: 'normal' },
+			categoryHierarchy: { 5: 0, 6: 5 },
+			categoryRules: {
+				5: { scope: 'disabled' },
+				6: { scope: 'override', traceRequired: true, deletePolicy: 'request-only' },
+			},
+		});
+
+		const parentRule = RuleResolver.resolve(settings, 5);
+		const childRule = RuleResolver.resolve(settings, 6);
+
+		assert.strictEqual(parentRule.enabled, false);
+		assert.strictEqual(childRule.enabled, true);
+		assert.strictEqual(childRule.traceRequired, true);
+		assert.strictEqual(childRule.deletePolicy, 'request-only');
+		assert.strictEqual(childRule.minimumTopicContentLength, 0);
+	});
 });

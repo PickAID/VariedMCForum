@@ -21,6 +21,7 @@ class RuleResolver {
 		const chain = RuleResolver.chain(settings.categoryHierarchy || {}, targetCid);
 		let resolved = { ...DEFAULT_RULE, ...(settings.globalRule || {}) };
 		let sources = Object.fromEntries(MERGE_FIELDS.map(field => [field, { cid: 0, scope: 'global' }]));
+		let disabledSource;
 
 		for (const chainCid of chain) {
 			const local = settings.categoryRules && settings.categoryRules[String(chainCid)];
@@ -28,16 +29,18 @@ class RuleResolver {
 				continue;
 			}
 			if (local.scope === 'disabled') {
-				return {
-					...DEFAULT_RULE,
-					cid: targetCid,
-					enabled: false,
-					sources: { disabled: { cid: chainCid, scope: 'disabled' } },
-				};
+				resolved = { ...DEFAULT_RULE, enabled: false };
+				sources = { disabled: { cid: chainCid, scope: 'disabled' } };
+				disabledSource = sources.disabled;
+				continue;
 			}
 			if (local.scope === 'override') {
 				resolved = { ...DEFAULT_RULE, enabled: true, ...RuleResolver.localFields(local) };
 				sources = RuleResolver.sourcesFor(local, chainCid);
+				disabledSource = null;
+				continue;
+			}
+			if (disabledSource) {
 				continue;
 			}
 			resolved = { ...resolved, ...RuleResolver.localFields(local) };
