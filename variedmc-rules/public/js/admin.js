@@ -29,8 +29,8 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 		$('[data-field="enabled"]').prop('checked', settings.enabled !== false);
 		$('[data-field="traceRequired"]').prop('checked', !!global.traceRequired);
 		$('[data-field="deletePolicy"]').val(global.deletePolicy || 'normal');
-		$('[data-field="deleteGraceHours"]').val(global.deleteGraceHours || 0.5);
-		$('[data-field="minimumTopicContentLength"]').val(global.minimumTopicContentLength || 0);
+		$('[data-field="deleteGraceHours"]').val(valueOrDefault(global.deleteGraceHours, 0.5));
+		$('[data-field="minimumTopicContentLength"]').val(valueOrDefault(global.minimumTopicContentLength, 0));
 		$('[data-field="reputationPresets"]').val((settings.reputationPresets || [-5, -10, -20]).join(','));
 		renderCategories();
 	}
@@ -54,8 +54,8 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 				option('request-only', '总是申请', rule.deletePolicy),
 				option('locked', '仅管理删除', rule.deletePolicy),
 				'</select>',
-				'<input class="form-control form-control-sm" type="number" data-rule-field="deleteGraceHours" value="', rule.deleteGraceHours || '', '" placeholder="0.5" />',
-				'<input class="form-control form-control-sm" type="number" data-rule-field="minimumTopicContentLength" value="', rule.minimumTopicContentLength || '', '" placeholder="0" />',
+				'<input class="form-control form-control-sm" type="number" data-rule-field="deleteGraceHours" value="', valueOrDefault(rule.deleteGraceHours, ''), '" placeholder="0.5" />',
+				'<input class="form-control form-control-sm" type="number" data-rule-field="minimumTopicContentLength" value="', valueOrDefault(rule.minimumTopicContentLength, ''), '" placeholder="0" />',
 				'<label class="form-check"><input class="form-check-input" type="checkbox" data-rule-field="traceRequired"', rule.traceRequired ? ' checked' : '', ' /> 留痕</label>',
 				'</div>',
 			].join('');
@@ -112,6 +112,10 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 
 	function option(value, label, selected) {
 		return '<option value="' + value + '"' + (value === selected ? ' selected' : '') + '>' + label + '</option>';
+	}
+
+	function valueOrDefault(value, fallback) {
+		return value === undefined || value === null ? fallback : value;
 	}
 
 	function escapeHtml(value) {
