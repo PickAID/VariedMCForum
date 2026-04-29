@@ -2,14 +2,17 @@
 
 const routeHelpers = require.main.require('./src/routes/helpers');
 const SocketPlugins = require.main.require('./src/socket.io/plugins');
+const db = require.main.require('./src/database');
 const privileges = require.main.require('./src/privileges');
 const posts = require.main.require('./src/posts');
 const topics = require.main.require('./src/topics');
+const user = require.main.require('./src/user');
 
 const controllers = require('./lib/controllers');
 const settings = require('./lib/settings');
 const sockets = require('./lib/sockets');
 const ContentPolicy = require('./lib/domain/content-policy');
+const DeletePolicy = require('./lib/domain/delete-policy');
 
 const plugin = module.exports;
 
@@ -79,7 +82,27 @@ plugin.filterPostEdit = async function (payload) {
 	}
 	return payload;
 };
-plugin.filterTopicDelete = async payload => payload;
+plugin.filterTopicDelete = async function (payload) {
+	if (!payload || !payload.isDelete || !payload.topicData) {
+		return payload;
+	}
+	const stored = await settings.getSettings();
+	const rule = settings.resolveRule(stored, payload.topicData.cid);
+	if (!rule.enabled) {
+		return payload;
+	}
+	const context = {
+		uid: payload.uid,
+		now: Date.now(),
+		nonAuthorReplyCount: await getNonAuthorReplyCount(payload.topicData),
+		isAdminOrMod: await isAdminOrMod(payload.topicData.cid, payload.uid),
+	};
+	if (DeletePolicy.requiresRequest(rule, payload.topicData, context)) {
+		payload.canDelete = false;
+		throw new Error('[[error:variedmc-rules-delete-request-required]]');
+	}
+	return payload;
+};
 plugin.filterThreadTools = async payload => payload;
 plugin.filterModifyUserInfo = async userData => userData;
 
@@ -102,3 +125,20 @@ plugin.filterTopicEventsInit = async function (payload) {
 	};
 	return payload;
 };
+
+async function getNonAuthorReplyCount(topicData) {
+	const pids = await db.getSortedSetRange(`tid:${topicData.tid}:posts`, 0, -1);
+	if (pids.length <= 1) {
+		return 0;
+	}
+	const postsData = await posts.getPostsFields(pids, ['pid', 'uid']);
+	return postsData.filter(post => post && String(post.uid) !== String(topicData.uid)).length;
+}
+
+async function isAdminOrMod(cid, uid) {
+	const [isAdmin, isMod] = await Promise.all([
+		user.isAdministrator(uid),
+		user.isModerator(uid, cid),
+	]);
+	return isAdmin || isMod;
+}
