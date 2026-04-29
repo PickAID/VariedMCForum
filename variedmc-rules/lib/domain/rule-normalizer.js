@@ -13,9 +13,10 @@ class RuleNormalizer {
 			categoryHierarchy: RuleNormalizer.categoryHierarchy(input.categoryHierarchy || {}),
 			reputationPresets: RuleNormalizer.reputationPresets(input.reputationPresets),
 		};
-		settings.enabled = input.enabled !== false;
+		settings.enabled = Object.prototype.hasOwnProperty.call(input, 'enabled') ? KeyNormalizer.bool(input.enabled) : true;
 		settings.allowCategoryModeratorsTrustTools = KeyNormalizer.bool(settings.allowCategoryModeratorsTrustTools);
-		settings.notifyTrustChanges = settings.notifyTrustChanges !== false;
+		settings.notifyTrustChanges = Object.prototype.hasOwnProperty.call(input, 'notifyTrustChanges') ?
+			KeyNormalizer.bool(input.notifyTrustChanges) : true;
 		return settings;
 	}
 
@@ -47,14 +48,15 @@ class RuleNormalizer {
 	static rule(input = {}) {
 		const deletePolicy = DELETE_POLICIES.has(input.deletePolicy) ? input.deletePolicy : DEFAULT_RULE.deletePolicy;
 		return {
-			enabled: input.enabled !== false,
+			enabled: Object.prototype.hasOwnProperty.call(input, 'enabled') ? KeyNormalizer.bool(input.enabled) : true,
 			traceRequired: KeyNormalizer.bool(input.traceRequired),
 			deletePolicy,
 			deleteGraceHours: Math.max(0, KeyNormalizer.number(input.deleteGraceHours, DEFAULT_RULE.deleteGraceHours)),
 			minimumTopicContentLength: Math.max(0, Math.floor(KeyNormalizer.number(input.minimumTopicContentLength, 0))),
 			minimumReplyContentLength: Math.max(0, Math.floor(KeyNormalizer.number(input.minimumReplyContentLength, 0))),
 			moderatorLengthBypass: KeyNormalizer.bool(input.moderatorLengthBypass),
-			trustBadgeVisible: input.trustBadgeVisible !== false,
+			trustBadgeVisible: Object.prototype.hasOwnProperty.call(input, 'trustBadgeVisible') ?
+				KeyNormalizer.bool(input.trustBadgeVisible) : true,
 			rulesText: KeyNormalizer.text(input.rulesText),
 		};
 	}

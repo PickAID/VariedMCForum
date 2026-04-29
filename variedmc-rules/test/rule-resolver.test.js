@@ -6,6 +6,33 @@ const RuleNormalizer = require('../lib/domain/rule-normalizer');
 const RuleResolver = require('../lib/domain/rule-resolver');
 
 describe('VariedMC Rules resolver', () => {
+	it('normalizes ACP string booleans for settings and rules', () => {
+		const settings = RuleNormalizer.normalize({
+			enabled: 'false',
+			notifyTrustChanges: 'false',
+			globalRule: {
+				enabled: 'false',
+				trustBadgeVisible: 'false',
+				traceRequired: 'true',
+			},
+		});
+
+		assert.strictEqual(settings.enabled, false);
+		assert.strictEqual(settings.notifyTrustChanges, false);
+		assert.strictEqual(settings.globalRule.enabled, false);
+		assert.strictEqual(settings.globalRule.trustBadgeVisible, false);
+		assert.strictEqual(settings.globalRule.traceRequired, true);
+	});
+
+	it('preserves boolean defaults when omitted', () => {
+		const settings = RuleNormalizer.normalize();
+
+		assert.strictEqual(settings.enabled, true);
+		assert.strictEqual(settings.notifyTrustChanges, true);
+		assert.strictEqual(settings.globalRule.enabled, false);
+		assert.strictEqual(settings.globalRule.trustBadgeVisible, true);
+	});
+
 	it('resolves global, parent extend, and child extend in order', () => {
 		const settings = RuleNormalizer.normalize({
 			globalRule: {
