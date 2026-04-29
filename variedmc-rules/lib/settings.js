@@ -44,8 +44,16 @@ Settings.getAdminState = async function () {
 
 Settings.save = async function (input) {
 	const settings = RuleNormalizer.normalize(input || {});
-	await meta.settings.set(SETTINGS_KEY, settings, true);
+	await meta.settings.set(SETTINGS_KEY, Settings.toPersistedSettings(settings), true);
 	return settings;
+};
+
+Settings.toPersistedSettings = function (settings) {
+	const { categoryHierarchy, ...persisted } = settings;
+	return {
+		...persisted,
+		reputationPresets: settings.reputationPresets.map(value => String(value)),
+	};
 };
 
 Settings.resolveRule = function (settings, cid) {

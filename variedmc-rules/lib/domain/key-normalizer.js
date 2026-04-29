@@ -16,7 +16,11 @@ class KeyNormalizer {
 	}
 
 	static bool(value) {
-		return value === true || value === 'true' || value === 1 || value === '1';
+		if (typeof value === 'string') {
+			const normalized = value.trim().toLowerCase();
+			return normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'yes';
+		}
+		return value === true || value === 1;
 	}
 }
 

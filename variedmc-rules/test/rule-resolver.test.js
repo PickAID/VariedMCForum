@@ -33,6 +33,28 @@ describe('VariedMC Rules resolver', () => {
 		assert.strictEqual(settings.globalRule.trustBadgeVisible, true);
 	});
 
+	it('keeps partial global rule disabled by default', () => {
+		const settings = RuleNormalizer.normalize({ globalRule: {} });
+
+		assert.strictEqual(settings.globalRule.enabled, false);
+	});
+
+	it('normalizes expanded ACP boolean strings and reputation presets for runtime', () => {
+		const settings = RuleNormalizer.normalize({
+			allowCategoryModeratorsTrustTools: 'on',
+			globalRule: {
+				enabled: 'YES',
+				trustBadgeVisible: 'OFF',
+			},
+			reputationPresets: ['-3', -8, '0', 'bad', '-12.5'],
+		});
+
+		assert.strictEqual(settings.allowCategoryModeratorsTrustTools, true);
+		assert.strictEqual(settings.globalRule.enabled, true);
+		assert.strictEqual(settings.globalRule.trustBadgeVisible, false);
+		assert.deepStrictEqual(settings.reputationPresets, [-3, -8, -13]);
+	});
+
 	it('resolves global, parent extend, and child extend in order', () => {
 		const settings = RuleNormalizer.normalize({
 			globalRule: {

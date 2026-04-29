@@ -22,7 +22,7 @@ const defaultSettings = Object.freeze({
 	globalRule: DEFAULT_RULE,
 	categoryRules: {},
 	categoryHierarchy: {},
-	reputationPresets: [-5, -10, -20],
+	reputationPresets: ['-5', '-10', '-20'],
 	allowCategoryModeratorsTrustTools: false,
 	notifyTrustChanges: true,
 });

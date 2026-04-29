@@ -8,7 +8,10 @@ class RuleNormalizer {
 		const settings = {
 			...defaultSettings,
 			...input,
-			globalRule: RuleNormalizer.rule(input.globalRule || defaultSettings.globalRule),
+			globalRule: RuleNormalizer.rule({
+				...defaultSettings.globalRule,
+				...(input.globalRule || {}),
+			}),
 			categoryRules: RuleNormalizer.categoryRules(input.categoryRules || {}),
 			categoryHierarchy: RuleNormalizer.categoryHierarchy(input.categoryHierarchy || {}),
 			reputationPresets: RuleNormalizer.reputationPresets(input.reputationPresets),
