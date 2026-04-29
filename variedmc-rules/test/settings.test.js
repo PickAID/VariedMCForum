@@ -66,7 +66,7 @@ describe('VariedMC Rules settings facade', () => {
 		assert.strictEqual(typeof storedSettings.settings.categoryRules, 'string');
 		assert.deepStrictEqual(JSON.parse(storedSettings.settings.globalRule), settings.globalRule);
 		assert.deepStrictEqual(JSON.parse(storedSettings.settings.categoryRules), settings.categoryRules);
-		assert.deepStrictEqual(storedSettings.settings.reputationPresets, ['-5', '-10', '-21']);
+		assert.strictEqual(storedSettings.settings.reputationPresets, JSON.stringify(['-5', '-10', '-21']));
 	});
 
 	it('sets meta-safe defaults and reads persisted JSON settings into runtime shape', async () => {
@@ -77,7 +77,7 @@ describe('VariedMC Rules settings facade', () => {
 				6: { scope: 'override', deletePolicy: 'request-only', minimumTopicContentLength: '42' },
 			}),
 			categoryHierarchy: { 9: 8 },
-			reputationPresets: ['-4', '-9'],
+			reputationPresets: JSON.stringify(['-4', '-9']),
 		};
 		categoryOptions = [
 			{ cid: 5, parentCid: 0 },
@@ -89,6 +89,7 @@ describe('VariedMC Rules settings facade', () => {
 		assert.strictEqual(setOnEmptyPayload.key, 'variedmc-rules');
 		assert.strictEqual(typeof setOnEmptyPayload.settings.globalRule, 'string');
 		assert.strictEqual(typeof setOnEmptyPayload.settings.categoryRules, 'string');
+		assert.strictEqual(typeof setOnEmptyPayload.settings.reputationPresets, 'string');
 		assert.strictEqual(Object.prototype.hasOwnProperty.call(setOnEmptyPayload.settings, 'categoryHierarchy'), false);
 		assert.strictEqual(settings.globalRule.traceRequired, true);
 		assert.strictEqual(settings.categoryRules['6'].scope, 'override');
@@ -96,5 +97,34 @@ describe('VariedMC Rules settings facade', () => {
 		assert.strictEqual(settings.categoryRules['6'].minimumTopicContentLength, 42);
 		assert.deepStrictEqual(settings.reputationPresets, [-4, -9]);
 		assert.deepStrictEqual(settings.categoryHierarchy, { 5: 0, 6: 5 });
+	});
+
+	it('reads Redis-like scalar string round trips without losing custom presets', async () => {
+		const savedSettings = await Settings.save({
+			reputationPresets: ['-7', '-14'],
+			globalRule: { enabled: true },
+			categoryRules: { 5: { scope: 'extend', traceRequired: true } },
+		});
+		settingsStore = Object.fromEntries(Object.entries(storedSettings.settings).map(([key, value]) => [
+			key,
+			String(value),
+		]));
+
+		const settings = await Settings.getSettings();
+
+		assert.deepStrictEqual(savedSettings.reputationPresets, [-7, -14]);
+		assert.deepStrictEqual(settings.reputationPresets, [-7, -14]);
+		assert.strictEqual(settings.globalRule.enabled, true);
+		assert.strictEqual(settings.categoryRules['5'].traceRequired, true);
+	});
+
+	it('reads legacy comma-string reputation presets', async () => {
+		settingsStore = {
+			reputationPresets: '-6,-11',
+		};
+
+		const settings = await Settings.getSettings();
+
+		assert.deepStrictEqual(settings.reputationPresets, [-6, -11]);
 	});
 });

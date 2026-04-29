@@ -54,7 +54,7 @@ Settings.toPersistedSettings = function (settings) {
 		...persisted,
 		globalRule: JSON.stringify(settings.globalRule || {}),
 		categoryRules: JSON.stringify(settings.categoryRules || {}),
-		reputationPresets: settings.reputationPresets.map(value => String(value)),
+		reputationPresets: JSON.stringify(Settings.reputationPresetsForPersistence(settings.reputationPresets)),
 	};
 };
 
@@ -63,7 +63,24 @@ Settings.fromPersistedSettings = function (settings) {
 		...settings,
 		globalRule: Settings.parseJSONSetting(settings && settings.globalRule, {}),
 		categoryRules: Settings.parseJSONSetting(settings && settings.categoryRules, {}),
+		reputationPresets: Settings.parseReputationPresets(settings && settings.reputationPresets),
 	};
+};
+
+Settings.reputationPresetsForPersistence = function (reputationPresets) {
+	const values = Array.isArray(reputationPresets) ? reputationPresets : defaultSettings.reputationPresets;
+	return values.map(value => String(value));
+};
+
+Settings.parseReputationPresets = function (value) {
+	if (typeof value !== 'string') {
+		return value;
+	}
+	const parsed = Settings.parseJSONSetting(value, null);
+	if (Array.isArray(parsed)) {
+		return parsed;
+	}
+	return value.split(',').map(item => item.trim()).filter(Boolean);
 };
 
 Settings.parseJSONSetting = function (value, fallback) {
