@@ -124,6 +124,22 @@ describe('VariedMC Rules governance action socket', () => {
 		assert.deepStrictEqual(reputationActions.deductions, []);
 		assert.strictEqual(trustMarks.marks[0].publicVisible, false);
 	});
+
+	it('rejects invalid or empty governance actions without side effects', async () => {
+		for (const payload of [
+			{ tid: 55, delta: 0, reason: 'zero' },
+			{ tid: 55, delta: 5, reason: 'positive' },
+			{ tid: 55, reason: 'empty' },
+		]) {
+			const { sockets, reputationActions, trustMarks, topics } = loadSockets();
+
+			await assert.rejects(() => sockets.applyGovernanceAction({ uid: 'mod' }, payload), /error:invalid-data/);
+
+			assert.deepStrictEqual(reputationActions.deductions, []);
+			assert.deepStrictEqual(trustMarks.marks, []);
+			assert.deepStrictEqual(topics.logged, []);
+		}
+	});
 });
 
 function loadService() {

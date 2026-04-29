@@ -74,19 +74,29 @@ Sockets.applyGovernanceAction = async function (socket, data) {
 		throw new Error('[[error:no-privileges]]');
 	}
 	const evidenceUrl = `/topic/${topicData.slug || topicData.tid}`;
+	const rawDelta = data && data.delta;
+	const hasDelta = rawDelta !== undefined && rawDelta !== null && String(rawDelta).trim() !== '';
+	const delta = hasDelta ? Number(rawDelta) : 0;
+	const shouldMarkUntrusted = !!(data && data.markUntrusted);
+	if (hasDelta && (!Number.isFinite(delta) || Math.floor(delta) >= 0)) {
+		throw new Error('[[error:invalid-data]]');
+	}
+	if (!hasDelta && !shouldMarkUntrusted) {
+		throw new Error('[[error:invalid-data]]');
+	}
 	let reputationAction = null;
-	if (Number(data.delta) < 0) {
+	if (hasDelta) {
 		reputationAction = await require('./domain/reputation-action-service').recordDeduction({
 			targetUid: topicData.uid,
 			actorUid: socket.uid,
 			tid: topicData.tid,
-			delta: data.delta,
+			delta,
 			reason: data.reason,
 			evidenceUrl,
 		});
 	}
 	let trustMark = null;
-	if (data.markUntrusted) {
+	if (shouldMarkUntrusted) {
 		trustMark = await require('./domain/trust-mark-service').markUntrusted({
 			uid: topicData.uid,
 			reason: data.reason,
