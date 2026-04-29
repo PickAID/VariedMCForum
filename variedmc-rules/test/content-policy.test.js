@@ -9,6 +9,16 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(text, '招募说明：需要长期协作。');
 	});
 
+	it('ignores reference-style markdown image alt text and definitions', () => {
+		const text = ContentPolicy.toMeaningfulText('![very long hidden alt text][img]\n\n[img]: https://example.com/a.png "title"');
+		assert.strictEqual(text, '');
+	});
+
+	it('does not count zero-width characters or blank HTML entities as meaningful text', () => {
+		const text = ContentPolicy.toMeaningfulText('&nbsp;&#160;&#xA0;&ZeroWidthSpace;\u200b\u200c\u200d\ufeff');
+		assert.strictEqual(text, '');
+	});
+
 	it('rejects topic content shorter than the resolved rule', () => {
 		assert.throws(() => ContentPolicy.assertTopicContent('短内容', {
 			minimumTopicContentLength: 10,

@@ -43,8 +43,11 @@ plugin.filterTopicPost = async function (data) {
 	if (!rule.enabled) {
 		return data;
 	}
-	const isAdmin = await privileges.users.isAdministrator(data.uid);
-	if (!isAdmin) {
+	const [isAdmin, isModerator] = await Promise.all([
+		privileges.users.isAdministrator(data.uid),
+		privileges.categories.isAdminOrMod(data.cid, data.uid),
+	]);
+	if (!isAdmin && !(isModerator && rule.moderatorLengthBypass)) {
 		ContentPolicy.assertTopicContent(data.sourceContent || data.content, rule);
 	}
 	return data;
