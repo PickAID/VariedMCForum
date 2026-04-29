@@ -11,10 +11,10 @@ const RuleResolver = require('./domain/rule-resolver');
 const Settings = module.exports;
 
 Settings.getSettings = async function () {
-	await meta.settings.setOnEmpty(SETTINGS_KEY, defaultSettings);
+	await meta.settings.setOnEmpty(SETTINGS_KEY, Settings.toPersistedSettings(defaultSettings));
 	const stored = await meta.settings.get(SETTINGS_KEY);
 	return RuleNormalizer.normalize({
-		...stored,
+		...Settings.fromPersistedSettings(stored),
 		categoryHierarchy: await Settings.buildCategoryHierarchy(),
 	});
 };
@@ -52,8 +52,29 @@ Settings.toPersistedSettings = function (settings) {
 	const { categoryHierarchy, ...persisted } = settings;
 	return {
 		...persisted,
+		globalRule: JSON.stringify(settings.globalRule || {}),
+		categoryRules: JSON.stringify(settings.categoryRules || {}),
 		reputationPresets: settings.reputationPresets.map(value => String(value)),
 	};
+};
+
+Settings.fromPersistedSettings = function (settings) {
+	return {
+		...settings,
+		globalRule: Settings.parseJSONSetting(settings && settings.globalRule, {}),
+		categoryRules: Settings.parseJSONSetting(settings && settings.categoryRules, {}),
+	};
+};
+
+Settings.parseJSONSetting = function (value, fallback) {
+	if (typeof value !== 'string') {
+		return value || fallback;
+	}
+	try {
+		return JSON.parse(value);
+	} catch (err) {
+		return fallback;
+	}
 };
 
 Settings.resolveRule = function (settings, cid) {
