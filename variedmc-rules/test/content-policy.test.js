@@ -28,6 +28,33 @@ describe('VariedMC Rules content policy', () => {
 		}), /error:variedmc-rules-content-too-short/);
 	});
 
+	it('does not count inline image destinations with balanced parentheses as content', () => {
+		const text = [
+			'![x](https://example.com/a(foo).png)',
+			'![x](https://example.com/a(foo).png)',
+		].join('\n');
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+		assert.throws(() => ContentPolicy.assertTopicContent(text, {
+			minimumTopicContentLength: 1,
+		}), /error:variedmc-rules-content-too-short/);
+	});
+
+	it('does not count linked inline image destinations with balanced parentheses as content', () => {
+		const text = '[![x](https://example.com/a(foo).png)](https://example.com)';
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+		assert.throws(() => ContentPolicy.assertTopicContent(text, {
+			minimumTopicContentLength: 1,
+		}), /error:variedmc-rules-content-too-short/);
+	});
+
+	it('does not count angle-bracket image destinations as content', () => {
+		const text = '![x](<https://example.com/a(foo).png>)';
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+	});
+
 	it('does not count zero-width characters or blank HTML entities as meaningful text', () => {
 		const text = ContentPolicy.toMeaningfulText('&nbsp;&#160;&#xA0;&ZeroWidthSpace;\u200b\u200c\u200d\ufeff');
 		assert.strictEqual(text, '');
