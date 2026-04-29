@@ -12,7 +12,7 @@ const plugin = module.exports;
 plugin.init = async function ({ router, middleware }) {
 	SocketPlugins.variedmcRules = sockets;
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/variedmc-rules', controllers.renderAdminPage);
-	router.get('/review-queue', middleware.ensureLoggedIn, controllers.renderReviewQueue);
+	routeHelpers.setupPageRoute(router, '/review-queue', [middleware.ensureLoggedIn], controllers.renderReviewQueue);
 	await settings.getSettings();
 };
 
