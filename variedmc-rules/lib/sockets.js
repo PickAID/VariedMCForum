@@ -63,6 +63,43 @@ Sockets.resolveRequest = async function (socket, data) {
 	return resolved;
 };
 
+Sockets.applyGovernanceAction = async function (socket, data) {
+	if (!socket.uid) {
+		throw new Error('[[error:not-logged-in]]');
+	}
+	const topics = require.main.require('./src/topics');
+	const privileges = require.main.require('./src/privileges');
+	const topicData = await topics.getTopicFields(data && data.tid, ['tid', 'cid', 'uid', 'slug']);
+	if (!topicData || !await privileges.categories.isAdminOrMod(topicData.cid, socket.uid)) {
+		throw new Error('[[error:no-privileges]]');
+	}
+	const evidenceUrl = `/topic/${topicData.slug || topicData.tid}`;
+	let reputationAction = null;
+	if (Number(data.delta) < 0) {
+		reputationAction = await require('./domain/reputation-action-service').recordDeduction({
+			targetUid: topicData.uid,
+			actorUid: socket.uid,
+			tid: topicData.tid,
+			delta: data.delta,
+			reason: data.reason,
+			evidenceUrl,
+		});
+	}
+	let trustMark = null;
+	if (data.markUntrusted) {
+		trustMark = await require('./domain/trust-mark-service').markUntrusted({
+			uid: topicData.uid,
+			reason: data.reason,
+			evidenceUrl,
+			sourceTid: topicData.tid,
+			createdBy: socket.uid,
+			publicVisible: data.publicVisible !== false,
+		});
+	}
+	await topics.events.log(topicData.tid, { type: 'variedmc-governance-action', uid: socket.uid });
+	return { reputationAction, trustMark };
+};
+
 async function ensureAdmin(socket) {
 	const privileges = require.main.require('./src/privileges');
 	const allowed = await privileges.admin.can('admin:settings', socket.uid);

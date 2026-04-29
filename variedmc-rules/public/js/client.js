@@ -34,7 +34,39 @@ require(['alerts', 'bootbox', 'hooks'], function (alerts, bootbox, hooks) {
 
 	function openGovernance(event) {
 		event.preventDefault();
-		bootbox.alert('治理操作会在下一阶段接入扣信誉和失信标记。');
+		const tid = ajaxify.data && ajaxify.data.tid;
+		const html = [
+			'<form class="variedmc-governance-form">',
+			'<label class="form-label">扣除信誉</label>',
+			'<input class="form-control mb-2" name="delta" type="number" max="-1" step="1" placeholder="-10" />',
+			'<label class="form-check mb-2"><input class="form-check-input" name="markUntrusted" type="checkbox" /> 标记失信用户</label>',
+			'<label class="form-label">原因</label>',
+			'<textarea class="form-control" name="reason" rows="4"></textarea>',
+			'</form>',
+		].join('');
+		bootbox.confirm({
+			title: '治理操作',
+			message: html,
+			callback: function (ok) {
+				if (!ok) {
+					return;
+				}
+				const form = $('.variedmc-governance-form');
+				socket.emit('plugins.variedmcRules.applyGovernanceAction', {
+					tid,
+					delta: form.find('[name="delta"]').val(),
+					markUntrusted: form.find('[name="markUntrusted"]').prop('checked'),
+					reason: form.find('[name="reason"]').val(),
+				}, function (err) {
+					if (err) {
+						alerts.error(err.message || err);
+						return;
+					}
+					alerts.success('治理操作已记录');
+					ajaxify.refresh();
+				});
+			},
+		});
 	}
 
 	function resolveRequest(state, event) {
