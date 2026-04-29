@@ -2,10 +2,14 @@
 
 const routeHelpers = require.main.require('./src/routes/helpers');
 const SocketPlugins = require.main.require('./src/socket.io/plugins');
+const privileges = require.main.require('./src/privileges');
+const posts = require.main.require('./src/posts');
+const topics = require.main.require('./src/topics');
 
 const controllers = require('./lib/controllers');
 const settings = require('./lib/settings');
 const sockets = require('./lib/sockets');
+const ContentPolicy = require('./lib/domain/content-policy');
 
 const plugin = module.exports;
 
@@ -30,8 +34,48 @@ plugin.appendConfig = async function (config) {
 	return config;
 };
 
-plugin.filterTopicPost = async data => data;
-plugin.filterPostEdit = async payload => payload;
+plugin.filterTopicPost = async function (data) {
+	if (!data || !data.cid || data.fromQueue) {
+		return data;
+	}
+	const stored = await settings.getSettings();
+	const rule = settings.resolveRule(stored, data.cid);
+	if (!rule.enabled) {
+		return data;
+	}
+	const isAdmin = await privileges.users.isAdministrator(data.uid);
+	if (!isAdmin) {
+		ContentPolicy.assertTopicContent(data.sourceContent || data.content, rule);
+	}
+	return data;
+};
+
+plugin.filterPostEdit = async function (payload) {
+	if (!payload || !payload.data || !payload.data.pid) {
+		return payload;
+	}
+	const [isMain, postData] = await Promise.all([
+		posts.isMain(payload.data.pid),
+		posts.getPostFields(payload.data.pid, ['tid']),
+	]);
+	if (!isMain || !postData || !postData.tid) {
+		return payload;
+	}
+	const topicData = await topics.getTopicFields(postData.tid, ['cid']);
+	const stored = await settings.getSettings();
+	const rule = settings.resolveRule(stored, topicData.cid);
+	if (!rule.enabled) {
+		return payload;
+	}
+	const [isAdmin, isModerator] = await Promise.all([
+		privileges.users.isAdministrator(payload.uid),
+		privileges.categories.isAdminOrMod(topicData.cid, payload.uid),
+	]);
+	if (!isAdmin && !(isModerator && rule.moderatorLengthBypass)) {
+		ContentPolicy.assertTopicContent(payload.data.sourceContent || payload.data.content, rule);
+	}
+	return payload;
+};
 plugin.filterTopicDelete = async payload => payload;
 plugin.filterThreadTools = async payload => payload;
 plugin.filterModifyUserInfo = async userData => userData;
