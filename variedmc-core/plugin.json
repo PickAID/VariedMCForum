@@ -4,11 +4,24 @@
 	"description": "Core forum behavior customizations for VariedMCForum",
 	"url": "https://github.com/VariedMCForum/VariedMCForum",
 	"library": "./library.js",
+	"settingsRoute": "/admin/plugins/variedmc-core",
 	"hooks": [
+		{
+			"hook": "static:app.load",
+			"method": "init"
+		},
+		{
+			"hook": "filter:admin.header.build",
+			"method": "addAdminNavigation"
+		},
 		{
 			"hook": "filter:categories.getPinnedTids",
 			"method": "filterCategoryPinnedTids"
 		}
 	],
+	"modules": {
+		"../admin/plugins/variedmc-core.js": "public/js/admin.js"
+	},
+	"templates": "templates",
 	"compatibility": "^4.0.0"
 }

@@ -5,6 +5,7 @@ const categories = require.main.require('./src/categories');
 const privileges = require.main.require('./src/privileges');
 const topics = require.main.require('./src/topics');
 
+const settings = require('./lib/settings');
 const {
 	mergePinnedTids,
 	slicePinnedTids,
@@ -12,11 +13,31 @@ const {
 
 const plugin = module.exports;
 
+plugin.init = async function ({ router }) {
+	const routeHelpers = require.main.require('./src/routes/helpers');
+	const SocketPlugins = require.main.require('./src/socket.io/plugins');
+	SocketPlugins.variedmcCore = require('./lib/sockets');
+	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/variedmc-core', require('./lib/controllers').renderAdminPage);
+	await settings.get();
+};
+
+plugin.addAdminNavigation = async function (header) {
+	header.plugins.push({
+		route: '/plugins/variedmc-core',
+		icon: 'fa-sliders',
+		name: 'VariedMC Core',
+	});
+	return header;
+};
+
 plugin.filterCategoryPinnedTids = async function (payload) {
 	const data = payload && payload.data ? payload.data : {};
 	const cid = String(data.cid || '').trim();
 
 	if (!cid || cid === '-1') {
+		return payload;
+	}
+	if (!await settings.isPinnedInheritanceEnabled()) {
 		return payload;
 	}
 

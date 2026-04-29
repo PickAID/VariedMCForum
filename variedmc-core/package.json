@@ -1,6 +1,6 @@
 {
 	"name": "nodebb-plugin-variedmc-core",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Repository-managed core behavior overrides for VariedMCForum",
 	"main": "library.js",
 	"license": "GPL-3.0",
