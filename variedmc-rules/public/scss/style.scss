@@ -2,3 +2,35 @@
 .variedmc-review-queue {
 	width: min(100%, 1280px);
 }
+
+.variedmc-review-list {
+	display: grid;
+	gap: .75rem;
+}
+
+.variedmc-review-card {
+	display: flex;
+	align-items: stretch;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: .875rem 1rem;
+	border: 1px solid var(--bs-border-color);
+	border-radius: .5rem;
+	background: var(--bs-body-bg);
+}
+
+.variedmc-review-card__main {
+	min-width: 0;
+}
+
+.variedmc-review-card__actions {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+}
+
+@media (max-width: 767.98px) {
+	.variedmc-review-card {
+		flex-direction: column;
+	}
+}

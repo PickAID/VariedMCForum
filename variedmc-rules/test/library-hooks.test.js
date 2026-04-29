@@ -320,4 +320,52 @@ describe('VariedMC Rules library hooks', () => {
 		assert.strictEqual(result, payload);
 		assert.strictEqual(postsGetPostsFieldsCalls, 1);
 	});
+
+	it('adds author delete request thread tool for trace-required categories', async () => {
+		const plugin = loadPlugin({ traceRequired: true });
+		const payload = {
+			uid: 'author',
+			topic: { tid: 55, cid: 5, uid: 'author' },
+			tools: [],
+		};
+
+		const result = await plugin.filterThreadTools(payload);
+
+		assert.strictEqual(result, payload);
+		assert.deepStrictEqual(payload.tools.map(tool => tool.action), ['variedmc-request-delete']);
+	});
+
+	it('adds governance thread tool for admins and moderators', async () => {
+		const plugin = loadPlugin({ traceRequired: true });
+		const adminPayload = {
+			uid: 'admin',
+			topic: { tid: 55, cid: 5, uid: 'author' },
+			tools: [],
+		};
+		const modPayload = {
+			uid: 'mod',
+			topic: { tid: 55, cid: 5, uid: 'author' },
+			tools: [],
+		};
+
+		await plugin.filterThreadTools(adminPayload);
+		await plugin.filterThreadTools(modPayload);
+
+		assert.deepStrictEqual(adminPayload.tools.map(tool => tool.action), ['variedmc-governance']);
+		assert.deepStrictEqual(modPayload.tools.map(tool => tool.action), ['variedmc-governance']);
+	});
+
+	it('does not add thread tools for disabled rules', async () => {
+		const plugin = loadPlugin({ enabled: false, traceRequired: true });
+		const payload = {
+			uid: 'author',
+			topic: { tid: 55, cid: 5, uid: 'author' },
+			tools: [],
+		};
+
+		const result = await plugin.filterThreadTools(payload);
+
+		assert.strictEqual(result, payload);
+		assert.deepStrictEqual(payload.tools, []);
+	});
 });

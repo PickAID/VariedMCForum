@@ -115,7 +115,34 @@ plugin.filterTopicDelete = async function (payload) {
 	}
 	return payload;
 };
-plugin.filterThreadTools = async payload => payload;
+plugin.filterThreadTools = async function (payload) {
+	if (!payload || !payload.topic || !payload.uid) {
+		return payload;
+	}
+	const stored = await settings.getSettings();
+	const rule = settings.resolveRule(stored, payload.topic.cid);
+	if (!rule.enabled) {
+		return payload;
+	}
+	const adminOrMod = await isAdminOrMod(payload.topic.cid, payload.uid);
+	if (rule.traceRequired && String(payload.topic.uid) === String(payload.uid) && !adminOrMod) {
+		payload.tools.push({
+			action: 'variedmc-request-delete',
+			class: 'variedmc-request-delete',
+			title: '申请删除',
+			icon: 'fa-file-signature',
+		});
+	}
+	if (adminOrMod) {
+		payload.tools.push({
+			action: 'variedmc-governance',
+			class: 'variedmc-governance',
+			title: '治理操作',
+			icon: 'fa-scale-balanced',
+		});
+	}
+	return payload;
+};
 plugin.filterModifyUserInfo = async userData => userData;
 
 plugin.filterTopicEventsInit = async function (payload) {
