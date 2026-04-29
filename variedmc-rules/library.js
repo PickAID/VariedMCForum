@@ -124,6 +124,7 @@ plugin.filterThreadTools = async function (payload) {
 	if (!rule.enabled) {
 		return payload;
 	}
+	payload.tools = Array.isArray(payload.tools) ? payload.tools : [];
 	const adminOrMod = await isAdminOrMod(payload.topic.cid, payload.uid);
 	if (rule.traceRequired && String(payload.topic.uid) === String(payload.uid) && !adminOrMod) {
 		payload.tools.push({

@@ -368,4 +368,17 @@ describe('VariedMC Rules library hooks', () => {
 		assert.strictEqual(result, payload);
 		assert.deepStrictEqual(payload.tools, []);
 	});
+
+	it('normalizes missing thread tools before adding plugin tools', async () => {
+		const plugin = loadPlugin({ traceRequired: true });
+		const payload = {
+			uid: 'author',
+			topic: { tid: 55, cid: 5, uid: 'author' },
+		};
+
+		const result = await plugin.filterThreadTools(payload);
+
+		assert.strictEqual(result, payload);
+		assert.deepStrictEqual(payload.tools.map(tool => tool.action), ['variedmc-request-delete']);
+	});
 });
