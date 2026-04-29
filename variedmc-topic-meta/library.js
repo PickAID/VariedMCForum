@@ -9,6 +9,7 @@ const topics = require.main.require('./src/topics');
 const controllers = require('./lib/controllers');
 const settings = require('./lib/settings');
 const socketMethods = require('./lib/sockets');
+const TitleBracketGuard = require('./lib/domain/title-bracket-guard');
 
 const plugin = module.exports;
 
@@ -58,7 +59,14 @@ plugin.filterComposerPush = async function (payload) {
 };
 
 plugin.filterTopicPost = async function (data) {
-	if (!data || !data.cid || !data.variedmcTopicMeta) {
+	if (!data) {
+		return data;
+	}
+	if (!data.variedmcTopicMeta) {
+		TitleBracketGuard.assertNoManualBlocks(data.title || '', { generatedPrefix: '' });
+		return data;
+	}
+	if (!data.cid) {
 		return data;
 	}
 
@@ -74,6 +82,9 @@ plugin.filterTopicPost = async function (data) {
 	if (prepared.meta.baseTitle) {
 		data.title = prepared.title;
 	}
+	TitleBracketGuard.assertNoManualBlocks(prepared.title || data.title, {
+		generatedPrefix: getPreparedPrefix(prepared),
+	});
 
 	return data;
 };
@@ -138,6 +149,9 @@ plugin.filterPostEdit = async function (payload) {
 		payload.data.variedmcTopicMeta,
 		fallbackBaseTitle
 	);
+	TitleBracketGuard.assertNoManualBlocks(prepared.title, {
+		generatedPrefix: getPreparedPrefix(prepared),
+	});
 
 	payload.data.title = prepared.title;
 	payload.data.variedmcTopicMetaPrepared = prepared.meta;
@@ -192,4 +206,10 @@ async function ensurePreparedCreateMeta(data) {
 	data.variedmcTopicMetaPrepared = prepared.meta;
 	data.variedmcTopicMetaPreparedTitle = prepared.title;
 	return prepared.meta;
+}
+
+function getPreparedPrefix(prepared) {
+	return prepared && prepared.title && prepared.meta && prepared.meta.baseTitle ?
+		prepared.title.slice(0, Math.max(0, prepared.title.length - prepared.meta.baseTitle.length)).trim() :
+		'';
 }
