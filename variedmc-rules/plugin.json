@@ -1,0 +1,33 @@
+{
+  "id": "nodebb-plugin-variedmc-rules",
+  "name": "VariedMC Rules",
+  "description": "Board governance, trace-required delete requests, and trust marks for VariedMCForum",
+  "url": "https://github.com/VariedMCForum/VariedMCForum",
+  "library": "./library.js",
+  "settingsRoute": "/admin/plugins/variedmc-rules",
+  "hooks": [
+    { "hook": "static:app.load", "method": "init" },
+    { "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
+    { "hook": "filter:config.get", "method": "appendConfig" },
+    { "hook": "filter:topic.post", "method": "filterTopicPost" },
+    { "hook": "filter:post.edit", "method": "filterPostEdit" },
+    { "hook": "filter:topic.delete", "method": "filterTopicDelete" },
+    { "hook": "filter:topic.thread_tools", "method": "filterThreadTools" },
+    { "hook": "filter:posts.modifyUserInfo", "method": "filterModifyUserInfo" },
+    { "hook": "filter:topicEvents.init", "method": "filterTopicEventsInit" }
+  ],
+  "modules": {
+    "../admin/plugins/variedmc-rules.js": "public/js/admin.js"
+  },
+  "scripts": [
+    "public/js/client.js"
+  ],
+  "acpScss": [
+    "public/scss/style.scss"
+  ],
+  "scss": [
+    "public/scss/style.scss"
+  ],
+  "templates": "templates",
+  "compatibility": "^4.0.0"
+}

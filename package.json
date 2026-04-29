@@ -168,6 +168,7 @@
         "nodebb-plugin-sso-oauth2-multiple": "^1.5.1",
         "nodebb-plugin-tag-controller": "file:tag-controller",
         "nodebb-plugin-variedmc-core": "file:variedmc-core",
+        "nodebb-plugin-variedmc-rules": "file:variedmc-rules",
         "nodebb-plugin-variedmc-topic-meta": "file:variedmc-topic-meta",
         "nodebb-plugin-variedmc-ui": "file:variedmc-ui",
         "nodebb-plugin-web-push": "0.7.7",

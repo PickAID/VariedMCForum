@@ -1,0 +1,7 @@
+{
+  "name": "nodebb-plugin-variedmc-rules",
+  "version": "0.1.0",
+  "description": "Board governance, trace-required delete requests, and trust marks for VariedMCForum",
+  "main": "library.js",
+  "license": "GPL-3.0"
+}
