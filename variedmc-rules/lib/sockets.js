@@ -45,16 +45,18 @@ Sockets.resolveRequest = async function (socket, data) {
 		throw new Error('[[error:no-privileges]]');
 	}
 	const topics = require.main.require('./src/topics');
-	const resolved = await reviewRequests.resolve(request.id, {
+	const resolution = {
 		state: data.state,
 		resolverUid: socket.uid,
 		resolutionNote: data.resolutionNote,
-	});
-	if (resolved.state === 'approved' && resolved.type === 'delete-topic') {
-		await topics.tools.delete(resolved.tid, socket.uid);
-		await topics.events.log(resolved.tid, { type: 'variedmc-delete-approved', uid: socket.uid });
-		return await reviewRequests.markExecuted(resolved.id);
+	};
+	if (request.type === 'delete-topic' && data.state === 'approved') {
+		await topics.tools.delete(request.tid, socket.uid);
+		await topics.events.log(request.tid, { type: 'variedmc-delete-approved', uid: socket.uid });
+		const approved = await reviewRequests.resolve(request.id, resolution);
+		return await reviewRequests.markExecuted(approved.id);
 	}
+	const resolved = await reviewRequests.resolve(request.id, resolution);
 	if (resolved.state === 'rejected' && resolved.type === 'delete-topic') {
 		await topics.events.log(resolved.tid, { type: 'variedmc-delete-rejected', uid: socket.uid });
 	}

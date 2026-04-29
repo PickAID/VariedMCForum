@@ -176,6 +176,20 @@ describe('VariedMC Rules review request sockets', () => {
 		assert.deepStrictEqual(reviewRequests.executed, ['req-1']);
 	});
 
+	it('does not approve delete-topic requests when soft delete execution fails', async () => {
+		const { sockets, reviewRequests, topics } = loadSockets({ deleteError: new Error('delete failed') });
+
+		await assert.rejects(() => sockets.resolveRequest({ uid: 'mod' }, {
+			id: 'req-1',
+			state: 'approved',
+			resolutionNote: '同意',
+		}), /delete failed/);
+
+		assert.deepStrictEqual(reviewRequests.resolved, []);
+		assert.deepStrictEqual(reviewRequests.executed, []);
+		assert.deepStrictEqual(topics.logged, []);
+	});
+
 	it('logs rejected delete-topic requests without deleting topics', async () => {
 		const { sockets, topics } = loadSockets();
 
@@ -232,7 +246,7 @@ function loadService() {
 	};
 }
 
-function loadSockets() {
+function loadSockets(options = {}) {
 	const reviewRequests = {
 		created: [],
 		resolved: [],
@@ -256,7 +270,12 @@ function loadSockets() {
 		logged: [],
 		getTopicFields: async tid => (Number(tid) === 55 ? { tid: 55, cid: 5, uid: 'author', title: 'Topic' } : null),
 		tools: {
-			delete: async (tid, uid) => topics.deleted.push({ tid, uid }),
+			delete: async (tid, uid) => {
+				if (options.deleteError) {
+					throw options.deleteError;
+				}
+				topics.deleted.push({ tid, uid });
+			},
 		},
 		events: {
 			log: async (tid, event) => topics.logged.push({ tid, event }),
