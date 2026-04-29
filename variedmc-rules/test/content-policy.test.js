@@ -55,6 +55,24 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 	});
 
+	it('does not count image alt text with nested brackets as content', () => {
+		const text = '![very [long] hidden alt text](https://example.com/a.png)';
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+		assert.throws(() => ContentPolicy.assertTopicContent(text, {
+			minimumTopicContentLength: 1,
+		}), /error:variedmc-rules-content-too-short/);
+	});
+
+	it('does not count shortcut reference images as content', () => {
+		const text = '![very long hidden alt text]\n\n[very long hidden alt text]: https://example.com/a.png';
+
+		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
+		assert.throws(() => ContentPolicy.assertTopicContent(text, {
+			minimumTopicContentLength: 1,
+		}), /error:variedmc-rules-content-too-short/);
+	});
+
 	it('does not count zero-width characters or blank HTML entities as meaningful text', () => {
 		const text = ContentPolicy.toMeaningfulText('&nbsp;&#160;&#xA0;&ZeroWidthSpace;\u200b\u200c\u200d\ufeff');
 		assert.strictEqual(text, '');
