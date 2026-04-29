@@ -74,6 +74,20 @@ class ReviewRequestService {
 		return next;
 	}
 
+	async markExecuted(id, input = {}) {
+		const request = await this.get(id);
+		if (!request || request.state !== 'approved') {
+			throw new Error('[[error:invalid-data]]');
+		}
+		const next = {
+			...request,
+			state: 'executed',
+			executedAt: Number(input.now) || Date.now(),
+		};
+		await this.transition(request, next);
+		return next;
+	}
+
 	async save(request) {
 		await this.db.setObject(`variedmc:review-request:${request.id}`, request);
 		await this.index(request);

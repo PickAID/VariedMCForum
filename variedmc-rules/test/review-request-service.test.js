@@ -96,6 +96,26 @@ describe('VariedMC Rules review request service', () => {
 			await assert.rejects(() => service.resolve(request.id, { state: 'approved', resolverUid: 2 }), /error:invalid-data/);
 		}
 	});
+
+	it('marks approved requests executed and reindexes state', async () => {
+		const { service, db } = loadService();
+		const request = await service.createDeleteTopicRequest({
+			tid: 55,
+			cid: 5,
+			requesterUid: 10,
+			targetUid: 10,
+			now: 1000,
+		});
+		const approved = await service.resolve(request.id, { state: 'approved', resolverUid: 2, now: 2000 });
+
+		const executed = await service.markExecuted(approved.id, { now: 3000 });
+
+		assert.strictEqual(executed.state, 'executed');
+		assert.strictEqual(executed.executedAt, 3000);
+		assert.strictEqual(await db.isSortedSetMember('variedmc:review-requests:byState:approved', request.id), false);
+		assert.strictEqual(await db.isSortedSetMember('variedmc:review-requests:byState:executed', request.id), true);
+		await assert.rejects(() => service.markExecuted(request.id), /error:invalid-data/);
+	});
 });
 
 describe('VariedMC Rules review request sockets', () => {
@@ -109,7 +129,7 @@ describe('VariedMC Rules review request sockets', () => {
 	});
 
 	it('allows only the topic author to request topic deletion', async () => {
-		const { sockets, reviewRequests } = loadSockets();
+		const { sockets, reviewRequests, topics } = loadSockets();
 
 		await assert.rejects(() => sockets.requestDeleteTopic({ uid: 'other' }, { tid: 55 }), /error:no-privileges/);
 
@@ -118,6 +138,9 @@ describe('VariedMC Rules review request sockets', () => {
 		assert.strictEqual(request.tid, 55);
 		assert.strictEqual(request.requesterUid, 'author');
 		assert.strictEqual(reviewRequests.created.length, 1);
+		assert.deepStrictEqual(topics.logged, [
+			{ tid: 55, event: { type: 'variedmc-delete-requested', uid: 'author' } },
+		]);
 	});
 
 	it('allows only category admins or moderators to resolve requests', async () => {
@@ -134,6 +157,39 @@ describe('VariedMC Rules review request sockets', () => {
 		assert.strictEqual(resolved.state, 'rejected');
 		assert.strictEqual(resolved.resolverUid, 'mod');
 		assert.strictEqual(reviewRequests.resolved.length, 1);
+	});
+
+	it('executes approved delete-topic requests and logs governance events', async () => {
+		const { sockets, reviewRequests, topics } = loadSockets();
+
+		const resolved = await sockets.resolveRequest({ uid: 'mod' }, {
+			id: 'req-1',
+			state: 'approved',
+			resolutionNote: '同意',
+		});
+
+		assert.strictEqual(resolved.state, 'executed');
+		assert.deepStrictEqual(topics.deleted, [{ tid: 55, uid: 'mod' }]);
+		assert.deepStrictEqual(topics.logged, [
+			{ tid: 55, event: { type: 'variedmc-delete-approved', uid: 'mod' } },
+		]);
+		assert.deepStrictEqual(reviewRequests.executed, ['req-1']);
+	});
+
+	it('logs rejected delete-topic requests without deleting topics', async () => {
+		const { sockets, topics } = loadSockets();
+
+		const resolved = await sockets.resolveRequest({ uid: 'mod' }, {
+			id: 'req-1',
+			state: 'rejected',
+			resolutionNote: '不同意',
+		});
+
+		assert.strictEqual(resolved.state, 'rejected');
+		assert.deepStrictEqual(topics.deleted, []);
+		assert.deepStrictEqual(topics.logged, [
+			{ tid: 55, event: { type: 'variedmc-delete-rejected', uid: 'mod' } },
+		]);
 	});
 });
 
@@ -180,14 +236,30 @@ function loadSockets() {
 	const reviewRequests = {
 		created: [],
 		resolved: [],
-		get: async id => (id === 'req-1' ? { id, cid: 5, state: 'open' } : null),
+		executed: [],
+		get: async id => (id === 'req-1' ? { id, cid: 5, tid: 55, type: 'delete-topic', state: 'open' } : null),
 		createDeleteTopicRequest: async (input) => {
 			reviewRequests.created.push(input);
 			return { id: 'new-req', state: 'open', ...input };
 		},
 		resolve: async (id, input) => {
 			reviewRequests.resolved.push({ id, input });
-			return { id, ...input };
+			return { id, cid: 5, tid: 55, type: 'delete-topic', ...input };
+		},
+		markExecuted: async (id) => {
+			reviewRequests.executed.push(id);
+			return { id, cid: 5, tid: 55, type: 'delete-topic', state: 'executed' };
+		},
+	};
+	const topics = {
+		deleted: [],
+		logged: [],
+		getTopicFields: async tid => (Number(tid) === 55 ? { tid: 55, cid: 5, uid: 'author', title: 'Topic' } : null),
+		tools: {
+			delete: async (tid, uid) => topics.deleted.push({ tid, uid }),
+		},
+		events: {
+			log: async (tid, event) => topics.logged.push({ tid, event }),
 		},
 	};
 	const settings = {
@@ -200,9 +272,7 @@ function loadSockets() {
 	const originalRequire = require.main.require;
 	require.main.require = (requestPath) => {
 		if (requestPath === './src/topics') {
-			return {
-				getTopicFields: async tid => (Number(tid) === 55 ? { tid: 55, cid: 5, uid: 'author', title: 'Topic' } : null),
-			};
+			return topics;
 		}
 		if (requestPath === './src/privileges') {
 			return {
@@ -224,7 +294,7 @@ function loadSockets() {
 	require.cache[settingsPath] = cacheEntry(settingsPath, settings);
 	delete require.cache[socketsPath];
 	const sockets = require('../lib/sockets');
-	return { sockets, reviewRequests, settings };
+	return { sockets, reviewRequests, settings, topics };
 }
 
 function loadControllers() {
