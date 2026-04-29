@@ -8,12 +8,20 @@ describe('VariedMC Rules library hooks', () => {
 	let settingsPath;
 	let libraryPath;
 	let getSettingsCalls;
+	let dbGetSortedSetRangeCalls;
+	let userAdminChecks;
+	let userModeratorChecks;
 	let mainPostIds;
 	let postTids;
 	let topicCids;
+	let topicPostIds;
+	let postUids;
 
 	function loadPlugin(rule = {}) {
 		getSettingsCalls = 0;
+		dbGetSortedSetRangeCalls = 0;
+		userAdminChecks = 0;
+		userModeratorChecks = 0;
 		mainPostIds = new Set(['main-pid']);
 		postTids = {
 			'main-pid': 'topic-id',
@@ -21,6 +29,12 @@ describe('VariedMC Rules library hooks', () => {
 		};
 		topicCids = {
 			'topic-id': 5,
+		};
+		topicPostIds = {
+			55: ['topic-main-pid'],
+		};
+		postUids = {
+			'topic-main-pid': 'author',
 		};
 		settingsStub = {
 			getSettings: async () => {
@@ -55,6 +69,15 @@ describe('VariedMC Rules library hooks', () => {
 			if (path === './src/socket.io/plugins') {
 				return {};
 			}
+			if (path === './src/database') {
+				return {
+					getSortedSetRange: async (key) => {
+						dbGetSortedSetRangeCalls += 1;
+						const tid = key.match(/^tid:(.+):posts$/)[1];
+						return topicPostIds[tid] || [];
+					},
+				};
+			}
 			if (path === './src/privileges') {
 				return {
 					users: {
@@ -71,6 +94,10 @@ describe('VariedMC Rules library hooks', () => {
 					getPostFields: async pid => ({
 						tid: postTids[pid],
 					}),
+					getPostsFields: async pids => pids.map(pid => ({
+						pid,
+						uid: postUids[pid],
+					})),
 				};
 			}
 			if (path === './src/topics') {
@@ -78,6 +105,18 @@ describe('VariedMC Rules library hooks', () => {
 					getTopicFields: async tid => ({
 						cid: topicCids[tid],
 					}),
+				};
+			}
+			if (path === './src/user') {
+				return {
+					isAdministrator: async (uid) => {
+						userAdminChecks += 1;
+						return uid === 'admin';
+					},
+					isModerator: async (uid) => {
+						userModeratorChecks += 1;
+						return uid === 'mod';
+					},
 				};
 			}
 			return originalMainRequire.call(require.main, path);
@@ -153,5 +192,84 @@ describe('VariedMC Rules library hooks', () => {
 			uid: 'mod',
 			data: { pid: 'main-pid', content: '' },
 		}));
+	});
+
+	it('skips delete policy checks for disabled rules', async () => {
+		const plugin = loadPlugin({
+			enabled: false,
+			traceRequired: true,
+			deletePolicy: 'request-only',
+		});
+		const payload = {
+			isDelete: true,
+			uid: 'author',
+			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+		};
+
+		const result = await plugin.filterTopicDelete(payload);
+
+		assert.strictEqual(result, payload);
+		assert.strictEqual(dbGetSortedSetRangeCalls, 0);
+		assert.strictEqual(userAdminChecks, 0);
+		assert.strictEqual(userModeratorChecks, 0);
+	});
+
+	it('allows admins and moderators to bypass delete request policy', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-only',
+		});
+		topicPostIds[55] = ['topic-main-pid', 'other-reply-pid'];
+		postUids['other-reply-pid'] = 'other-user';
+
+		await assert.doesNotReject(plugin.filterTopicDelete({
+			isDelete: true,
+			uid: 'admin',
+			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+		}));
+		await assert.doesNotReject(plugin.filterTopicDelete({
+			isDelete: true,
+			uid: 'mod',
+			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: 1000 },
+		}));
+	});
+
+	it('rejects author delete after non-author replies require a request', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-after-grace',
+			deleteGraceHours: 0.5,
+		});
+		topicPostIds[55] = ['topic-main-pid', 'other-reply-pid'];
+		postUids['other-reply-pid'] = 'other-user';
+
+		await assert.rejects(
+			plugin.filterTopicDelete({
+				isDelete: true,
+				uid: 'author',
+				topicData: { tid: 55, cid: 5, uid: 'author', timestamp: Date.now() },
+			}),
+			/error:variedmc-rules-delete-request-required/
+		);
+	});
+
+	it('allows author delete inside grace with only own posts', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-after-grace',
+			deleteGraceHours: 0.5,
+		});
+		topicPostIds[55] = ['topic-main-pid', 'own-reply-pid'];
+		postUids['own-reply-pid'] = 'author';
+		const payload = {
+			isDelete: true,
+			uid: 'author',
+			topicData: { tid: 55, cid: 5, uid: 'author', timestamp: Date.now() },
+		};
+
+		const result = await plugin.filterTopicDelete(payload);
+
+		assert.strictEqual(result, payload);
+		assert.strictEqual(payload.canDelete, undefined);
 	});
 });
