@@ -3,6 +3,43 @@
 	width: min(100%, 1280px);
 }
 
+.variedmc-rules-admin-page {
+	width: 100%;
+	max-width: none;
+}
+
+.variedmc-rules-admin-layout {
+	display: grid;
+	gap: 1rem;
+}
+
+.variedmc-rules-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 1rem;
+	align-items: end;
+}
+
+.variedmc-rules-category-list {
+	display: grid;
+	gap: .5rem;
+}
+
+.variedmc-rules-category-row {
+	display: grid;
+	grid-template-columns: minmax(180px, 1.5fr) minmax(120px, .8fr) minmax(150px, 1fr) 96px 120px 88px;
+	gap: .5rem;
+	align-items: center;
+	padding: .5rem;
+	border: 1px solid var(--bs-border-color);
+	border-radius: .375rem;
+}
+
+.variedmc-rules-category-name {
+	font-weight: 600;
+	min-width: 0;
+}
+
 .variedmc-review-list {
 	display: grid;
 	gap: .75rem;
@@ -32,6 +69,12 @@
 @media (max-width: 767.98px) {
 	.variedmc-review-card {
 		flex-direction: column;
+	}
+}
+
+@media (max-width: 991.98px) {
+	.variedmc-rules-category-row {
+		grid-template-columns: 1fr 1fr;
 	}
 }
 
