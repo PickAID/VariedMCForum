@@ -1,0 +1,7 @@
+{
+	"variedmc-rules-delete-request-required": "该板块需要先提交删除申请，请在主题工具中使用“申请删除”。",
+	"variedmc-rules-delete-request-not-required": "当前主题可以直接删除，不需要提交删除申请。",
+	"variedmc-rules-restore-request-required": "该板块需要先提交恢复申请，请在主题工具中使用“申请恢复”。",
+	"variedmc-rules-edit-request-required": "该留痕板块需要先提交编辑申请，请在帖子菜单中使用“申请编辑”。",
+	"variedmc-rules-duplicate-delete-request": "这个主题已经有待处理的申请。"
+}

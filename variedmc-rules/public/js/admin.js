@@ -27,7 +27,6 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 		const settings = state.settings || {};
 		const global = settings.globalRule || {};
 		$('[data-field="enabled"]').prop('checked', settings.enabled !== false);
-		$('[data-field="traceRequired"]').prop('checked', !!global.traceRequired);
 		$('[data-field="deletePolicy"]').val(global.deletePolicy || 'normal');
 		$('[data-field="deleteGraceHours"]').val(valueOrDefault(global.deleteGraceHours, 0.5));
 		$('[data-field="minimumTopicContentLength"]').val(valueOrDefault(global.minimumTopicContentLength, 0));
@@ -51,12 +50,11 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 				'<select class="form-select form-select-sm" data-rule-field="deletePolicy">',
 				option('normal', '普通', rule.deletePolicy),
 				option('request-after-grace', '宽限后申请', rule.deletePolicy),
-				option('request-only', '总是申请', rule.deletePolicy),
-				option('locked', '仅管理删除', rule.deletePolicy),
+				option('request-only', '宽限后申请', rule.deletePolicy),
+				option('locked', '宽限后仅管理处理', rule.deletePolicy),
 				'</select>',
 				'<input class="form-control form-control-sm" type="number" data-rule-field="deleteGraceHours" value="', valueOrDefault(rule.deleteGraceHours, ''), '" placeholder="0.5" />',
 				'<input class="form-control form-control-sm" type="number" data-rule-field="minimumTopicContentLength" value="', valueOrDefault(rule.minimumTopicContentLength, ''), '" placeholder="0" />',
-				'<label class="form-check"><input class="form-check-input" type="checkbox" data-rule-field="traceRequired"', rule.traceRequired ? ' checked' : '', ' /> 留痕</label>',
 				'</div>',
 			].join('');
 		});
@@ -81,18 +79,17 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 		$('.variedmc-rules-category-row').each(function () {
 			const row = $(this);
 			const cid = row.attr('data-cid');
-			categoryRules[cid] = {
-				scope: row.find('[data-rule-field="scope"]').val(),
-				traceRequired: row.find('[data-rule-field="traceRequired"]').prop('checked'),
-				deletePolicy: row.find('[data-rule-field="deletePolicy"]').val(),
-				deleteGraceHours: row.find('[data-rule-field="deleteGraceHours"]').val(),
-				minimumTopicContentLength: row.find('[data-rule-field="minimumTopicContentLength"]').val(),
-			};
+			const rule = { scope: row.find('[data-rule-field="scope"]').val() };
+			if (rule.scope !== 'inherit') {
+				rule.deletePolicy = row.find('[data-rule-field="deletePolicy"]').val();
+				collectOptional(rule, 'deleteGraceHours', row.find('[data-rule-field="deleteGraceHours"]').val());
+				collectOptional(rule, 'minimumTopicContentLength', row.find('[data-rule-field="minimumTopicContentLength"]').val());
+			}
+			categoryRules[cid] = rule;
 		});
 		return {
 			enabled: $('[data-field="enabled"]').prop('checked'),
 			globalRule: {
-				traceRequired: $('[data-field="traceRequired"]').prop('checked'),
 				deletePolicy: $('[data-field="deletePolicy"]').val(),
 				deleteGraceHours: $('[data-field="deleteGraceHours"]').val(),
 				minimumTopicContentLength: $('[data-field="minimumTopicContentLength"]').val(),
@@ -100,6 +97,12 @@ define('admin/plugins/variedmc-rules', ['alerts'], function (alerts) {
 			reputationPresets: String($('[data-field="reputationPresets"]').val() || '').split(','),
 			categoryRules,
 		};
+	}
+
+	function collectOptional(target, key, value) {
+		if (String(value == null ? '' : value).trim() !== '') {
+			target[key] = value;
+		}
 	}
 
 	function filterCategories() {

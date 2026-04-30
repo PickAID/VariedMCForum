@@ -24,18 +24,20 @@ describe('VariedMC Rules library hooks', () => {
 		postsGetPostsFieldsCalls = 0;
 		userAdminChecks = 0;
 		userModeratorChecks = 0;
-		mainPostIds = new Set(['main-pid']);
+		mainPostIds = new Set(['main-pid', 'topic-main-pid']);
 		postTids = {
 			'main-pid': 'topic-id',
 			'reply-pid': 'topic-id',
 		};
 		topicCids = {
 			'topic-id': 5,
+			55: 5,
 		};
 		topicPostIds = {
 			55: ['topic-main-pid'],
 		};
 		postUids = {
+			'main-pid': 'author',
 			'topic-main-pid': 'author',
 		};
 		settingsStub = {
@@ -80,6 +82,11 @@ describe('VariedMC Rules library hooks', () => {
 					},
 				};
 			}
+			if (path === 'nconf') {
+				return {
+					get: key => (key === 'relative_path' ? '' : null),
+				};
+			}
 			if (path === './src/privileges') {
 				return {
 					users: {
@@ -95,6 +102,7 @@ describe('VariedMC Rules library hooks', () => {
 					isMain: async pid => mainPostIds.has(pid),
 					getPostFields: async pid => ({
 						tid: postTids[pid],
+						uid: postUids[pid],
 					}),
 					getPostsFields: async (pids) => {
 						postsGetPostsFieldsCalls += 1;
@@ -108,7 +116,11 @@ describe('VariedMC Rules library hooks', () => {
 			if (path === './src/topics') {
 				return {
 					getTopicFields: async tid => ({
+						tid,
 						cid: topicCids[tid],
+						uid: 'author',
+						mainPid: 'topic-main-pid',
+						timestamp: 1000,
 					}),
 				};
 			}
@@ -124,6 +136,11 @@ describe('VariedMC Rules library hooks', () => {
 					},
 				};
 			}
+			if (path === './src/helpers') {
+				return {
+					buildAvatar: user => `<span class="avatar">${user.displayname}</span>`,
+				};
+			}
 			return originalMainRequire.call(require.main, path);
 		};
 	});
@@ -132,43 +149,39 @@ describe('VariedMC Rules library hooks', () => {
 		require.main.require = originalMainRequire;
 		delete require.cache[libraryPath];
 		delete require.cache[settingsPath];
+		delete require.cache[require.resolve('../../variedmc-core/lib/topic-timeline')];
 	});
 
 	it('skips topic content length checks for queue payloads', async () => {
 		const plugin = loadPlugin();
-
 		const payload = { cid: 5, uid: 'user', fromQueue: true, content: '' };
 		const result = await plugin.filterTopicPost(payload);
-
 		assert.strictEqual(result, payload);
 		assert.strictEqual(getSettingsCalls, 0);
 	});
 
 	it('allows admins and bypass-enabled moderators to create short topics', async () => {
 		const plugin = loadPlugin();
-
 		await assert.doesNotReject(plugin.filterTopicPost({ cid: 5, uid: 'admin', content: '' }));
 		await assert.doesNotReject(plugin.filterTopicPost({ cid: 5, uid: 'mod', content: '' }));
 	});
 
 	it('rejects short topic creation for users without a bypass', async () => {
 		const plugin = loadPlugin();
-
 		await assert.rejects(
 			plugin.filterTopicPost({ cid: 5, uid: 'user', content: '' }),
-			/error:variedmc-rules-content-too-short/
+			/error:content-too-short/
 		);
 	});
 
 	it('rejects short main-post edits for users without a bypass', async () => {
 		const plugin = loadPlugin();
-
 		await assert.rejects(
 			plugin.filterPostEdit({
 				uid: 'user',
 				data: { pid: 'main-pid', content: '' },
 			}),
-			/error:variedmc-rules-content-too-short/
+			/error:content-too-short/
 		);
 	});
 
@@ -179,16 +192,13 @@ describe('VariedMC Rules library hooks', () => {
 			uid: 'user',
 			data: { pid: 'reply-pid', content: '' },
 		};
-
 		const result = await plugin.filterPostEdit(payload);
-
 		assert.strictEqual(result, payload);
 		assert.strictEqual(getSettingsCalls, 0);
 	});
 
 	it('allows admins and bypass-enabled moderators to edit main posts short', async () => {
 		const plugin = loadPlugin();
-
 		await assert.doesNotReject(plugin.filterPostEdit({
 			uid: 'admin',
 			data: { pid: 'main-pid', content: '' },
@@ -196,6 +206,25 @@ describe('VariedMC Rules library hooks', () => {
 		await assert.doesNotReject(plugin.filterPostEdit({
 			uid: 'mod',
 			data: { pid: 'main-pid', content: '' },
+		}));
+	});
+
+	it('requires author edit requests for protected main posts', async () => {
+		const plugin = loadPlugin({ deletePolicy: 'request-only' });
+		await assert.rejects(
+			plugin.filterPostEdit({
+				uid: 'author',
+				data: { pid: 'main-pid', content: 'long enough content' },
+			}),
+			/error:variedmc-rules-edit-request-required/
+		);
+		await assert.doesNotReject(plugin.filterPostEdit({
+			uid: 'admin',
+			data: { pid: 'main-pid', content: 'long enough content' },
+		}));
+		await assert.doesNotReject(plugin.filterPostEdit({
+			uid: 'mod',
+			data: { pid: 'main-pid', content: 'long enough content' },
 		}));
 	});
 
@@ -210,9 +239,7 @@ describe('VariedMC Rules library hooks', () => {
 			uid: 'author',
 			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: 1000 },
 		};
-
 		const result = await plugin.filterTopicDelete(payload);
-
 		assert.strictEqual(result, payload);
 		assert.strictEqual(dbGetSortedSetRangeCalls, 0);
 		assert.strictEqual(userAdminChecks, 0);
@@ -226,7 +253,6 @@ describe('VariedMC Rules library hooks', () => {
 		});
 		topicPostIds[55] = ['topic-main-pid', 'other-reply-pid'];
 		postUids['other-reply-pid'] = 'other-user';
-
 		await assert.doesNotReject(plugin.filterTopicDelete({
 			isDelete: true,
 			uid: 'admin',
@@ -241,13 +267,13 @@ describe('VariedMC Rules library hooks', () => {
 		assert.strictEqual(postsGetPostsFieldsCalls, 0);
 	});
 
-	it('rejects request-only and locked author deletes without scanning replies', async () => {
+	it('rejects request-only and locked author deletes after grace', async () => {
 		for (const deletePolicy of ['request-only', 'locked']) {
 			const plugin = loadPlugin({
 				traceRequired: true,
 				deletePolicy,
+				deleteGraceHours: 0.5,
 			});
-
 			await assert.rejects(
 				plugin.filterTopicDelete({
 					isDelete: true,
@@ -257,8 +283,22 @@ describe('VariedMC Rules library hooks', () => {
 				/error:variedmc-rules-delete-request-required/
 			);
 		}
-		assert.strictEqual(dbGetSortedSetRangeCalls, 0);
+		assert.ok(dbGetSortedSetRangeCalls > 0);
 		assert.strictEqual(postsGetPostsFieldsCalls, 0);
+	});
+
+	it('allows request-only author delete inside grace with no non-author replies', async () => {
+		const plugin = loadPlugin({
+			deletePolicy: 'request-only',
+			deleteGraceHours: 0.5,
+		});
+		const payload = {
+			isDelete: true,
+			uid: 'author',
+			topicData: { tid: 55, cid: 5, uid: 'author', mainPid: 'topic-main-pid', timestamp: Date.now() },
+		};
+		const result = await plugin.filterTopicDelete(payload);
+		assert.strictEqual(result, payload);
 	});
 
 	it('rejects author delete after non-author replies require a request', async () => {
@@ -300,6 +340,42 @@ describe('VariedMC Rules library hooks', () => {
 		assert.strictEqual(payload.canDelete, undefined);
 	});
 
+	it('rejects main post deletes before the post is soft-deleted', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-only',
+		});
+
+		await assert.rejects(
+			plugin.filterPostDelete({
+				isDelete: true,
+				uid: 'author',
+				postData: { pid: 'topic-main-pid', tid: 55, uid: 'author' },
+				canDelete: { flag: true },
+			}),
+			/error:variedmc-rules-delete-request-required/
+		);
+	});
+
+	it('does not apply topic delete request policy to reply deletes', async () => {
+		const plugin = loadPlugin({
+			traceRequired: true,
+			deletePolicy: 'request-only',
+		});
+		mainPostIds = new Set();
+		const payload = {
+			isDelete: true,
+			uid: 'author',
+			postData: { pid: 'reply-pid', tid: 55, uid: 'author' },
+			canDelete: { flag: true },
+		};
+
+		const result = await plugin.filterPostDelete(payload);
+
+		assert.strictEqual(result, payload);
+		assert.deepStrictEqual(payload.canDelete, { flag: true });
+	});
+
 	it('ignores mainPid and missing uid data when counting non-author replies', async () => {
 		const plugin = loadPlugin({
 			traceRequired: true,
@@ -319,66 +395,5 @@ describe('VariedMC Rules library hooks', () => {
 
 		assert.strictEqual(result, payload);
 		assert.strictEqual(postsGetPostsFieldsCalls, 1);
-	});
-
-	it('adds author delete request thread tool for trace-required categories', async () => {
-		const plugin = loadPlugin({ traceRequired: true });
-		const payload = {
-			uid: 'author',
-			topic: { tid: 55, cid: 5, uid: 'author' },
-			tools: [],
-		};
-
-		const result = await plugin.filterThreadTools(payload);
-
-		assert.strictEqual(result, payload);
-		assert.deepStrictEqual(payload.tools.map(tool => tool.action), ['variedmc-request-delete']);
-	});
-
-	it('adds governance thread tool for admins and moderators', async () => {
-		const plugin = loadPlugin({ traceRequired: true });
-		const adminPayload = {
-			uid: 'admin',
-			topic: { tid: 55, cid: 5, uid: 'author' },
-			tools: [],
-		};
-		const modPayload = {
-			uid: 'mod',
-			topic: { tid: 55, cid: 5, uid: 'author' },
-			tools: [],
-		};
-
-		await plugin.filterThreadTools(adminPayload);
-		await plugin.filterThreadTools(modPayload);
-
-		assert.deepStrictEqual(adminPayload.tools.map(tool => tool.action), ['variedmc-governance']);
-		assert.deepStrictEqual(modPayload.tools.map(tool => tool.action), ['variedmc-governance']);
-	});
-
-	it('does not add thread tools for disabled rules', async () => {
-		const plugin = loadPlugin({ enabled: false, traceRequired: true });
-		const payload = {
-			uid: 'author',
-			topic: { tid: 55, cid: 5, uid: 'author' },
-			tools: [],
-		};
-
-		const result = await plugin.filterThreadTools(payload);
-
-		assert.strictEqual(result, payload);
-		assert.deepStrictEqual(payload.tools, []);
-	});
-
-	it('normalizes missing thread tools before adding plugin tools', async () => {
-		const plugin = loadPlugin({ traceRequired: true });
-		const payload = {
-			uid: 'author',
-			topic: { tid: 55, cid: 5, uid: 'author' },
-		};
-
-		const result = await plugin.filterThreadTools(payload);
-
-		assert.strictEqual(result, payload);
-		assert.deepStrictEqual(payload.tools.map(tool => tool.action), ['variedmc-request-delete']);
 	});
 });

@@ -6,7 +6,7 @@
 			<div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
 				<div>
 					<div class="fw-semibold">全局默认规则</div>
-					<div class="text-muted small">默认关闭留痕，只在指定板块启用。</div>
+					<div class="text-muted small">通过删除策略和宽限小时控制内容风险板块。</div>
 				</div>
 				<button id="save" class="btn btn-primary btn-sm" type="button">Save</button>
 			</div>
@@ -15,17 +15,13 @@
 					<input class="form-check-input" type="checkbox" data-field="enabled" />
 					<span class="form-check-label">启用 VariedMC Rules</span>
 				</label>
-				<label class="form-check form-switch">
-					<input class="form-check-input" type="checkbox" data-field="traceRequired" />
-					<span class="form-check-label">默认留痕板块</span>
-				</label>
 				<div>
 					<label class="form-label">删除策略</label>
 					<select class="form-select" data-field="deletePolicy">
 						<option value="normal">普通</option>
 						<option value="request-after-grace">宽限后申请删除</option>
-						<option value="request-only">总是申请删除</option>
-						<option value="locked">仅管理删除</option>
+						<option value="request-only">宽限后申请删除</option>
+						<option value="locked">宽限后仅管理处理</option>
 					</select>
 				</div>
 				<div>

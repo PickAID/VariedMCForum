@@ -1,0 +1,7 @@
+{
+	"variedmc-rules-delete-request-required": "This category requires a deletion request. Use the topic tools to submit one.",
+	"variedmc-rules-delete-request-not-required": "This topic can be deleted directly and does not need a deletion request.",
+	"variedmc-rules-restore-request-required": "This category requires a restoration request. Use the topic tools to submit one.",
+	"variedmc-rules-edit-request-required": "This trace-required category requires an edit request. Use the post menu to submit one.",
+	"variedmc-rules-duplicate-delete-request": "A pending request already exists for this topic."
+}

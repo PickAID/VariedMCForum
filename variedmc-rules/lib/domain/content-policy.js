@@ -129,7 +129,7 @@ class ContentPolicy {
 		}
 		const length = ContentPolicy.toMeaningfulText(content).length;
 		if (length < min) {
-			throw new Error(`[[error:variedmc-rules-content-too-short, ${min}]]`);
+			throw new Error(`[[error:content-too-short, ${min}]]`);
 		}
 	}
 }

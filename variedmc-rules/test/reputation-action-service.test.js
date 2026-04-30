@@ -76,7 +76,7 @@ describe('VariedMC Rules governance action socket', () => {
 		}), /error:no-privileges/);
 	});
 
-	it('deducts reputation, marks untrusted users, and logs topic events', async () => {
+	it('deducts reputation and marks untrusted users without public topic events', async () => {
 		const { sockets, reputationActions, trustMarks, topics } = loadSockets();
 
 		const result = await sockets.applyGovernanceAction({ uid: 'mod' }, {
@@ -104,9 +104,7 @@ describe('VariedMC Rules governance action socket', () => {
 		}]);
 		assert.strictEqual(result.reputationAction.id, 'rep-action');
 		assert.strictEqual(result.trustMark.uid, 'author');
-		assert.deepStrictEqual(topics.logged, [
-			{ tid: 55, event: { type: 'variedmc-governance-action', uid: 'mod' } },
-		]);
+		assert.deepStrictEqual(topics.logged, []);
 	});
 
 	it('supports private trust marks and mark-only actions', async () => {

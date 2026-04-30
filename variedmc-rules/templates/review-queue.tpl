@@ -17,11 +17,20 @@
 
 	<div class="variedmc-review-list">
 		{{{ each requests }}}
-		<article class="variedmc-review-card" data-request-id="{./id}">
+		<article class="variedmc-review-card" data-request-id="{./id}" data-review-type="{./type}" data-main-pid="{./mainPid}" data-proposed-title="{./proposedTitle}">
 			<div class="variedmc-review-card__main">
-				<div class="fw-semibold">申请删除主题 #{./tid}</div>
-				<div class="text-muted small">板块 {./cid} · 申请人 {./requesterUid} · 状态 {./state}</div>
+				<a class="fw-semibold text-decoration-none" href="{config.relative_path}{./topicUrl}">{./topicTitle}</a>
+				<div class="text-muted small">类型 {./typeLabel} · 板块 {./cid} · 申请人 {./requesterUid} · 状态 {./state}</div>
 				<p class="mb-0 text-break">{./reason}</p>
+				{{{ if ./proposedTitle }}}
+				<div class="small mt-2">拟改标题：<span class="text-break">{./proposedTitle}</span></div>
+				{{{ end }}}
+				{{{ if ./proposedContent }}}
+				<div class="variedmc-review-card__edit mt-2">
+					<button class="btn btn-sm btn-outline-secondary" data-action="variedmc-preview-edit-request">用 Composer 预览</button>
+					<textarea class="d-none" data-role="proposed-content">{./proposedContent}</textarea>
+				</div>
+				{{{ end }}}
 			</div>
 			{{{ if (./state == "open") }}}
 			<div class="variedmc-review-card__actions">

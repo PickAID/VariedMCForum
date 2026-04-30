@@ -2,7 +2,7 @@
 
 class DeletePolicy {
 	static requiresRequest(rule, topicData, context) {
-		if (!rule || !rule.traceRequired || rule.deletePolicy === 'normal') {
+		if (!rule || rule.deletePolicy === 'normal') {
 			return false;
 		}
 		if (context.isAdminOrMod) {
@@ -11,13 +11,19 @@ class DeletePolicy {
 		if (!DeletePolicy.isAuthor(topicData, context.uid)) {
 			return false;
 		}
-		if (rule.deletePolicy === 'request-only' || rule.deletePolicy === 'locked') {
-			return true;
-		}
-		if (rule.deletePolicy !== 'request-after-grace') {
+		if (!DeletePolicy.requiresProtection(rule)) {
 			return false;
 		}
-		return !DeletePolicy.insideGrace(rule, topicData, context.now) || context.nonAuthorReplyCount > 0;
+		return !DeletePolicy.canDirectDeleteInsideGrace(rule, topicData, context);
+	}
+
+	static requiresProtection(rule) {
+		return rule && ['request-after-grace', 'request-only', 'locked'].includes(rule.deletePolicy);
+	}
+
+	static canDirectDeleteInsideGrace(rule, topicData, context) {
+		return DeletePolicy.insideGrace(rule, topicData, context.now) &&
+			Number(context.nonAuthorReplyCount) === 0;
 	}
 
 	static isAuthor(topicData, uid) {

@@ -54,6 +54,30 @@ describe('VariedMC Rules delete policy', () => {
 		}), true);
 	});
 
+	it('still honors grace for request-only policies', () => {
+		assert.strictEqual(DeletePolicy.requiresRequest({
+			deletePolicy: 'request-only',
+			deleteGraceHours: 0.5,
+		}, topic, {
+			uid: 10,
+			now: 1000 + 5 * 60 * 1000,
+			nonAuthorReplyCount: 0,
+			isAdminOrMod: false,
+		}), false);
+	});
+
+	it('requires request-only deletes after grace', () => {
+		assert.strictEqual(DeletePolicy.requiresRequest({
+			deletePolicy: 'request-only',
+			deleteGraceHours: 0.5,
+		}, topic, {
+			uid: 10,
+			now: 1000 + 31 * 60 * 1000,
+			nonAuthorReplyCount: 0,
+			isAdminOrMod: false,
+		}), true);
+	});
+
 	it('does not block moderators', () => {
 		assert.strictEqual(DeletePolicy.requiresRequest({
 			traceRequired: true,

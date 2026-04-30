@@ -14,14 +14,25 @@ class ReviewRequestService {
 	}
 
 	async createDeleteTopicRequest(input) {
-		const existing = await this.findOpenDeleteRequest(input.tid, input.requesterUid);
-		if (existing) {
+		return await this.createTopicRequest('delete-topic', input);
+	}
+
+	async createRestoreTopicRequest(input) {
+		return await this.createTopicRequest('restore-topic', input);
+	}
+
+	async createEditTopicRequest(input) {
+		return await this.createTopicRequest('edit-topic', input);
+	}
+
+	async createTopicRequest(type, input) {
+		if (type !== 'edit-topic' && await this.findOpenTopicRequest(type, input.tid, input.requesterUid)) {
 			throw new Error('[[error:variedmc-rules-duplicate-delete-request]]');
 		}
 		const now = Number(input.now) || Date.now();
 		const request = {
-			id: `delete-topic:${now}:${input.tid}:${input.requesterUid}`,
-			type: 'delete-topic',
+			id: `${type}:${now}:${input.tid}:${input.requesterUid}`,
+			type,
 			state: 'open',
 			tid: Number(input.tid),
 			cid: Number(input.cid),
@@ -33,15 +44,27 @@ class ReviewRequestService {
 			createdAt: now,
 			resolvedAt: 0,
 		};
+		if (type === 'edit-topic') {
+			request.proposedTitle = String(input.proposedTitle || '').trim();
+			request.proposedContent = String(input.proposedContent || '');
+		}
 		await this.save(request);
 		return request;
 	}
 
 	async findOpenDeleteRequest(tid, requesterUid) {
+		return await this.findOpenTopicRequest('delete-topic', tid, requesterUid);
+	}
+
+	async findLatestOpenEditTopicRequest(tid, requesterUid) {
+		return await this.findOpenTopicRequest('edit-topic', tid, requesterUid);
+	}
+
+	async findOpenTopicRequest(type, tid, requesterUid) {
 		const ids = await this.db.getSortedSetRevRange('variedmc:review-requests:byState:open', 0, -1);
 		const requests = await Promise.all(ids.map(id => this.get(id)));
 		return requests.find(request => request &&
-			request.type === 'delete-topic' &&
+			request.type === type &&
 			String(request.tid) === String(tid) &&
 			String(request.requesterUid) === String(requesterUid));
 	}

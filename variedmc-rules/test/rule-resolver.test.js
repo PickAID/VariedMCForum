@@ -146,4 +146,28 @@ describe('VariedMC Rules resolver', () => {
 		assert.strictEqual(childRule.deletePolicy, 'request-only');
 		assert.strictEqual(childRule.minimumTopicContentLength, 0);
 	});
+
+	it('does not let blank category number fields override defaults', () => {
+		const settings = RuleNormalizer.normalize({
+			globalRule: { enabled: true, deletePolicy: 'request-after-grace', deleteGraceHours: 0.5 },
+			categoryHierarchy: { 12: 0 },
+			categoryRules: {
+				12: {
+					scope: 'override',
+					deletePolicy: 'request-only',
+					deleteGraceHours: '',
+					minimumTopicContentLength: '',
+				},
+			},
+		});
+
+		assert.strictEqual(Object.prototype.hasOwnProperty.call(settings.categoryRules['12'], 'deleteGraceHours'), false);
+		assert.strictEqual(Object.prototype.hasOwnProperty.call(settings.categoryRules['12'], 'minimumTopicContentLength'), false);
+
+		const rule = RuleResolver.resolve(settings, 12);
+
+		assert.strictEqual(rule.deletePolicy, 'request-only');
+		assert.strictEqual(rule.deleteGraceHours, 0.5);
+		assert.strictEqual(rule.minimumTopicContentLength, 0);
+	});
 });

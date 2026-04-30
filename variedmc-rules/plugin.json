@@ -12,14 +12,21 @@
     { "hook": "filter:topic.post", "method": "filterTopicPost" },
     { "hook": "filter:post.edit", "method": "filterPostEdit" },
     { "hook": "filter:topic.delete", "method": "filterTopicDelete" },
+    { "hook": "filter:topic.restore", "method": "filterTopicRestore" },
+    { "hook": "filter:privileges.topics.get", "method": "filterPrivilegesTopicsGet" },
+    { "hook": "filter:post.delete", "method": "filterPostDelete" },
+    { "hook": "filter:post.tools", "method": "filterPostTools" },
     { "hook": "filter:topic.thread_tools", "method": "filterThreadTools" },
-    { "hook": "filter:posts.modifyUserInfo", "method": "filterModifyUserInfo" },
-    { "hook": "filter:topicEvents.init", "method": "filterTopicEventsInit" }
+    { "hook": "filter:category.get", "method": "filterCategoryGet" },
+    { "hook": "filter:posts.modifyUserInfo", "method": "filterModifyUserInfo" }
   ],
   "modules": {
     "../admin/plugins/variedmc-rules.js": "public/js/admin.js"
   },
   "scripts": [
+    "public/js/client/rule-policy.js",
+    "public/js/client/review-preview.js",
+    "public/js/client/edit-review.js",
     "public/js/client.js"
   ],
   "acpScss": [
@@ -29,5 +36,6 @@
     "public/scss/style.scss"
   ],
   "templates": "templates",
+  "languages": "languages",
   "compatibility": "^4.0.0"
 }

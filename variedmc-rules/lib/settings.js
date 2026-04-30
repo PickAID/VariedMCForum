@@ -21,8 +21,27 @@ Settings.getSettings = async function () {
 
 Settings.getPublicConfig = async function () {
 	const settings = await Settings.getSettings();
+	const cids = new Set([
+		...Object.keys(settings.categoryHierarchy || {}),
+		...Object.keys(settings.categoryRules || {}),
+	]);
 	return {
 		enabled: settings.enabled,
+		globalRule: Settings.publicRule(Settings.resolveRule(settings, 0)),
+		rules: Object.fromEntries([...cids].map(cid => [
+			String(cid),
+			Settings.publicRule(Settings.resolveRule(settings, cid)),
+		])),
+	};
+};
+
+Settings.publicRule = function (rule) {
+	return {
+		enabled: !!(rule && rule.enabled),
+		traceRequired: !!(rule && rule.traceRequired),
+		deletePolicy: rule && rule.deletePolicy || 'normal',
+		deleteGraceHours: Number(rule && rule.deleteGraceHours) || 0,
+		minimumTopicContentLength: Number(rule && rule.minimumTopicContentLength) || 0,
 	};
 };
 

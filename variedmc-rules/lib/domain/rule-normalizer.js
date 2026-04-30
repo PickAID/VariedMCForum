@@ -43,9 +43,15 @@ class RuleNormalizer {
 		return {
 			scope,
 			...Object.fromEntries(Object.keys(normalized).filter(field => (
-				Object.prototype.hasOwnProperty.call(input, field)
+				Object.prototype.hasOwnProperty.call(input, field) &&
+				!RuleNormalizer.isBlankOptionalField(field, input[field])
 			)).map(field => [field, normalized[field]])),
 		};
+	}
+
+	static isBlankOptionalField(field, value) {
+		return ['deleteGraceHours', 'minimumTopicContentLength', 'minimumReplyContentLength'].includes(field) &&
+			String(value == null ? '' : value).trim() === '';
 	}
 
 	static rule(input = {}) {

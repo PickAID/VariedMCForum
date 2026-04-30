@@ -25,7 +25,7 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 		assert.throws(() => ContentPolicy.assertTopicContent(text, {
 			minimumTopicContentLength: 1,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('does not count inline image destinations with balanced parentheses as content', () => {
@@ -37,7 +37,7 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 		assert.throws(() => ContentPolicy.assertTopicContent(text, {
 			minimumTopicContentLength: 1,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('does not count linked inline image destinations with balanced parentheses as content', () => {
@@ -46,7 +46,7 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 		assert.throws(() => ContentPolicy.assertTopicContent(text, {
 			minimumTopicContentLength: 1,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('does not count angle-bracket image destinations as content', () => {
@@ -61,7 +61,7 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 		assert.throws(() => ContentPolicy.assertTopicContent(text, {
 			minimumTopicContentLength: 1,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('does not count shortcut reference images as content', () => {
@@ -70,7 +70,7 @@ describe('VariedMC Rules content policy', () => {
 		assert.strictEqual(ContentPolicy.toMeaningfulText(text), '');
 		assert.throws(() => ContentPolicy.assertTopicContent(text, {
 			minimumTopicContentLength: 1,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('does not count zero-width characters or blank HTML entities as meaningful text', () => {
@@ -81,7 +81,7 @@ describe('VariedMC Rules content policy', () => {
 	it('rejects topic content shorter than the resolved rule', () => {
 		assert.throws(() => ContentPolicy.assertTopicContent('短内容', {
 			minimumTopicContentLength: 10,
-		}), /error:variedmc-rules-content-too-short/);
+		}), /error:content-too-short/);
 	});
 
 	it('allows disabled length rules', () => {
