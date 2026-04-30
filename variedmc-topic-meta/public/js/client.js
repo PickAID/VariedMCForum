@@ -24,10 +24,10 @@
 				}
 			});
 		}
-		bindSubmitHook();
+		bindComposerHooks();
 	}
 
-	function bindSubmitHook() {
+	function bindComposerHooks() {
 		if (hooksBound || typeof require !== 'function') {
 			return;
 		}
@@ -35,6 +35,13 @@
 			if (hooksBound) {
 				return;
 			}
+			hooks.on('filter:composer.check', async (hookData) => {
+				const error = check(hookData);
+				if (error) {
+					hookData.error = error;
+				}
+				return hookData;
+			});
 			hooks.on('filter:composer.submit', async (hookData) => {
 				try {
 					return submit(hookData);
@@ -46,6 +53,19 @@
 			});
 			hooksBound = true;
 		});
+	}
+
+	function check(hookData) {
+		const entry = stateForHook(hookData && hookData.postContainer);
+		if (!entry || !entry.state.rule || !entry.state.rule.enabled) {
+			return null;
+		}
+		try {
+			validate(entry.container, entry.state);
+			return null;
+		} catch (err) {
+			return err && err.message ? err.message : String(err || '[[error:invalid-data]]');
+		}
 	}
 
 	function enhance(postContainer, composerData) {
@@ -110,8 +130,8 @@
 		if (!state.rule || !state.rule.enabled) {
 			return hookData;
 		}
+		validate(composerEl, state);
 		const baseTitle = String(ui.titleInput(composerEl).val() || '').trim();
-		ui.validate(state.rule, state.selected);
 		hookData.composerData.variedmcTopicMeta = {
 			versions: (state.selected.versions || []).slice(),
 			loaders: (state.selected.loaders || []).slice(),
@@ -123,6 +143,34 @@
 			categoryCid: state.rule.cid,
 		};
 		return hookData;
+	}
+
+	function validate(container, state) {
+		const baseTitle = String(ui.titleInput(container).val() || '').trim();
+		ui.validate(state.rule, state.selected);
+		assertNoManualBlocks(baseTitle, state);
+	}
+
+	function assertNoManualBlocks(baseTitle, state) {
+		const metaState = {
+			...state.selected,
+			modules: ui.selectedModules(state.rule, state.selected),
+			fields: state.selected,
+		};
+		const prefix = title.prefix(metaState, ui.context(state.rule));
+		const stripped = title.stripPrefix(baseTitle, prefix);
+		if (/(^|\s)\[[^\]\r\n]{1,40}]/.test(stripped)) {
+			throw new Error('[[error:variedmc-topic-meta-manual-brackets]]');
+		}
+	}
+
+	function stateForHook(postContainer) {
+		const container = window.jQuery(postContainer);
+		const uuid = String(container.attr('data-uuid') || '');
+		if (!uuid || !states.has(uuid)) {
+			return null;
+		}
+		return { container, state: states.get(uuid) };
 	}
 
 	function normalizeStoredMeta(input) {
