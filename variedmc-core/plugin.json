@@ -17,6 +17,10 @@
 		{
 			"hook": "filter:categories.getPinnedTids",
 			"method": "filterCategoryPinnedTids"
+		},
+		{
+			"hook": "filter:topicEvents.init",
+			"method": "filterTopicEventsInit"
 		}
 	],
 	"modules": {

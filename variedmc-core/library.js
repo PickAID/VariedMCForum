@@ -6,6 +6,7 @@ const privileges = require.main.require('./src/privileges');
 const topics = require.main.require('./src/topics');
 
 const settings = require('./lib/settings');
+const topicTimeline = require('./lib/topic-timeline');
 const {
 	mergePinnedTids,
 	slicePinnedTids,
@@ -49,6 +50,11 @@ plugin.filterCategoryPinnedTids = async function (payload) {
 		...payload,
 		pinnedTids,
 	};
+};
+
+plugin.filterTopicEventsInit = async function (payload) {
+	topicTimeline.applyTo(payload.types);
+	return payload;
 };
 
 async function getCategoryChain(cid, currentCategory) {

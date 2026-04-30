@@ -143,6 +143,7 @@ Events.get = async (tid, uid, reverse = false) => {
 		e.timestamp = timestamps[idx];
 	});
 	await addEventsFromPostQueue(tid, uid, events);
+	({ events } = await plugins.hooks.fire('filter:topic.events.get', { tid, uid, events }));
 	events = await modifyEvent({ uid, events });
 	if (reverse) {
 		events.reverse();

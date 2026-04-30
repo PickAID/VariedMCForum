@@ -1,6 +1,7 @@
 'use strict';
 
 const privileges = require('../privileges');
+const plugins = require('../plugins');
 
 module.exports = function (Posts) {
 	Posts.tools = {};
@@ -30,6 +31,11 @@ module.exports = function (Posts) {
 
 		if (!canDelete.flag) {
 			throw new Error(canDelete.message);
+		}
+		const hook = isDelete ? 'delete' : 'restore';
+		const data = await plugins.hooks.fire(`filter:post.${hook}`, { postData, uid, isDelete, canDelete });
+		if (!data.canDelete.flag) {
+			throw new Error(data.canDelete.message);
 		}
 		let post;
 		if (isDelete) {

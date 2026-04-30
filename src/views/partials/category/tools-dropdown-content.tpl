@@ -77,7 +77,7 @@
 
 	{{{ each thread_tools }}}
 	<li>
-		<a href="#" class="dropdown-item rounded-1 d-flex align-items-center gap-2 {./class}" role="menuitem">
+		<a href="{{{ if ./href }}}{./href}{{{ else }}}#{{{ end }}}" data-action="{./action}" class="dropdown-item rounded-1 d-flex align-items-center gap-2 {./class}" role="menuitem">
 			<i class="fa fa-fw {./icon} text-secondary"></i> {./title}
 		</a>
 	</li>
