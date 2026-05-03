@@ -11,8 +11,8 @@
     max-width: 640px;
     overflow: hidden;
     border-radius: 10px;
-    background-color: #e9ecef;
-    filter: drop-shadow(0 0 4px #ccc);
+    background-color: var(--vui-surface-soft);
+    box-shadow: var(--vui-card-shadow);
     aspect-ratio: 16 / 9;
     isolation: isolate;
 }
@@ -151,8 +151,9 @@
     min-width: 0;
     height: 360px;
     padding: 0 20px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--vui-border);
     border-radius: 10px;
+    background: var(--vui-surface);
 }
 
 #recent_area .head {
@@ -162,7 +163,7 @@
     gap: 12px;
     padding: 16px 0 9px;
     margin-bottom: 8px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--vui-border);
 }
 
 #recent_area .head h4 { margin-bottom: 0; }
@@ -209,7 +210,8 @@
 }
 
 [data-widget-area="header"] .popular-tags .tag-list > div a {
-    background-color: #ddd;
+    color: var(--bs-body-color);
+    background-color: var(--vui-surface-soft);
 }
 
 @media (max-width: 1199px) {
