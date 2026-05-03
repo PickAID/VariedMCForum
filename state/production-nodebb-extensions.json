@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-30T14:38:41.059Z",
+  "capturedAt": "2026-05-03T16:55:56.084Z",
   "runtime": {
     "nodebbVersion": "4.10.3",
     "nodeVersion": "v20.19.2",
@@ -46,7 +46,8 @@
     "nodebb-plugin-tag-controller",
     "nodebb-plugin-variedmc-topic-meta",
     "nodebb-plugin-variedmc-core",
-    "nodebb-plugin-variedmc-ui"
+    "nodebb-plugin-variedmc-ui",
+    "nodebb-plugin-variedmc-rules"
   ],
   "localSourceDirs": [
     {
@@ -636,8 +637,8 @@
       "declaredSpec": "file:variedmc-rules",
       "installed": true,
       "installedVersion": "0.1.0",
-      "active": false,
-      "activeOrder": null,
+      "active": true,
+      "activeOrder": 40,
       "localSourceDir": "variedmc-rules"
     },
     {
